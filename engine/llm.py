@@ -54,6 +54,7 @@ class LLM:
         self.calls = 0
         self.cached = 0
         self.tokens = {"prompt": 0, "completion": 0}
+        self.unreachable: Optional[str] = None
 
     @property
     def available(self) -> bool:
@@ -106,8 +107,10 @@ class LLM:
         last = None
         async with self._sem:
             for attempt in range(4):
+                if self.unreachable:
+                    raise LLMError(self.unreachable)
                 try:
-                    async with httpx.AsyncClient(timeout=180) as client:
+                    async with httpx.AsyncClient(timeout=httpx.Timeout(150, connect=10)) as client:
                         r = await client.post(f"{self.base_url}/chat/completions", headers=headers, json=body)
                     if r.status_code in (429, 500, 502, 503, 504):
                         last = f"HTTP {r.status_code}: {r.text[:200]}"
@@ -128,6 +131,11 @@ class LLM:
                     with open(path, "w") as f:
                         json.dump(out, f)
                     return out
+                except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+                    # the endpoint cannot be reached at all: fail this and every later call at once
+                    host = httpx.URL(self.base_url).host
+                    self.unreachable = f"Cannot reach the language model gateway ({host}) from this server."
+                    raise LLMError(self.unreachable) from e
                 except (httpx.HTTPError, ValueError, KeyError) as e:
                     last = f"{type(e).__name__}: {e}"
                     await asyncio.sleep(2 ** attempt + 0.5)
