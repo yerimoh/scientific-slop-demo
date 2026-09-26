@@ -522,6 +522,11 @@ async def config():
 app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static")
 
 
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse(os.path.join(HERE, "static", "favicon-32.png"), media_type="image/png")
+
+
 @app.get("/")
 @app.get("/leaderboard")
 @app.get("/how")
