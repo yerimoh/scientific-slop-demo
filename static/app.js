@@ -460,6 +460,7 @@ function paperView(job) {
   const pages = h('div', { class: 'pv-pages' });
   (pdf.sizes || []).forEach(([w, hgt], n) => {
     const page = h('div', { class: 'pv-page', style: { aspectRatio: `${w} / ${hgt}` } },
+      h('span', { class: 'pl', text: `Loading page ${n + 1}…` }),
       h('img', { src: `/api/jobs/${encodeURIComponent(key)}/pages/${n}.jpg`, alt: `Page ${n + 1}`, loading: 'lazy', width: 1100, height: Math.round(1100 * hgt / w) }),
       h('span', { class: 'pno', text: `${n + 1}` }));
     for (const hl of byPage.get(n) || []) {

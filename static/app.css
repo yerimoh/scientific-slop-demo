@@ -253,7 +253,8 @@ h1.hero em { font-style: italic; color: var(--red); font-weight: 600; }
 .pv-toggle .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; }
 .pv-pages { display: grid; gap: 16px; }
 .pv-page { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow); overflow: hidden; }
-.pv-page img { display: block; width: 100%; height: auto; }
+.pv-page img { display: block; width: 100%; height: auto; position: relative; }
+.pv-page .pl { position: absolute; inset: 0; display: grid; place-items: center; color: #9ca3af; font-size: 13px; }
 .pv-page .pno { position: absolute; right: 8px; bottom: 6px; font-size: 11px; color: #6b7280; background: rgba(255,255,255,.85); padding: 0 6px; border-radius: 6px; }
 .hl { position: absolute; border-radius: 2px; cursor: pointer; mix-blend-mode: multiply; transition: outline-color .2s; outline: 2px solid transparent; outline-offset: 1px; }
 .hl.structure { background: rgba(149, 98, 122, .28); } .hl.argument { background: rgba(228, 149, 158, .45); } .hl.artifacts { background: rgba(109, 138, 150, .30); }
