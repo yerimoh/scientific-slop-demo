@@ -313,7 +313,7 @@ h1.hero em { font-style: italic; color: var(--red); font-weight: 600; }
 .g-thumb img { width: 100%; display: block; }
 .g-thumb .ph { position: absolute; inset: 0; display: grid; place-items: center; padding: 18px; text-align: center; color: #4b5563; font-weight: 700; font-size: 14px; background: #faf9f7; }
 .g-body { padding: 12px 14px 16px; display: grid; gap: 6px; }
-.g-rank { display: flex; align-items: baseline; gap: 8px; color: var(--red); font-weight: 700; font-size: 14px; }
+.g-rank { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 8px; color: var(--red); font-weight: 700; font-size: 13.5px; }
 .g-rank .score { margin-left: auto; font-size: 13px; color: var(--ink-2); font-weight: 700; }
 .g-title { font-weight: 700; font-size: 16px; line-height: 1.25; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .g-planes { display: flex; gap: 4px; margin-top: 2px; }

@@ -736,7 +736,7 @@ function footCard(res) {
       h('div', { class: 'd-sub', style: { marginTop: 0 }, text: 'How this number is computed' }),
       h('div', { class: 'eq', text: 'S(p) = mean over planes of the mean of its measures' }),
       h('div', { class: 'calc', text: parts.length ? `${parts.join('  ·  ')}  →  ${idx.index} / 100` : 'No plane could be measured.' }),
-      h('div', { class: 'engine', text: `Language model: ${eng.llm?.model || '—'} via ${eng.llm?.provider || '—'}` + (eng.llm_available ? ` · ${eng.llm_calls} calls` : ' · not configured') + ` · ${eng.seconds}s` })),
+      h('div', { class: 'engine', text: `Language model: ${eng.llm?.model || '—'}` + (eng.llm?.provider ? ` via ${eng.llm.provider}` : '') + (eng.llm_available ? ` · ${eng.llm_calls} calls` : ' · not configured') + ` · ${eng.seconds}s` })),
     h('div', { class: 'actions' },
       h('button', { class: 'btn ghost', type: 'button', onclick: () => copy(location.href, 'Link copied') }, 'Copy link'),
       h('button', { class: 'btn', type: 'button', onclick: () => go('/') }, 'Analyze another')));
@@ -808,7 +808,7 @@ function renderGallery() {
       h('div', { class: 'g-thumb', style: { borderBottomColor: b ? b.color : 'var(--line-2)' } },
         x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title })),
       h('div', { class: 'g-body' },
-        h('div', { class: 'g-rank' }, h('span', { text: rank.has(x.key) ? `Slop #${rank.get(x.key)}` : '—' }), h('span', { class: 'score', text: x.index != null ? `${x.index} / 100${x.partial ? '*' : ''}` : '—' })),
+        h('div', { class: 'g-rank' }, h('span', { text: rank.has(x.key) ? `Science Slop Index #${rank.get(x.key)}` : '—' }), h('span', { class: 'score', text: x.index != null ? `${x.index} / 100${x.partial ? '*' : ''}` : '—' })),
         h('div', { class: 'g-title', text: x.title }),
         h('div', { class: 'g-planes' }, PLANES.map(p => h('i', { title: `${p.label} ${fmt(x.planes?.[p.key])}` }, h('b', { style: { width: `${100 * (x.planes?.[p.key] || 0)}%`, background: PLANE_VAR[p.key] } }))))));
   }));

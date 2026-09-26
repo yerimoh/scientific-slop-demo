@@ -478,7 +478,17 @@ async def gallery():
             "route": doc.get("route"), "url": doc.get("url"), "created": job.get("created"),
             "thumb": bool(_find_file(key, "thumb.png")), "seed": bool(job.get("seed")),
         })
-    return {"items": items, "persistent": PERSISTENT}
+    # one card per paper: the newest analysis wins (same arXiv id, link, or title)
+    def ident(x):
+        t = re.sub(r"[^a-z0-9]", "", (x.get("title") or "").lower())[:80]
+        if len(t) >= 12:
+            return "t:" + t
+        m = re.search(r"arxiv\.org/(?:abs|pdf)/(\d{4}\.\d{4,5})", x.get("url") or "")
+        return "arxiv:" + m.group(1) if m else "k:" + x["key"]
+    newest: dict[str, dict] = {}
+    for x in sorted(items, key=lambda x: x.get("created") or 0):
+        newest[ident(x)] = x
+    return {"items": list(newest.values()), "persistent": PERSISTENT}
 
 
 @app.get("/api/config")
