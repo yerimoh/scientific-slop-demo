@@ -462,6 +462,22 @@ async def job_file(key: str, name: str):
     return FileResponse(p, media_type="image/png")
 
 
+def _source_label(doc: dict) -> str:
+    """Short label for where a paper came from, shown under its bar on the leaderboard."""
+    url = (doc.get("url") or "").lower()
+    route = (doc.get("route") or "").lower()
+    if "arxiv" in url or "arxiv" in route:
+        return "arXiv"
+    if "openreview" in url:
+        return "OpenReview"
+    if "aclanthology" in url:
+        return "ACL"
+    if url:
+        host = re.sub(r"^https?://(www\.)?", "", url).split("/")[0]
+        return host.split(".")[-2].capitalize() if host.count(".") else "Link"
+    return "Upload" if "upload" in route else "Example"
+
+
 @app.get("/api/gallery")
 async def gallery():
     items = []
@@ -477,6 +493,9 @@ async def gallery():
             "planes": {k: (v or {}).get("score") for k, v in (idx.get("planes") or {}).items()},
             "route": doc.get("route"), "url": doc.get("url"), "created": job.get("created"),
             "thumb": bool(_find_file(key, "thumb.png")), "seed": bool(job.get("seed")),
+            "source": _source_label(doc), "source_kind": doc.get("source"),
+            "measures": {m["key"]: (m.get("score") if m.get("status") == "done" else None)
+                         for m in res.get("measures", [])},
         })
     # one card per paper: the newest analysis wins (same arXiv id, link, or title)
     def ident(x):
@@ -504,6 +523,7 @@ app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="
 
 
 @app.get("/")
+@app.get("/leaderboard")
 @app.get("/how")
 @app.get("/gallery")
 @app.get("/view")

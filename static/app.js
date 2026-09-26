@@ -123,16 +123,17 @@ function initTheme() {
     const next = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next; store.set('ssi-theme', next);
     if (state.job && !$('#page-report').hidden) { state.sig = ''; render(state.job); }
+    if (!$('#page-leaderboard').hidden && lb.data) renderLeaderboard();
   });
 }
 
 // ------------------------------------------------------------------ routing
-const PAGES = ['home', 'how', 'gallery', 'view', 'report'];
+const PAGES = ['home', 'leaderboard', 'how', 'gallery', 'view', 'report'];
 function showPage(name) {
   for (const p of PAGES) $('#page-' + p).hidden = p !== name;
   document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === name));
   hideTip();
-  if (name !== 'report') document.title = { home: 'Science Slop Index', how: 'How it works · Science Slop Index', gallery: 'Gallery · Science Slop Index', view: 'View report · Science Slop Index' }[name];
+  if (name !== 'report') document.title = { home: 'Science Slop Index', leaderboard: 'Leaderboard · Science Slop Index', how: 'How it works · Science Slop Index', gallery: 'Gallery · Science Slop Index', view: 'View report · Science Slop Index' }[name];
 }
 function go(path) { history.pushState({}, '', path); route(); scrollTo({ top: 0 }); }
 function route() {
@@ -141,7 +142,8 @@ function route() {
   const m = p.match(/^\/r\/([A-Za-z0-9_-]+)/);
   if (m) { showPage('report'); openReport(m[1]); return; }
   state.key = null; state.job = null; state.sig = '';
-  if (p.startsWith('/how')) { showPage('how'); buildHow(); }
+  if (p.startsWith('/leaderboard')) { showPage('leaderboard'); loadLeaderboard(); }
+  else if (p.startsWith('/how')) { showPage('how'); buildHow(); }
   else if (p.startsWith('/gallery')) { showPage('gallery'); loadGallery(); }
   else if (p.startsWith('/view')) { showPage('view'); renderRecent(); }
   else showPage('home');
@@ -786,6 +788,260 @@ function drawBench() {
   draw(); new ResizeObserver(draw).observe(host);
 }
 
+// ------------------------------------------------------------------ leaderboard
+const METRICS = [
+  { id: 'index', label: 'Science Slop Index', stacked: true },
+  ...PLANES.map(p => ({ id: 'plane:' + p.key, label: `${p.label} plane`, plane: p.key })),
+  ...ORDER.map(k => ({ id: 'm:' + k, label: MEASURES[k].name, plane: MEASURES[k].plane })),
+];
+const lb = { metric: 'index', top: 30, picked: null, excluded: new Set(), hidePartial: false, table: false, sort: 'value', dir: -1, pop: null, data: null };
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function lbValue(x, metric) {
+  if (metric === 'index') return x.index;
+  if (metric.startsWith('plane:')) { const v = x.planes?.[metric.slice(6)]; return v == null ? null : 100 * v; }
+  const v = x.measures?.[metric.slice(2)]; return v == null ? null : 100 * v;
+}
+function lbReadParams() {
+  const q = new URLSearchParams(location.search);
+  if (q.get('metric') && METRICS.some(m => m.id === q.get('metric'))) lb.metric = q.get('metric');
+  if (q.get('n')) lb.top = q.get('n') === 'all' ? Infinity : Math.max(1, parseInt(q.get('n'), 10) || 30);
+  if (q.get('exclude')) lb.excluded = new Set(q.get('exclude').split(','));
+  lb.hidePartial = q.get('partial') === '0';
+  lb.table = q.get('view') === 'table';
+}
+function lbUrl() {
+  const q = new URLSearchParams();
+  if (lb.metric !== 'index') q.set('metric', lb.metric);
+  if (lb.top !== 30) q.set('n', lb.top === Infinity ? 'all' : lb.top);
+  if (lb.excluded.size) q.set('exclude', [...lb.excluded].join(','));
+  if (lb.hidePartial) q.set('partial', '0');
+  if (lb.table) q.set('view', 'table');
+  const s = q.toString();
+  return location.origin + '/leaderboard' + (s ? '?' + s : '');
+}
+async function loadLeaderboard() {
+  lbReadParams();
+  $('#lb-chart').replaceChildren(h('div', { class: 'lb-empty', text: 'Loading…' }));
+  try { const r = await fetch('/api/gallery'); lb.data = await r.json(); state.gallery = lb.data; }
+  catch (_) { $('#lb-chart').replaceChildren(h('div', { class: 'lb-empty', text: 'Could not load the leaderboard.' })); return; }
+  renderLeaderboard();
+}
+function lbRows() {
+  const all = (lb.data?.items || []).filter(x => lbValue(x, lb.metric) != null);
+  const pool = all.filter(x => !lb.excluded.has(x.source) && !(lb.hidePartial && x.partial));
+  pool.sort((a, b) => lbValue(b, lb.metric) - lbValue(a, lb.metric));
+  const shown = lb.picked ? pool.filter(x => lb.picked.has(x.key)) : pool.slice(0, lb.top);
+  return { all, pool, shown };
+}
+function renderLeaderboard() {
+  const { all, pool, shown } = lbRows();
+  const metric = METRICS.find(m => m.id === lb.metric);
+  $('#lb-count-t').textContent = `${shown.length} of ${all.length} papers`;
+  $('#lb-metricname').textContent = metric.stacked ? 'Science Slop Index · contribution of each plane' : `${metric.label} · score out of 100`;
+  $('#lb-table').setAttribute('aria-pressed', String(lb.table));
+  $('#lb-filter').classList.toggle('on', lb.excluded.size > 0 || lb.hidePartial);
+  $('#lb-metric').classList.toggle('on', lb.metric !== 'index');
+  $('#lb-scroll').parentElement.hidden = lb.table;
+  $('#lb-tablewrap').hidden = !lb.table;
+  if (lb.table) renderLbTable(shown); else drawLbChart(shown, metric);
+  $('#lb-legend').replaceChildren(...(metric.stacked
+    ? [...PLANES.map(p => h('span', {}, h('span', { class: 'lg-box', style: { background: PLANE_VAR[p.key], borderRadius: '3px', width: '12px', height: '12px' } }), `${p.label} share`)),
+      h('span', { class: 'muted', text: 'Each bar is the index; its segments show how much each plane adds.' })]
+    : [h('span', {}, h('span', { class: 'lg-box', style: { background: PLANE_VAR[metric.plane], borderRadius: '3px', width: '12px', height: '12px' } }), metric.label)]));
+  const partial = shown.some(x => x.partial) ? '* Partial: some measures could not run for this paper. ' : '';
+  $('#lb-note').textContent = partial + (pool.length > shown.length ? `Showing the top ${shown.length} of ${pool.length}. ` : '')
+    + (lb.data?.persistent ? '' : 'Papers analyzed on this server are listed until it restarts; bundled papers always stay.');
+}
+function drawLbChart(rows, metric) {
+  const host = $('#lb-chart');
+  if (!rows.length) { host.replaceChildren(h('div', { class: 'lb-empty' }, 'No paper to rank yet. ', h('a', { href: '/', 'data-link': '' }, 'Analyze one'))); return; }
+  const colors = Object.fromEntries(PLANES.map(p => [p.key, cssVar('--' + p.key)]));
+  const surface = cssVar('--surface');
+  const avail = Math.max(320, $('#lb-scroll').clientWidth);
+  const right = 8, top = 28, plotH = 300, badgeH = 30;
+  const slot0 = (avail - 34 - right) / rows.length;
+  const flat = slot0 >= 104;                         // few papers: titles sit flat under the bars
+  const left = flat ? 34 : Math.max(34, 150 - Math.max(46, slot0) / 2);   // room for the first rotated title
+  const slot = Math.max(46, (avail - left - right) / rows.length);
+  const labelH = flat ? 64 : 150;
+  const W = Math.max(avail, left + right + slot * rows.length);
+  const H = top + plotH + badgeH + labelH;
+  const vals = rows.map(x => lbValue(x, lb.metric));
+  const maxV = Math.max(...vals, 1);
+  const yMax = Math.min(100, Math.max(10, Math.ceil(maxV * 1.12 / 10) * 10));
+  const Y = v => top + plotH - plotH * v / yMax;
+  const bw = Math.min(58, slot * 0.74);
+  const svg = s('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `${metric.label} for ${rows.length} papers, highest first`, xmlns: SVGNS });
+  const step = yMax <= 20 ? 5 : yMax <= 50 ? 10 : 20;
+  for (let t = 0; t <= yMax + 0.01; t += step) {
+    svg.append(s('line', { class: 'grid', x1: left, x2: W - right, y1: Y(t), y2: Y(t) }));
+    svg.append(s('text', { class: 'axis', x: left - 8, y: Y(t) + 4, 'text-anchor': 'end', text: String(t) }));
+  }
+  rows.forEach((x, i) => {
+    const v = lbValue(x, lb.metric);
+    const cx = left + slot * (i + 0.5); const x0 = cx - bw / 2;
+    const g = s('g', { class: 'col', tabindex: 0, role: 'link', 'aria-label': `#${i + 1} ${x.title}: ${Math.round(v)}` });
+    // segments: plane contributions for the index, one plane color otherwise
+    let segs;
+    if (metric.stacked) {
+      const planes = PLANES.filter(p => x.planes?.[p.key] != null);
+      segs = planes.map(p => ({ c: colors[p.key], v: 100 * x.planes[p.key] / planes.length }));
+    } else segs = [{ c: colors[metric.plane], v }];
+    let base = top + plotH;
+    segs.forEach((sg, k) => {
+      const hgt = plotH * sg.v / yMax; if (hgt <= 0) return;
+      const last = k === segs.length - 1 || segs.slice(k + 1).every(o => o.v <= 0);
+      const yTop = base - hgt; const r = last ? Math.min(5, hgt) : 0;
+      const d = `M${x0},${base} V${yTop + r} ${r ? `Q${x0},${yTop} ${x0 + r},${yTop}` : ''} H${x0 + bw - r} ${r ? `Q${x0 + bw},${yTop} ${x0 + bw},${yTop + r}` : ''} V${base} Z`;
+      g.append(s('path', { class: 'seg', d, fill: sg.c }));
+      if (!last) g.append(s('rect', { x: x0, y: yTop - 1, width: bw, height: 2, fill: surface }));   // 2px surface gap between segments
+      base = yTop;
+    });
+    g.append(s('text', { class: 'cap', x: cx, y: Y(v) - 8, 'text-anchor': 'middle', text: String(Math.round(v)) + (x.partial && metric.stacked ? '*' : '') }));
+    // source badge + rotated title
+    const SHORT = { OpenReview: 'OR', Upload: 'PDF', Example: 'Ex' };
+    const bt = slot < 76 ? (SHORT[x.source] || (x.source || '').slice(0, 5)) : (x.source || '');
+    const bwid = Math.min(slot - 6, Math.max(28, bt.length * 6.2 + 12));
+    g.append(s('rect', { class: 'badge', x: cx - bwid / 2, y: top + plotH + 8, width: bwid, height: 17, rx: 5 }));
+    g.append(s('text', { class: 'badge-t', x: cx, y: top + plotH + 20, 'text-anchor': 'middle', text: bt }));
+    if (flat) {
+      // wrap the title into at most three centered lines that fit the slot
+      const maxChars = Math.max(8, Math.floor((slot - 12) / 6.6));
+      const words = (x.title || 'Untitled').split(/\s+/); const lines = [''];
+      for (const w of words) {
+        const cur = lines[lines.length - 1];
+        if ((cur + ' ' + w).trim().length <= maxChars) lines[lines.length - 1] = (cur + ' ' + w).trim();
+        else if (lines.length < 3) lines.push(w);
+        else { lines[2] = trunc(lines[2] + ' ' + w, maxChars); break; }
+      }
+      lines.forEach((ln, li) => g.append(s('text', { class: 'xl', x: cx, y: top + plotH + badgeH + 16 + li * 15, 'text-anchor': 'middle', text: trunc(ln, maxChars) })));
+    } else {
+      g.append(s('text', { class: 'xl', transform: `translate(${cx + 4},${top + plotH + badgeH + 8}) rotate(-42)`, 'text-anchor': 'end', text: trunc(x.title || 'Untitled', 28) }));
+    }
+    g.append(s('rect', { class: 'hitr', x: cx - slot / 2 + 2, y: top - 20, width: slot - 4, height: plotH + badgeH + 30, fill: 'transparent', rx: 6 }));
+    const tipBody = [`Rank #${i + 1} · ${metric.label} ${Math.round(v)}`,
+      ...PLANES.map(p => `${p.label} ${fmt(x.planes?.[p.key])}`),
+      ...ORDER.map(k => `${MEASURES[k].short} ${fmt(x.measures?.[k])}`)].join('  ·  ');
+    bindTip(g, x.title, tipBody);
+    const open = () => { hideTip(); go('/r/' + x.key); };
+    g.addEventListener('click', open);
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    svg.append(g);
+  });
+  svg.append(s('line', { x1: left, x2: W - right, y1: top + plotH, y2: top + plotH, stroke: cssVar('--line-2'), 'stroke-width': 1 }));
+  host.replaceChildren(svg);
+}
+function renderLbTable(rows) {
+  const cols = [
+    { k: 'rank', l: '#' }, { k: 'title', l: 'Paper' }, { k: 'index', l: 'Index' },
+    ...PLANES.map(p => ({ k: 'plane:' + p.key, l: p.label })),
+    ...ORDER.map(k => ({ k: 'm:' + k, l: MEASURES[k].short })), { k: 'source', l: 'Source' },
+  ];
+  const val = (x, k) => k === 'title' ? (x.title || '') : k === 'source' ? (x.source || '') : k === 'index' ? x.index : lbValue(x, k);
+  const ranked = rows.map((x, i) => ({ ...x, rank: i + 1 }));
+  if (lb.sort !== 'value' && lb.sort !== 'rank') ranked.sort((a, b) => {
+    const va = val(a, lb.sort), vb = val(b, lb.sort);
+    if (va == null) return 1; if (vb == null) return -1;
+    return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * lb.dir;
+  });
+  const thead = h('thead', {}, h('tr', {}, cols.map(c => h('th', { class: lb.sort === c.k ? 'sorted' : '', title: 'Sort',
+    onclick: () => { if (lb.sort === c.k) lb.dir *= -1; else { lb.sort = c.k; lb.dir = c.k === 'title' || c.k === 'source' ? 1 : -1; } renderLeaderboard(); } },
+    c.l + (lb.sort === c.k ? (lb.dir > 0 ? ' ↑' : ' ↓') : '')))));
+  const tbody = h('tbody', {}, ranked.map(x => h('tr', { onclick: () => go('/r/' + x.key), tabindex: 0, onkeydown: e => { if (e.key === 'Enter') go('/r/' + x.key); } },
+    h('td', { text: String(x.rank) }), h('td', { class: 'title', text: x.title, title: x.title }),
+    h('td', { class: 'idx', text: x.index == null ? '—' : x.index + (x.partial ? '*' : '') }),
+    ...PLANES.map(p => h('td', { text: fmt(x.planes?.[p.key]) })),
+    ...ORDER.map(k => h('td', { text: fmt(x.measures?.[k]) })),
+    h('td', { text: x.source || '' }))));
+  $('#lb-tablewrap').replaceChildren(h('table', { class: 'lb-table' }, thead, tbody));
+}
+function lbPopover(kind, anchor) {
+  const pop = $('#lb-pop');
+  if (lb.pop === kind) { pop.hidden = true; lb.pop = null; return; }
+  lb.pop = kind;
+  const { all, pool } = lbRows();
+  const close = () => { pop.hidden = true; lb.pop = null; };
+  let body = [];
+  if (kind === 'count') {
+    const chip = (label, n) => h('button', { type: 'button', class: !lb.picked && lb.top === n ? 'on' : '', onclick: () => { lb.picked = null; lb.top = n; renderLeaderboard(); close(); } }, label);
+    const search = h('input', { type: 'search', placeholder: 'Search papers', 'aria-label': 'Search papers' });
+    const list = h('div', {});
+    const shownKeys = new Set(lbRows().shown.map(x => x.key));
+    const draw = () => {
+      const q = search.value.trim().toLowerCase();
+      list.replaceChildren(...pool.filter(x => !q || (x.title || '').toLowerCase().includes(q)).map(x => {
+        const cb = h('input', { type: 'checkbox', checked: shownKeys.has(x.key) ? true : null, onchange: () => {
+          lb.picked = new Set(lb.picked || shownKeys);
+          cb.checked ? lb.picked.add(x.key) : lb.picked.delete(x.key);
+          cb.checked ? shownKeys.add(x.key) : shownKeys.delete(x.key);
+          renderLeaderboard();
+        } });
+        return h('label', { class: 'lb-opt' }, cb, h('span', { class: 't', text: x.title, title: x.title }), h('span', { class: 'v', text: String(Math.round(lbValue(x, lb.metric))) }));
+      }));
+    };
+    search.addEventListener('input', draw); draw();
+    body = [h('h5', { text: 'Show' }), h('div', { class: 'chips' }, chip('Top 10', 10), chip('Top 20', 20), chip('Top 30', 30), chip('All', Infinity)),
+      h('h5', { text: 'Or pick papers' }), search, list];
+  } else if (kind === 'filter') {
+    const sources = [...new Set(all.map(x => x.source).filter(Boolean))].sort();
+    body = [h('h5', { text: 'Source' }), ...sources.map(src => {
+      const n = all.filter(x => x.source === src).length;
+      const cb = h('input', { type: 'checkbox', checked: !lb.excluded.has(src) ? true : null, onchange: () => { cb.checked ? lb.excluded.delete(src) : lb.excluded.add(src); lb.picked = null; renderLeaderboard(); } });
+      return h('label', { class: 'lb-opt' }, cb, h('span', { class: 't', text: src }), h('span', { class: 'v', text: String(n) }));
+    }), h('h5', { text: 'Reports', style: { marginTop: '12px' } }), (() => {
+      const cb = h('input', { type: 'checkbox', checked: lb.hidePartial ? true : null, onchange: () => { lb.hidePartial = cb.checked; lb.picked = null; renderLeaderboard(); } });
+      return h('label', { class: 'lb-opt' }, cb, h('span', { class: 't', text: 'Hide partial reports (some measures did not run)' }));
+    })()];
+  } else {
+    const opt = m => {
+      const r = h('input', { type: 'radio', name: 'lb-metric', checked: lb.metric === m.id ? true : null, onchange: () => { lb.metric = m.id; lb.sort = 'value'; renderLeaderboard(); close(); } });
+      return h('label', { class: 'lb-opt' }, r, m.plane ? h('span', { class: 'sw', style: { background: PLANE_VAR[m.plane] } }) : h('span', { class: 'mark', style: { gap: '2px' } }, h('i'), h('i'), h('i')), h('span', { class: 't', text: m.label }));
+    };
+    body = [h('h5', { text: 'Rank by' }), opt(METRICS[0]), h('h5', { text: 'Planes', style: { marginTop: '10px' } }), ...METRICS.filter(m => m.id.startsWith('plane:')).map(opt),
+      h('h5', { text: 'Measures', style: { marginTop: '10px' } }), ...METRICS.filter(m => m.id.startsWith('m:')).map(opt)];
+  }
+  pop.replaceChildren(...body);
+  pop.hidden = false;
+  const r = anchor.getBoundingClientRect(); const pr = $('#page-leaderboard').getBoundingClientRect();
+  pop.style.top = `${r.bottom - pr.top + 8}px`;
+  pop.style.left = `${Math.max(0, Math.min(r.right - pr.left - 340, pr.width - 340))}px`;
+}
+async function lbDownloadPng() {
+  const svg = $('#lb-chart svg'); if (!svg) { toast('Switch to the chart first'); return; }
+  const clone = svg.cloneNode(true);
+  // inline the computed styles the CSS classes provide, so the image stands alone
+  const map = [['.grid', { stroke: cssVar('--line') }], ['.axis', { fill: cssVar('--ink-4'), 'font-size': '11px' }], ['.cap', { fill: cssVar('--ink'), 'font-size': '14px', 'font-weight': '700' }],
+    ['.xl', { fill: cssVar('--ink-2'), 'font-size': '11px' }], ['.badge-t', { fill: cssVar('--ink-2'), 'font-size': '9.5px', 'font-weight': '700' }], ['.badge', { fill: cssVar('--surface-2'), stroke: cssVar('--line-2') }]];
+  for (const [sel, st] of map) clone.querySelectorAll(sel).forEach(n => Object.entries(st).forEach(([k, v]) => n.setAttribute(k, v)));
+  clone.querySelectorAll('text').forEach(n => n.setAttribute('font-family', 'Avenir Next, Avenir, Nunito Sans, Helvetica, Arial, sans-serif'));
+  const W = +svg.getAttribute('width'), Hh = +svg.getAttribute('height'), head = 64;
+  const wrap = document.createElementNS(SVGNS, 'svg');
+  wrap.setAttribute('xmlns', SVGNS); wrap.setAttribute('width', W); wrap.setAttribute('height', Hh + head);
+  wrap.append(s('rect', { width: W, height: Hh + head, fill: cssVar('--surface') }),
+    s('text', { x: 16, y: 32, 'font-size': '20', 'font-weight': '700', fill: cssVar('--ink'), 'font-family': 'Avenir Next, Avenir, Nunito Sans, Helvetica, sans-serif', text: 'Science Slop Index' }),
+    s('text', { x: 16, y: 52, 'font-size': '12', fill: cssVar('--ink-3'), 'font-family': 'Avenir Next, Avenir, Nunito Sans, Helvetica, sans-serif', text: `${$('#lb-metricname').textContent} · scislop.open-galapagos.com` }));
+  const g = document.createElementNS(SVGNS, 'g'); g.setAttribute('transform', `translate(0,${head})`); g.append(...clone.childNodes); wrap.append(g);
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(wrap)], { type: 'image/svg+xml' }));
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = W * 2; c.height = (Hh + head) * 2;
+    const ctx = c.getContext('2d'); ctx.scale(2, 2); ctx.drawImage(img, 0, 0); URL.revokeObjectURL(url);
+    c.toBlob(b => { const a = h('a', { href: URL.createObjectURL(b), download: 'science-slop-index-leaderboard.png' }); document.body.append(a); a.click(); a.remove(); });
+  };
+  img.src = url;
+}
+function initLeaderboard() {
+  $('#lb-count').addEventListener('click', e => { e.stopPropagation(); lbPopover('count', e.currentTarget); });
+  $('#lb-filter').addEventListener('click', e => { e.stopPropagation(); lbPopover('filter', e.currentTarget); });
+  $('#lb-metric').addEventListener('click', e => { e.stopPropagation(); lbPopover('metric', e.currentTarget); });
+  $('#lb-table').addEventListener('click', () => { lb.table = !lb.table; renderLeaderboard(); });
+  $('#lb-link').addEventListener('click', () => copy(lbUrl(), 'Link to this view copied'));
+  $('#lb-png').addEventListener('click', lbDownloadPng);
+  document.addEventListener('click', e => { if (lb.pop && !e.target.closest('#lb-pop')) { $('#lb-pop').hidden = true; lb.pop = null; } });
+  let last = 0;
+  new ResizeObserver(() => { const w = $('#lb-scroll').clientWidth; if (!$('#page-leaderboard').hidden && lb.data && !lb.table && Math.abs(w - last) > 8) { last = w; renderLeaderboard(); } }).observe($('#lb-scroll'));
+}
+
 // ------------------------------------------------------------------ gallery
 async function loadGallery() {
   const grid = $('#g-grid');
@@ -827,7 +1083,7 @@ function renderRecent() {
 
 // ------------------------------------------------------------------ boot
 async function boot() {
-  initTheme(); initInputs();
+  initTheme(); initInputs(); initLeaderboard();
   $('#g-q').addEventListener('input', renderGallery);
   $('#g-sort').addEventListener('change', renderGallery);
   try {

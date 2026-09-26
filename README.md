@@ -40,6 +40,7 @@ LLM은 `LITELLM_PROXY_API_BASE`가 있으면 LiteLLM gateway(기본: UMN AI gate
 - **홈** `/`: 링크 입력 또는 PDF / LaTeX 업로드(업로드는 "List uploaded paper in the gallery"를 체크해야 갤러리에 올라감).
 - **리포트** `/r/<key>`: 진행률 바, 지수와 세 영역 점수, Findings 탭(논문 맵, 여섯 지표의 위치 목록), Paper 탭(PDF 페이지 위 하이라이트, 지표별 켜고 끄기, 클릭하면 해당 발견으로 이동), Export(하이라이트된 PDF + 요약 표지, JSON, CSV).
 - **Report key**: 분석마다 `xxxx-xxxx-xxxx` 키가 발급됨. `/view`에서 키로 다시 열기, 이 브라우저의 최근 리포트, 내려받은 JSON 다시 열기.
+- **리더보드** `/leaderboard`: 등록된 논문(갤러리와 같은 목록)을 Science Slop Index 순으로 세운 막대 차트. 막대는 세 영역의 기여분으로 쌓이고, 지표 전환(지수 / 영역 / 여섯 지표), "N of M papers"(Top N 또는 직접 선택), 출처 필터, 표 보기, PNG 저장, 현재 보기 링크 복사(`?metric=&n=&exclude=&view=`)를 지원.
 - **갤러리** `/gallery`: 공개 링크로 분석한 논문과 공개를 선택한 업로드, 첫 페이지 썸네일과 순위("Slop #n"), 검색과 정렬.
 - **How it works** `/how`: 논문 Table 1 형식의 지표 표(그림 포함), 논문이 보고한 벤치마크, 계산식, 논문과 다른 점.
 
