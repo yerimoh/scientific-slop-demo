@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Science Slop Index</title>
+<meta name="description" content="Paste a paper and get its Science Slop Index: six paper-level measures of how its structure, argument, and artifacts hold together.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='7' cy='16' r='5' fill='%238e3b72'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23e2706a'/%3E%3Ccircle cx='25' cy='16' r='5' fill='%232274c4'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="wrap top">
+  <a class="brand" href="/" id="home"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>Science Slop Index</a>
+  <nav>
+    <a href="#how">How it works</a>
+    <button class="icon-btn" id="theme" type="button" aria-label="Switch color theme" title="Switch theme">◐</button>
+  </nav>
+</header>
+
+<main>
+  <section id="landing" class="wrap landing">
+    <p class="eyebrow">Paper-level scientific slop</p>
+    <h1>Science, or <em>slop</em>?</h1>
+    <p class="lede">AI text detectors read sentences. The Science Slop Index reads how a paper holds together: whether its sections build on each other, its claims are argued, and its evidence can be inspected.</p>
+    <form id="ask" class="ask" autocomplete="off">
+      <input id="url" type="text" inputmode="url" placeholder="Paste an arXiv, OpenReview, or PDF link" aria-label="Paper link">
+      <button class="btn" type="submit" id="go">Analyze</button>
+    </form>
+    <div class="alt">
+      <span class="file-btn"><button class="link-btn" type="button" tabindex="-1">Upload a PDF or LaTeX .zip</button><input id="file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF or LaTeX archive"></span>
+      <span class="dot-sep" id="ex-sep" hidden>·</span>
+      <button class="link-btn" type="button" id="example" hidden>Try the example paper</button>
+    </div>
+    <p class="form-error" id="form-error" role="alert"></p>
+    <p class="notice" id="llm-notice" hidden></p>
+
+    <div class="planes-intro">
+      <div class="pi">
+        <h3><span class="swatch sw-structure"></span>Structure</h3>
+        <p>Do the sections build on one another?</p>
+        <ul><li>Cross-section references</li><li>Macro redundancy</li></ul>
+      </div>
+      <div class="pi">
+        <h3><span class="swatch sw-argument"></span>Argument</h3>
+        <p>Are claims and citations argued, not just stated?</p>
+        <ul><li>Argument graph</li><li>Citation isolation</li></ul>
+      </div>
+      <div class="pi">
+        <h3><span class="swatch sw-artifacts"></span>Artifacts</h3>
+        <p>Can a reader inspect the method and the evidence?</p>
+        <ul><li>Figure exposition</li><li>Evidence gap</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="report" class="wrap report" hidden></section>
+
+  <section id="how" class="how">
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <h2>Six measures, three planes, one number</h2>
+      <p>Each measure counts the share of a paper's units that show one pattern. The index averages the measures within each plane, then averages the planes, and reports the result out of 100. Higher means more of the patterns that set AI-generated papers apart from matched human papers.</p>
+      <div class="how-grid">
+        <div class="card how-card">
+          <h3>It separates AI from human papers</h3>
+          <p class="cap">As reported in the paper: pair accuracy on SciSlopBench, 390 AI-generated papers each matched with a human paper on the same problem. 0.5 is chance.</p>
+          <svg class="bench" id="bench" role="img" aria-label="Pair accuracy of the Science Slop Index and baselines"></svg>
+        </div>
+        <div class="card how-card">
+          <h3>What happens to your paper</h3>
+          <p class="cap">Your file is deleted when the analysis finishes. The report gets its own link to share.</p>
+          <ol class="steps">
+            <li><b>Read.</b> LaTeX source is read directly; arXiv links fetch the source. PDFs are rebuilt into sections, captions, references, and citations.</li>
+            <li><b>Measure.</b> Four measures are exact counting rules. Argument graph and Figure exposition ask a language model to label sentences and read the method figure.</li>
+            <li><b>Locate.</b> Every flagged unit is listed where it occurs, so each number can be checked against the paper.</li>
+          </ol>
+        </div>
+      </div>
+      <table class="measure-table" id="measure-table" aria-label="The six measures">
+        <thead><tr><th>Measure</th><th>Unit</th><th>Counts</th><th style="text-align:right" title="Reported in the paper">Pair acc.*</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="notice" style="text-align:left">* Pair accuracies are the paper's results for its own implementation. This site re-implements the measures; see the notes in each report.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Based on “Science or Slop? Benchmarking and Mitigating Scientific Slop in AI-Generated Papers” (ICLR 2027 submission).</span>
+    <span>The index describes a paper's text, not its authors.</span>
+  </div>
+</footer>
+
+<div id="drop" class="drop-overlay" hidden><div>Drop to analyze</div></div>
+<div id="tip" class="tip" role="tooltip" hidden></div>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

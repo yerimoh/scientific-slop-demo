@@ -1,0 +1,12 @@
+[project]
+name = "scislop-web"
+version = "0.1.0"
+description = "Science Slop Index: paper-level scientific slop measurement (web + engine)"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "python-multipart>=0.0.9",
+    "pymupdf>=1.24",
+    "httpx>=0.27",
+]

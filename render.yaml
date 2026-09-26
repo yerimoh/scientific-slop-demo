@@ -1,0 +1,25 @@
+# Science Slop Index on Render (Blueprint). One public Docker web service.
+# Render Dashboard -> New -> Blueprint -> this repo. OPENROUTER_API_KEY is asked for on first launch.
+# Then point DNS: CNAME scislop.open-galapagos.com -> <service>.onrender.com (Cloudflare, proxied).
+services:
+  - type: web
+    name: scislop
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /api/config
+    autoDeploy: true
+    domains:
+      - scislop.open-galapagos.com
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: SCISLOP_MODEL
+        value: openai/gpt-5.6-luna
+      - key: SCISLOP_RATE_PER_HOUR
+        value: "20"
+      - key: SCISLOP_MAX_CONCURRENT
+        value: "2"
+      - key: SCISLOP_MAX_UPLOAD_MB
+        value: "50"
