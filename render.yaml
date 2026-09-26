@@ -1,5 +1,5 @@
 # Science Slop Index on Render (Blueprint). One public Docker web service.
-# Render Dashboard -> New -> Blueprint -> this repo. The LLM gateway key is asked for on first launch.
+# Render Dashboard -> New -> Blueprint -> this repo. OPENROUTER_API_KEY is asked for on first launch.
 # Then point DNS: CNAME scislop.open-galapagos.com -> <service>.onrender.com (Cloudflare, proxied).
 services:
   - type: web
@@ -13,12 +13,11 @@ services:
     domains:
       - scislop.open-galapagos.com
     envVars:
-      - key: LITELLM_PROXY_API_BASE
-        value: https://api.aigateway.umn.edu
-      - key: LITELLM_PROXY_API_KEY
+      # The UMN AI gateway is reachable only inside the UMN network, so the public service uses OpenRouter.
+      - key: OPENROUTER_API_KEY
         sync: false
       - key: SCISLOP_MODEL
-        value: gpt-5.6-luna
+        value: openai/gpt-5.6-luna
       - key: SCISLOP_RATE_PER_HOUR
         value: "20"
       - key: SCISLOP_MAX_CONCURRENT

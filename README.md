@@ -59,9 +59,11 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 
 ## 배포 (scislop.open-galapagos.com, Render + Cloudflare)
 
-`render.yaml`은 Render Blueprint입니다 (Docker web service `scislop`, Free plan, 커스텀 도메인 포함).
+현재 배포: https://scislop.open-galapagos.com (Render 서비스 `scislop`, `srv-das3lnrbc2fs7396k9i0`; Cloudflare DNS-only CNAME `scislop` → `scislop.onrender.com`).
+`render.yaml`은 같은 구성을 새로 만들 때 쓰는 Render Blueprint입니다 (Docker web service, Free plan, 커스텀 도메인 포함).
 
-1. Render Dashboard → **New → Blueprint** → `Open-Galapagos/science-slop-index` 선택 → `LITELLM_PROXY_API_KEY` 입력 → Apply.
+1. Render Dashboard → **New → Blueprint** → `Open-Galapagos/science-slop-index` 선택 → `OPENROUTER_API_KEY` 입력 → Apply.
+   (UMN AI gateway는 교내망 전용이라 Render에서는 닿지 않습니다. 공개 서비스는 OpenRouter, 로컬 실행은 UMN gateway를 씁니다.)
    (Render GitHub App이 이 repo에 접근할 수 있어야 합니다. 안 보이면 GitHub → Settings → Applications → Render → Repository access에 추가.)
 2. 배포가 끝나면 서비스 주소(`https://scislop-xxxx.onrender.com`)를 확인합니다.
 3. Cloudflare → `open-galapagos.com` → DNS → **Add record**: `CNAME`, 이름 `scislop`, 대상 `scislop-xxxx.onrender.com`, Proxied.
