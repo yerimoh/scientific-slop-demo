@@ -798,7 +798,7 @@ def read_latex(root: str) -> Document:
     if e >= 0:
         body_all = body_all[:e]
 
-    tm = re.search(r"\\title\s*(?:\[[^\]]*\])?\s*\{", preamble + body_all)
+    tm = re.search(r"\\(?:title|icmltitle|Title|mytitle|papertitle)\s*(?:\[[^\]]*\])?\s*\{", preamble + body_all)
     if tm:
         src = preamble + body_all
         t, _ = _brace_arg(src, tm.end() - 1)

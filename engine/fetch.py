@@ -176,18 +176,33 @@ async def resolve_url(url: str, workdir: str, prefer_source: bool = True) -> tup
                 data, _ = await _get(f"https://arxiv.org/e-print/{aid}")
                 kind, path = materialize(data, "eprint", workdir)
                 meta["route"] = "arXiv e-print (LaTeX source)" if kind == "latex" else "arXiv PDF"
+                if kind == "latex":
+                    # the typeset PDF too, for the paper view and the highlighted PDF
+                    try:
+                        pdf_bytes, _ = await _get(f"https://arxiv.org/pdf/{aid}")
+                        if pdf_bytes[:4] == b"%PDF":
+                            vp = os.path.join(workdir, "view.pdf")
+                            with open(vp, "wb") as f:
+                                f.write(pdf_bytes)
+                            meta["view_pdf"] = vp
+                    except Exception as e:
+                        meta["view_pdf_error"] = str(e)[:160]
+                else:
+                    meta["view_pdf"] = path
                 return kind, path, meta
             except Exception as e:  # fall back to the PDF
                 meta["source_error"] = str(e)[:200]
         data, _ = await _get(f"https://arxiv.org/pdf/{aid}")
         kind, path = materialize(data, "paper.pdf", workdir)
         meta["route"] = "arXiv PDF"
+        meta["view_pdf"] = path
         return kind, path, meta
     m = OPENREVIEW.search(url)
     if m:
         data, _ = await _get(f"https://openreview.net/pdf?id={m.group(1)}")
         meta["route"] = "OpenReview PDF"
         kind, path = materialize(data, "paper.pdf", workdir)
+        meta["view_pdf"] = path if kind == "pdf" else None
         return kind, path, meta
     if not re.match(r"^https?://", url):
         raise InputError("Paste an arXiv, OpenReview, or direct PDF link.")
@@ -203,6 +218,7 @@ async def resolve_url(url: str, workdir: str, prefer_source: bool = True) -> tup
         data, _ = await _get(httpx.URL(url).join(pm.group(1)).__str__())
     meta["route"] = "PDF link"
     kind, path = materialize(data, "paper.pdf", workdir)
+    meta["view_pdf"] = path if kind == "pdf" else None
     return kind, path, meta
 
 
@@ -211,3 +227,24 @@ def guess_title_from_name(name: Optional[str]) -> str:
         return ""
     base = os.path.splitext(os.path.basename(name))[0]
     return re.sub(r"[_\-]+", " ", base).strip()
+
+
+def find_paper_pdf(root: str, title: str) -> Optional[str]:
+    """A compiled PDF of the paper inside an uploaded LaTeX archive: at least four pages, and page one
+    carries most of the title's words."""
+    import pymupdf
+    want = {w for w in re.findall(r"[a-z]{3,}", (title or "").lower())}
+    best, score = None, 0.0
+    for p in _find(root, ".pdf"):
+        try:
+            with pymupdf.open(p) as d:
+                if len(d) < 4:
+                    continue
+                first = d[0].get_text("text").lower()
+        except Exception:
+            continue
+        have = {w for w in re.findall(r"[a-z]{3,}", first)}
+        sc = len(want & have) / max(len(want), 1)
+        if sc > score:
+            best, score = p, sc
+    return best if score >= 0.6 else None

@@ -35,6 +35,18 @@ uv run python cli.py https://arxiv.org/abs/2303.17651
 
 LLM은 `LITELLM_PROXY_API_BASE`가 있으면 LiteLLM gateway(기본: UMN AI gateway), 없으면 OpenRouter(`OPENROUTER_API_KEY`)를 씁니다. 그 밖의 OpenAI 호환 엔드포인트도 됩니다 (`SCISLOP_LLM_BASE_URL`, `SCISLOP_MODEL`). 로컬 vLLM으로 테스트할 때는 `SCISLOP_LLM_EXTRA='{"chat_template_kwargs":{"enable_thinking":false}}'`.
 
+## 웹사이트 기능
+
+- **홈** `/`: 링크 입력 또는 PDF / LaTeX 업로드(업로드는 "List uploaded paper in the gallery"를 체크해야 갤러리에 올라감).
+- **리포트** `/r/<key>`: 진행률 바, 지수와 세 영역 점수, Findings 탭(논문 맵, 여섯 지표의 위치 목록), Paper 탭(PDF 페이지 위 하이라이트, 지표별 켜고 끄기, 클릭하면 해당 발견으로 이동), Export(하이라이트된 PDF + 요약 표지, JSON, CSV).
+- **Report key**: 분석마다 `xxxx-xxxx-xxxx` 키가 발급됨. `/view`에서 키로 다시 열기, 이 브라우저의 최근 리포트, 내려받은 JSON 다시 열기.
+- **갤러리** `/gallery`: 공개 링크로 분석한 논문과 공개를 선택한 업로드, 첫 페이지 썸네일과 순위("Slop #n"), 검색과 정렬.
+- **How it works** `/how`: 논문 Table 1 형식의 지표 표(그림 포함), 논문이 보고한 벤치마크, 계산식, 논문과 다른 점.
+
+저장: `data/jobs/<key>/`에 job.json, files/(paper.pdf, highlighted.pdf, thumb.png, 페이지 이미지, figure 이미지). 업로드 원본 소스는 분석 후 삭제됩니다.
+`seed/`는 코드와 함께 배포되는 갤러리 기본 논문(공개 링크로 분석한 6편)이며, PDF는 원래 링크에서 필요할 때 다시 받아 옵니다.
+Render Free는 디스크가 휘발성이라 새로 분석한 리포트와 키는 재시작하면 사라집니다(`SCISLOP_PERSISTENT=1` + 영구 디스크를 쓰면 유지).
+
 ## 구조
 
 ```
@@ -44,8 +56,10 @@ engine/latex.py      LaTeX 리더: \input 확장, 주석 제거, 사용자 매�
 engine/pdf.py        PDF 리더: 2단 레이아웃 순서, 헤딩/캡션/수식 번호, hyperref 링크 + 인쇄된 참조, 인용 파싱
 engine/fetch.py      업로드/링크 처리 (arXiv는 e-print 소스 우선, 실패 시 PDF), 안전한 압축 해제
 engine/measures.py   6개 measure + aggregate
-engine/llm.py        OpenRouter 클라이언트, structured outputs, (model, prompt, run) 해시 디스크 캐시
-static/              index.html, app.css, app.js (빌드 없음)
+engine/llm.py        LLM 클라이언트(LiteLLM gateway / OpenRouter / OpenAI 호환), structured outputs, 디스크 캐시, 진행률 카운터
+engine/highlight.py  발견 위치를 PDF 단어 좌표에 매칭, 하이라이트 PDF(+요약 표지), 썸네일, 페이지 이미지
+static/              index.html, app.css, app.js (빌드 없음), img/ (논문 Table 1 그림)
+seed/                갤러리 기본 리포트
 data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐시
 ```
 

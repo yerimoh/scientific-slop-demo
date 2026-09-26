@@ -55,6 +55,18 @@ class LLM:
         self.cached = 0
         self.tokens = {"prompt": 0, "completion": 0}
         self.unreachable: Optional[str] = None
+        # progress: calls finished (fresh or cached) against calls expected for this report
+        self.done_calls = 0
+        self.expected = 0
+        self.on_progress = None
+
+    def _tick(self):
+        self.done_calls += 1
+        if self.on_progress:
+            try:
+                self.on_progress()
+            except Exception:
+                pass
 
     @property
     def available(self) -> bool:
@@ -82,6 +94,7 @@ class LLM:
         path = os.path.join(self.cache_dir, key[:2], key + ".json")
         if os.path.exists(path):
             self.cached += 1
+            self._tick()
             with open(path) as f:
                 return json.load(f)
         body: dict[str, Any] = {
@@ -130,6 +143,7 @@ class LLM:
                     os.makedirs(os.path.dirname(path), exist_ok=True)
                     with open(path, "w") as f:
                         json.dump(out, f)
+                    self._tick()
                     return out
                 except (httpx.ConnectError, httpx.ConnectTimeout) as e:
                     # the endpoint cannot be reached at all: fail this and every later call at once

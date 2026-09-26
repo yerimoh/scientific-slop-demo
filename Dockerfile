@@ -9,6 +9,7 @@ RUN uv sync --frozen --no-install-project --no-dev
 
 COPY engine ./engine
 COPY static ./static
+COPY seed ./seed
 COPY server.py cli.py ./
 
 ENV PATH="/app/.venv/bin:$PATH" SCISLOP_DATA=/app/data PORT=8000

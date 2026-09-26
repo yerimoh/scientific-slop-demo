@@ -4,26 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Science Slop Index</title>
-<meta name="description" content="Paste a paper and get its Science Slop Index: six paper-level measures of how its structure, argument, and artifacts hold together.">
+<meta name="description" content="Paste a paper and get its Science Slop Index: six paper-level measures of how its structure, argument, and artifacts hold together, highlighted on the paper itself.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='7' cy='16' r='5' fill='%238e3b72'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23e2706a'/%3E%3Ccircle cx='25' cy='16' r='5' fill='%232274c4'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,400;0,6..12,500;0,6..12,600;0,6..12,700;1,6..12,600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='7' cy='16' r='5' fill='%2395627a'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%23e4959e'/%3E%3Ccircle cx='25' cy='16' r='5' fill='%236d8a96'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
 <header class="wrap top">
-  <a class="brand" href="/" id="home"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>Science Slop Index</a>
+  <a class="brand" href="/" data-link><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span class="name">Science Slop Index</span></a>
   <nav>
-    <a href="#how">How it works</a>
+    <a href="/gallery" data-link data-nav="gallery">Gallery</a>
+    <a href="/how" data-link data-nav="how">How it works</a>
+    <a href="/view" data-link data-nav="view">View report</a>
     <button class="icon-btn" id="theme" type="button" aria-label="Switch color theme" title="Switch theme">◐</button>
   </nav>
 </header>
 
 <main>
-  <section id="landing" class="wrap landing">
+  <!-- home -->
+  <section id="page-home" class="wrap landing">
     <p class="eyebrow">Paper-level scientific slop</p>
-    <h1>Science, or <em>slop</em>?</h1>
+    <h1 class="hero">Science, or <em>slop</em>?</h1>
     <p class="lede">AI text detectors read sentences. The Science Slop Index reads how a paper holds together: whether its sections build on each other, its claims are argued, and its evidence can be inspected.</p>
     <form id="ask" class="ask" autocomplete="off">
       <input id="url" type="text" inputmode="url" placeholder="Paste an arXiv, OpenReview, or PDF link" aria-label="Paper link">
@@ -31,61 +34,91 @@
     </form>
     <div class="alt">
       <span class="file-btn"><button class="link-btn" type="button" tabindex="-1">Upload a PDF or LaTeX .zip</button><input id="file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF or LaTeX archive"></span>
-      <span class="dot-sep" id="ex-sep" hidden>·</span>
+      <label class="check" title="Papers analyzed from public links are always listed in the gallery"><input type="checkbox" id="to-gallery"> List uploaded paper in the gallery</label>
       <button class="link-btn" type="button" id="example" hidden>Try the example paper</button>
     </div>
     <p class="form-error" id="form-error" role="alert"></p>
     <p class="notice" id="llm-notice" hidden></p>
-
     <div class="planes-intro">
-      <div class="pi">
-        <h3><span class="swatch sw-structure"></span>Structure</h3>
-        <p>Do the sections build on one another?</p>
-        <ul><li>Cross-section references</li><li>Macro redundancy</li></ul>
-      </div>
-      <div class="pi">
-        <h3><span class="swatch sw-argument"></span>Argument</h3>
-        <p>Are claims and citations argued, not just stated?</p>
-        <ul><li>Argument graph</li><li>Citation isolation</li></ul>
-      </div>
-      <div class="pi">
-        <h3><span class="swatch sw-artifacts"></span>Artifacts</h3>
-        <p>Can a reader inspect the method and the evidence?</p>
-        <ul><li>Figure exposition</li><li>Evidence gap</li></ul>
-      </div>
+      <div class="pi band-structure"><span class="tag structure">Structure</span><p>Do the sections build on one another?</p><ul><li>Cross-section references</li><li>Macro redundancy</li></ul></div>
+      <div class="pi band-argument"><span class="tag argument">Argument</span><p>Are claims and citations argued, not just stated?</p><ul><li>Argument graph</li><li>Citation isolation</li></ul></div>
+      <div class="pi band-artifacts"><span class="tag artifacts">Artifacts</span><p>Can a reader inspect the method and the evidence?</p><ul><li>Figure exposition</li><li>Evidence gap</li></ul></div>
     </div>
   </section>
 
-  <section id="report" class="wrap report" hidden></section>
-
-  <section id="how" class="how">
-    <div class="wrap">
-      <p class="eyebrow">How it works</p>
-      <h2>Six measures, three planes, one number</h2>
-      <p>Each measure counts the share of a paper's units that show one pattern. The index averages the measures within each plane, then averages the planes, and reports the result out of 100. Higher means more of the patterns that set AI-generated papers apart from matched human papers.</p>
-      <div class="how-grid">
-        <div class="card how-card">
-          <h3>It separates AI from human papers</h3>
-          <p class="cap">As reported in the paper: pair accuracy on SciSlopBench, 390 AI-generated papers each matched with a human paper on the same problem. 0.5 is chance.</p>
-          <svg class="bench" id="bench" role="img" aria-label="Pair accuracy of the Science Slop Index and baselines"></svg>
-        </div>
-        <div class="card how-card">
-          <h3>What happens to your paper</h3>
-          <p class="cap">Your file is deleted when the analysis finishes. The report gets its own link to share.</p>
-          <ol class="steps">
-            <li><b>Read.</b> LaTeX source is read directly; arXiv links fetch the source. PDFs are rebuilt into sections, captions, references, and citations.</li>
-            <li><b>Measure.</b> Four measures are exact counting rules. Argument graph and Figure exposition ask a language model to label sentences and read the method figure.</li>
-            <li><b>Locate.</b> Every flagged unit is listed where it occurs, so each number can be checked against the paper.</li>
-          </ol>
-        </div>
+  <!-- how it works -->
+  <section id="page-how" class="wrap page" hidden>
+    <p class="eyebrow">How it works</p>
+    <h1 class="page-title">Six measures, three planes, one number</h1>
+    <p class="page-lede">Each measure counts the share of a paper's units that show one pattern. The index averages the measures within each plane, then averages the planes, and reports the result out of 100. Higher means more of the patterns that set AI-generated papers apart from matched human papers.</p>
+    <div class="table-scroll"><table class="spec" id="spec" aria-label="The six measures"></table></div>
+    <p class="notice" style="text-align:left">* Pair accuracy is the paper's reported result for its own implementation on SciSlopBench. This site re-implements the measures; the differences are listed below.</p>
+    <div class="how-grid">
+      <div class="card how-card">
+        <h3>It separates AI from human papers</h3>
+        <p class="cap">As reported in the paper: pair accuracy on SciSlopBench, 390 AI-generated papers each matched with a human paper on the same problem. 0.5 is chance.</p>
+        <svg class="bench" id="bench" role="img" aria-label="Pair accuracy of the Science Slop Index and baselines"></svg>
       </div>
-      <table class="measure-table" id="measure-table" aria-label="The six measures">
-        <thead><tr><th>Measure</th><th>Unit</th><th>Counts</th><th style="text-align:right" title="Reported in the paper">Pair acc.*</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <p class="notice" style="text-align:left">* Pair accuracies are the paper's results for its own implementation. This site re-implements the measures; see the notes in each report.</p>
+      <div class="card how-card">
+        <h3>What happens to your paper</h3>
+        <p class="cap">Every report gets a key. Keep it to open the report later.</p>
+        <ol class="steps">
+          <li><b>Read.</b> LaTeX source is read directly; arXiv links fetch the source and the PDF. PDFs are rebuilt into sections, captions, references, and citations.</li>
+          <li><b>Measure.</b> Four measures are exact counting rules. Argument graph and Figure exposition ask a language model to label sentences and read the method figure.</li>
+          <li><b>Highlight.</b> Every flagged unit is placed back on the PDF, colored by plane, and can be downloaded as a highlighted PDF.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="card formula-card">
+      <h3 style="margin:0 0 6px">One number</h3>
+      <p class="muted" style="margin:0">S(p) = mean over planes of ( mean over the plane's applicable measures of s<sub>j</sub>(p) ), and the index is 100 · S(p). A measure that does not apply to a paper is skipped, not counted as zero.</p>
+      <h3 style="margin:18px 0 6px">Where this site differs from the paper</h3>
+      <ul class="deviations">
+        <li><b>Argument graph.</b> The paper picks each claim's supporting sentence by pointwise mutual information under a second model. The model used here returns no log-probabilities, so it chooses the sentence the claim rests on from the other Introduction sentences, shown in shuffled order so position cannot bias the choice.</li>
+        <li><b>Citation isolation.</b> The paper's frozen list of relational cues is not public; this site uses a reconstructed list.</li>
+        <li><b>Figure exposition.</b> The method figure is found by a caption gate (overview, pipeline, framework, architecture, workflow, schematic). When none passes, you can choose the figure in the report.</li>
+        <li><b>Index bands.</b> Low, Moderate, High, and Very high are descriptive cut-points on the share of flagged units, not a probability of AI authorship.</li>
+      </ul>
     </div>
   </section>
+
+  <!-- gallery -->
+  <section id="page-gallery" class="wrap page" hidden>
+    <p class="eyebrow">Gallery</p>
+    <h1 class="page-title">Papers analyzed so far</h1>
+    <p class="page-lede">Papers analyzed from public links, and uploads whose owners chose to list them. Ranked by Science Slop Index.</p>
+    <div class="g-controls">
+      <input id="g-q" type="search" placeholder="Search papers" aria-label="Search papers">
+      <select id="g-sort" aria-label="Sort">
+        <option value="high">Highest index first</option>
+        <option value="low">Lowest index first</option>
+        <option value="new">Newest first</option>
+      </select>
+    </div>
+    <div id="g-grid" class="g-grid"></div>
+    <p class="g-note" id="g-note"></p>
+  </section>
+
+  <!-- view a report -->
+  <section id="page-view" class="wrap page" hidden>
+    <p class="eyebrow">View report</p>
+    <h1 class="page-title">Open a report</h1>
+    <p class="page-lede">Enter the report key you received when you submitted your paper.</p>
+    <div class="card view-card">
+      <form id="view-form" class="view-form" autocomplete="off">
+        <input id="view-key" type="text" placeholder="e.g. k7m2-p9qd-4xwe" maxlength="40" aria-label="Report key" required>
+        <button class="btn" type="submit">Open</button>
+      </form>
+      <p class="form-error" id="view-error" role="alert"></p>
+      <div class="d-sub" id="recent-h" hidden>Recent on this browser</div>
+      <ul class="recent" id="recent"></ul>
+      <div class="d-sub">Or open a downloaded report</div>
+      <span class="file-btn"><button class="btn ghost small" type="button" tabindex="-1">Open a report file (.json)</button><input id="open-json" type="file" accept=".json,application/json" aria-label="Open a report file"></span>
+    </div>
+  </section>
+
+  <!-- report -->
+  <section id="page-report" class="wrap page" hidden></section>
 </main>
 
 <footer>

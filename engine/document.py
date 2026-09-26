@@ -44,6 +44,7 @@ class Obj:
     caption: str = ""
     number: Optional[str] = None   # printed number, used by the PDF reader and printed mentions
     display: str = ""              # short human name, e.g. "Table 2" or "§3 Method"
+    loc: Optional[tuple] = None    # (page, x0, y0, x1, y1) of its heading / caption / number, PDF reader only
 
 
 @dataclass

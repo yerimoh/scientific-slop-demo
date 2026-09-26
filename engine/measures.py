@@ -306,6 +306,7 @@ def citation_isolation(doc: Document) -> dict:
 # ---------------------------------------------------------------------------- Argument graph (LLM)
 
 ARG_LABELS = ["superiority", "prior_limitation", "design_choice", "other"]
+EXPECTED_CLAIMS = 20       # progress estimate before the Introduction is labeled
 _LABEL_SCHEMA = {
     "type": "object",
     "properties": {"labels": {"type": "array", "items": {
@@ -368,12 +369,17 @@ def _majority(values: list, fallback):
 
 async def argument_graph(doc: Document, llm: LLM, runs: int = 3) -> dict:
     r = _base("argument_graph")
+
+    def _na_arg(rr, why):
+        llm.expected -= runs + EXPECTED_CLAIMS
+        return _na(rr, why)
     if doc.intro_idx is None:
-        return _na(r, "No Introduction was recovered.")
+        return _na_arg(r, "No Introduction was recovered.")
     sents = [s.text for s in doc.section(doc.intro_idx).sentences]
     if len(sents) < 4:
-        return _na(r, "The Introduction has fewer than four sentences.")
+        return _na_arg(r, "The Introduction has fewer than four sentences.")
     if not llm.available:
+        llm.expected -= runs + EXPECTED_CLAIMS
         r["status"] = "skipped"
         r["notes"].append("Needs a language model: set LITELLM_PROXY_API_KEY (or OPENROUTER_API_KEY).")
         return r
@@ -387,6 +393,7 @@ async def argument_graph(doc: Document, llm: LLM, runs: int = 3) -> dict:
                 votes[it["i"]].append(it.get("label"))
     labels = {i: _majority(votes.get(i, []), "other") for i in range(1, len(sents) + 1)}
     claims = [i for i, l in labels.items() if l in ("superiority", "prior_limitation", "design_choice")]
+    llm.expected += len(claims) - EXPECTED_CLAIMS      # replace the guess with the real count
     r["details"] = {"labels": labels, "sentences": sents}
     if not claims:
         return _na(r, "The Introduction states no key claim.")
@@ -551,23 +558,28 @@ def render_figure(doc: Document, fig_index: int, out_dir: str) -> list[tuple[byt
 async def figure_exposition(doc: Document, llm: LLM, out_dir: str, fig_index: Optional[int] = None,
                             runs: int = 3) -> dict:
     r = _base("figure_exposition")
+
+    def _na_fig(rr, why):
+        llm.expected -= runs
+        return _na(rr, why)
     cands = method_figure_candidates(doc)
     r["details"]["candidates"] = cands
     if fig_index is None:
         gated = [c for c in cands if c["gate"] >= 2] or [c for c in cands if c["gate"] >= 1]
         if not gated:
-            return _na(r, "No method figure passes the caption gate (overview / pipeline / framework / architecture).")
+            return _na_fig(r, "No method figure passes the caption gate (overview / pipeline / framework / architecture).")
         fig_index = gated[0]["index"]
     if fig_index >= len(doc.figures):
-        return _na(r, "Figure not found.")
+        return _na_fig(r, "Figure not found.")
     f = doc.figures[fig_index]
     r["details"].update({"figure": {"index": fig_index, "label": f.label, "number": f.number,
                                     "caption": f.caption[:300], "section_title": _sec_title(doc, f.home)}})
     images = render_figure(doc, fig_index, out_dir)
     if not images:
-        return _na(r, "The method figure's image could not be read.")
+        return _na_fig(r, "The method figure's image could not be read.")
     r["details"]["figure"]["images"] = [n for _, _, n in images]
     if not llm.available:
+        llm.expected -= runs
         r["status"] = "skipped"
         r["notes"].append("Needs a vision language model: set LITELLM_PROXY_API_KEY (or OPENROUTER_API_KEY).")
         return r

@@ -372,8 +372,10 @@ def read_pdf(path: str) -> Document:
         sec_lines[idx] = span
         for j in range(li, stop):
             sec_of_line[j] = idx
+        hl = lines[li]
         doc.objects.append(Obj(id=f"§{idx}", kind="section", home=idx,
-                               display=(f"§{num} " if num else "") + _title_case(title), number=num or None))
+                               display=(f"§{num} " if num else "") + _title_case(title), number=num or None,
+                               loc=(hl.page, hl.x0, hl.y0, hl.x1, hl.y1)))
 
     # captions -> objects, figures, tables
     cap_objs: dict[tuple[str, str], Obj] = {}
@@ -386,12 +388,14 @@ def read_pdf(path: str) -> Document:
         num = m.group("num")
         # caption continues on the following lines: same page and column, no paragraph gap
         cap = [l.text]
+        cap_lines = [l]
         prev = l
         for l2 in lines[j + 1:j + 14]:
             gap = l2.y0 - prev.y1
             if (l2.page == l.page and l2.kind in ("text", "small") and -2 <= gap < 0.8 * (prev.y1 - prev.y0) + 1
                     and abs(l2.size - l.size) <= 0.6 and l2.x0 >= l.x0 - 12 and l2.x1 <= max(l.x1, prev.x1) + 40):
                 cap.append(l2.text)
+                cap_lines.append(l2)
                 l2.kind = "caption_cont"
                 prev = l2
                 if l2.text.rstrip().endswith(".") and len(l2.text) < 0.6 * len(l.text):
@@ -406,7 +410,8 @@ def read_pdf(path: str) -> Document:
             continue
         disp = {"figure": "Figure", "table": "Table", "algorithm": "Algorithm"}[kind] + f" {num}"
         o = Obj(id=f"{kind}:{num}", kind=kind, home=home, aliases=[f"{kind}:{num}"],
-                caption=_CAPTION.sub("", text)[:300], number=num, display=disp)
+                caption=_CAPTION.sub("", text)[:300], number=num, display=disp,
+                loc=(l.page, min(c.x0 for c in cap_lines), l.y0, max(c.x1 for c in cap_lines), cap_lines[-1].y1))
         cap_objs[key] = o
         doc.objects.append(o)
     # numbered equations
@@ -419,7 +424,7 @@ def read_pdf(path: str) -> Document:
             key = ("equation", m.group(1))
             if key not in cap_objs:
                 o = Obj(id=f"equation:{m.group(1)}", kind="equation", home=sec_of_line[j], number=m.group(1),
-                        display=f"Eq. ({m.group(1)})")
+                        display=f"Eq. ({m.group(1)})", loc=(l.page, l.x0, l.y0, l.x1, l.y1))
                 cap_objs[key] = o
                 doc.objects.append(o)
             eq_anchor.append((j, cap_objs[key].id))
