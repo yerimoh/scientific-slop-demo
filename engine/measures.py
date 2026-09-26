@@ -375,7 +375,7 @@ async def argument_graph(doc: Document, llm: LLM, runs: int = 3) -> dict:
         return _na(r, "The Introduction has fewer than four sentences.")
     if not llm.available:
         r["status"] = "skipped"
-        r["notes"].append("Needs an LLM: set OPENROUTER_API_KEY.")
+        r["notes"].append("Needs a language model: set LITELLM_PROXY_API_KEY (or OPENROUTER_API_KEY).")
         return r
     numbered = "\n".join(f"[{i + 1}] {t}" for i, t in enumerate(sents))
     msgs = [{"role": "user", "content": _LABEL_PROMPT.format(sentences=numbered)}]
@@ -569,7 +569,7 @@ async def figure_exposition(doc: Document, llm: LLM, out_dir: str, fig_index: Op
     r["details"]["figure"]["images"] = [n for _, _, n in images]
     if not llm.available:
         r["status"] = "skipped"
-        r["notes"].append("Needs a vision LLM: set OPENROUTER_API_KEY.")
+        r["notes"].append("Needs a vision language model: set LITELLM_PROXY_API_KEY (or OPENROUTER_API_KEY).")
         return r
     content = [{"type": "text", "text": _FIG_PROMPT.format(caption=f.caption[:600].replace('"', "'"))}]
     content += [LLM.image_part(b, mime) for b, mime, _ in images[:4]]

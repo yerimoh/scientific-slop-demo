@@ -19,7 +19,7 @@ index = round(100 · S(p))
 ## 실행
 
 ```bash
-cp .env.example .env        # OPENROUTER_API_KEY 입력 (기본 모델: openai/gpt-5.6-luna)
+cp .env.example .env        # LITELLM_PROXY_API_KEY 입력 (UMN AI gateway, 모델 gpt-5.6-luna)
 ./run.sh                    # http://localhost:8811
 ```
 
@@ -33,7 +33,7 @@ uv run python cli.py paper.pdf --json report.json
 uv run python cli.py https://arxiv.org/abs/2303.17651
 ```
 
-OpenAI 호환 엔드포인트라면 무엇이든 쓸 수 있습니다 (`SCISLOP_LLM_BASE_URL`, `SCISLOP_MODEL`). 로컬 vLLM으로 테스트할 때는 `SCISLOP_LLM_EXTRA='{"chat_template_kwargs":{"enable_thinking":false}}'`.
+LLM은 `LITELLM_PROXY_API_BASE`가 있으면 LiteLLM gateway(기본: UMN AI gateway), 없으면 OpenRouter(`OPENROUTER_API_KEY`)를 씁니다. 그 밖의 OpenAI 호환 엔드포인트도 됩니다 (`SCISLOP_LLM_BASE_URL`, `SCISLOP_MODEL`). 로컬 vLLM으로 테스트할 때는 `SCISLOP_LLM_EXTRA='{"chat_template_kwargs":{"enable_thinking":false}}'`.
 
 ## 구조
 
@@ -51,7 +51,7 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 
 ## 논문 대비 달라진 점 (UI에도 표시됨)
 
-- **Argument graph**: 논문은 Qwen2.5-7B의 log-probability로 PMI를 계산해 각 claim의 supporting sentence를 고릅니다. OpenRouter의 gpt-5.6-luna는 logprob을 주지 않으므로, claim마다 나머지 Introduction 문장을 **무작위 순서 + 중립 ID**로 보여 주고 LLM이 하나를 고르게 했습니다. 위치 정보가 없으니 선택이 문장 순서에 끌리지 않습니다 (PMI처럼 (context, claim) 쌍만 보고 판단). claim 라벨은 논문처럼 3회 다수결입니다.
+- **Argument graph**: 논문은 Qwen2.5-7B의 log-probability로 PMI를 계산해 각 claim의 supporting sentence를 고릅니다. gpt-5.6-luna 호출에서는 logprob을 쓰지 않으므로, claim마다 나머지 Introduction 문장을 **무작위 순서 + 중립 ID**로 보여 주고 LLM이 하나를 고르게 했습니다. 위치 정보가 없으니 선택이 문장 순서에 끌리지 않습니다 (PMI처럼 (context, claim) 쌍만 보고 판단). claim 라벨은 논문처럼 3회 다수결입니다.
 - **Citation isolation**: 논문의 "frozen cue list"가 공개되어 있지 않아, 관계 cue 목록을 재구성했습니다 (`engine/text.py`).
 - **Figure exposition**: method figure는 caption gate(overview / pipeline / framework / architecture / workflow / schematic)로 고릅니다. 통과하는 figure가 없으면 N/A이며, 리포트에서 사용자가 직접 figure를 골라 채점할 수 있습니다.
 - **PDF 입력**: 논문의 Agents4Science 처리와 같이 PDF에서 구조를 복원합니다. LaTeX로 만든 PDF는 hyperref 내부 링크로 `\ref`/`\eqref`를 거의 그대로 복원합니다. arXiv 4편(DetectGPT, Self-Refine, Binoculars, Attention)에서 PDF와 LaTeX 결과를 비교해 섹션 구성과 Evidence gap이 일치하고, Cross-section references 차이는 0.02–0.08입니다.
@@ -61,7 +61,7 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 
 `render.yaml`은 Render Blueprint입니다 (Docker web service `scislop`, Free plan, 커스텀 도메인 포함).
 
-1. Render Dashboard → **New → Blueprint** → `Open-Galapagos/science-slop-index` 선택 → `OPENROUTER_API_KEY` 입력 → Apply.
+1. Render Dashboard → **New → Blueprint** → `Open-Galapagos/science-slop-index` 선택 → `LITELLM_PROXY_API_KEY` 입력 → Apply.
    (Render GitHub App이 이 repo에 접근할 수 있어야 합니다. 안 보이면 GitHub → Settings → Applications → Render → Repository access에 추가.)
 2. 배포가 끝나면 서비스 주소(`https://scislop-xxxx.onrender.com`)를 확인합니다.
 3. Cloudflare → `open-galapagos.com` → DNS → **Add record**: `CNAME`, 이름 `scislop`, 대상 `scislop-xxxx.onrender.com`, Proxied.

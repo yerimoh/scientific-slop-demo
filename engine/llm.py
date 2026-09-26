@@ -26,9 +26,26 @@ class LLMError(RuntimeError):
 class LLM:
     def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None, base_url: Optional[str] = None,
                  cache_dir: Optional[str] = None, reasoning: Optional[str] = None, max_parallel: int = 10):
+        # Provider, in order of preference: a LiteLLM proxy gateway (e.g. the UMN AI gateway), a custom
+        # OpenAI-compatible endpoint (e.g. local vLLM), then OpenRouter.
+        litellm_base = os.environ.get("LITELLM_PROXY_API_BASE")
+        if base_url is None and litellm_base:
+            self.provider = "litellm"
+            self.base_url = litellm_base.rstrip("/")
+            if not self.base_url.endswith("/v1"):
+                self.base_url += "/v1"
+            self.api_key = api_key or os.environ.get("LITELLM_PROXY_API_KEY")
+        elif base_url or os.environ.get("SCISLOP_LLM_BASE_URL"):
+            self.provider = "custom"
+            self.base_url = (base_url or os.environ["SCISLOP_LLM_BASE_URL"]).rstrip("/")
+            self.api_key = api_key or os.environ.get("SCISLOP_LLM_API_KEY")
+        else:
+            self.provider = "openrouter"
+            self.base_url = DEFAULT_BASE
+            self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
         self.model = model or os.environ.get("SCISLOP_MODEL", DEFAULT_MODEL)
-        self.base_url = (base_url or os.environ.get("SCISLOP_LLM_BASE_URL", DEFAULT_BASE)).rstrip("/")
-        self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY") or os.environ.get("SCISLOP_LLM_API_KEY")
+        if self.provider == "litellm" and self.model.startswith("openai/"):
+            self.model = self.model[len("openai/"):]     # LiteLLM model names carry no provider prefix
         self.reasoning = reasoning or os.environ.get("SCISLOP_REASONING", "low")
         self.cache_dir = cache_dir or os.environ.get(
             "SCISLOP_CACHE", os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "llm_cache"))
@@ -40,10 +57,12 @@ class LLM:
 
     @property
     def available(self) -> bool:
-        return bool(self.api_key) or "openrouter.ai" not in self.base_url
+        return bool(self.api_key) or self.provider == "custom"
 
     def describe(self) -> dict:
-        return {"model": self.model, "provider": "OpenRouter" if "openrouter.ai" in self.base_url else self.base_url}
+        name = {"litellm": "UMN AI gateway (LiteLLM)" if "umn.edu" in self.base_url else "LiteLLM gateway",
+                "openrouter": "OpenRouter"}.get(self.provider, self.base_url)
+        return {"model": self.model, "provider": name}
 
     @staticmethod
     def image_part(path_or_bytes, mime: str = "image/png") -> dict:
@@ -57,7 +76,7 @@ class LLM:
     async def json(self, messages: list[dict], schema: dict, name: str, run: int = 0,
                    max_tokens: int = 8000) -> dict:
         if not self.available:
-            raise LLMError("No OPENROUTER_API_KEY configured")
+            raise LLMError("No LLM key configured (LITELLM_PROXY_API_KEY or OPENROUTER_API_KEY)")
         key = self._key(messages, schema, run)
         path = os.path.join(self.cache_dir, key[:2], key + ".json")
         if os.path.exists(path):
@@ -67,16 +86,16 @@ class LLM:
         body: dict[str, Any] = {
             "model": self.model,
             "messages": messages,
-            "max_tokens": max_tokens,
             "response_format": {"type": "json_schema",
                                 "json_schema": {"name": name, "strict": True, "schema": schema}},
         }
-        if "openrouter.ai" in self.base_url:
-            body["reasoning"] = {"effort": self.reasoning}
-            body["seed"] = run
+        if self.provider == "openrouter":
+            body.update({"max_tokens": max_tokens, "reasoning": {"effort": self.reasoning}, "seed": run})
+        elif self.provider == "litellm":
+            # OpenAI chat-completions shape: reasoning models take max_completion_tokens and reasoning_effort
+            body.update({"max_completion_tokens": max_tokens, "reasoning_effort": self.reasoning, "seed": run})
         else:
-            body["temperature"] = 0.0 if run == 0 else 0.7
-            body["seed"] = run
+            body.update({"max_tokens": max_tokens, "temperature": 0.0 if run == 0 else 0.7, "seed": run})
         extra = os.environ.get("SCISLOP_LLM_EXTRA")
         if extra:
             body.update(json.loads(extra))

@@ -652,7 +652,7 @@ async function boot() {
     if (state.config.examples?.length) { $('#example').hidden = false; $('#ex-sep').hidden = false; $('#example').title = state.config.examples[0].title; }
     if (!state.config.llm_available) {
       const n = $('#llm-notice'); n.hidden = false;
-      n.textContent = 'Argument graph and Figure exposition need a language model. Set OPENROUTER_API_KEY on the server to enable them.';
+      n.textContent = 'Argument graph and Figure exposition need a language model. Set LITELLM_PROXY_API_KEY (or OPENROUTER_API_KEY) on the server to enable them.';
     }
   } catch (_) { /* the page works without config */ }
   route();
