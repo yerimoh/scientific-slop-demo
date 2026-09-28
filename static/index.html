@@ -191,20 +191,11 @@
     </div>
 
     <div class="wrap how-sec">
-      <div class="how-grid">
+      <div class="how-one">
         <div>
           <h2 class="sec-h left">Reported pair accuracy</h2>
           <p class="cap muted" style="margin:6px 0 14px">Table 2 of the paper: on SciSlopBench, 390 AI-generated papers each matched with a human-written paper on the same problem. 0.5 is chance.</p>
           <div class="card how-card"><svg class="bench" id="bench" role="img" aria-label="Pair accuracy of the Science Slop Index and baselines"></svg></div>
-        </div>
-        <div>
-          <h2 class="sec-h left">Where this site differs from the paper</h2>
-          <ul class="deviations">
-            <li><b>Argument graph.</b> The paper picks each claim's supporting sentence by pointwise mutual information under a second model. The model used here returns no log-probabilities, so it chooses the sentence the claim rests on from the other Introduction sentences, shown in shuffled order so position cannot bias the choice.</li>
-            <li><b>Citation isolation.</b> The paper's frozen list of relational cues is not public; this site uses a reconstructed list.</li>
-            <li><b>Figure exposition.</b> The method figure is found by a caption gate (overview, pipeline, framework, architecture, workflow, schematic). When none passes, you can choose the figure in the report.</li>
-            <li><b>Pair accuracy</b> shown above is the paper's result for its own implementation; this site re-implements the measures.</li>
-          </ul>
         </div>
       </div>
     </div>

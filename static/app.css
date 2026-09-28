@@ -354,6 +354,7 @@ h1.hero em { font-style: italic; color: var(--red); font-weight: 600; }
 .table-scroll { overflow-x: auto; }
 .how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 0; }
 .how-card { padding: 18px 20px; }
+.how-one { max-width: 720px; }
 .how-card h3 { margin: 0 0 4px; font-size: 16px; }
 .how-card p.cap { margin: 0 0 16px; color: var(--ink-3); font-size: 13px; }
 .bench { width: 100%; display: block; }
