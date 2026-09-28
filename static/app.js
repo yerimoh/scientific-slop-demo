@@ -1374,10 +1374,6 @@ async function loadHome() {
     catch (_) { return; }
   }
   const ranked = [...state.gallery.items].filter(x => x.index != null).sort((a, b) => b.index - a.index);
-  const ex = $('#examples');
-  const seeds = [...state.gallery.items].filter(x => x.index != null && x.source_kind !== 'upload').sort((a, b) => (a.created || 0) - (b.created || 0)).slice(0, 4);
-  ex.hidden = !seeds.length;
-  ex.replaceChildren(h('span', { class: 'ex-l', text: 'Try an example:' }), ...seeds.map(x => h('a', { class: 'ex', href: `/r/${x.key}`, 'data-link': '', title: x.title, text: shortTitle(x.title) })));
   $('#home-list').replaceChildren(...ranked.slice(0, 4).map((x, i) => galleryCard(x, i + 1)));
 }
 
