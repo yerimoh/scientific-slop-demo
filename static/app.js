@@ -696,6 +696,8 @@ const RENDERERS = {
     const det = m.details || {}; const fig = det.figure || {}; const out = [];
     if ((det.candidates || []).length > 1 && !state.job?.local) out.push(figurePicker(m, 'Method figure'));
     const key = state.job?.key || state.job?.id;
+    const viz = measureViz(m, state.job?.result?.document || state.job?.document);
+    if (viz) { out.push(viz); return out; }
     const imgs = (fig.images || []).map(n => h('div', { class: 'fig-img' }, h('img', { src: `/api/jobs/${encodeURIComponent(key)}/files/${n}`, alt: `Figure ${fig.number || ''}`, loading: 'lazy' })));
     const kinds = h('div', { class: 'kinds' }, (det.kinds || []).map(k => h('div', { class: 'kind' + (k.present ? ' on' : '') },
       h('span', { class: 'k-ico', text: k.present ? '✕' : '' }),
@@ -707,6 +709,7 @@ const RENDERERS = {
   },
   evidence_gap(m, pdfOk) {
     const det = m.details || {}; const out = [];
+    const viz = measureViz(m, state.job?.result?.document || state.job?.document); if (viz) out.push(h('div', { class: 'd-sub', style: { marginTop: 0 }, text: 'Result tables and exhibits by section' }), viz);
     if (m.score === 0) {
       const ex = (det.exhibits || [])[0];
       out.push(okLine(`Closed: ${det.exhibit_count} concrete exhibit${det.exhibit_count === 1 ? '' : 's'} found` + (ex ? `, e.g. ${ex.where}: “${trunc(ex.snippet, 140)}”` : '.')));
@@ -724,7 +727,7 @@ function sectionArcs(doc, edges, opts) {
   if (!outline.length) return h('div', { class: 'muted', text: 'The outline of the paper is not available.' });
   const host = h('div', { class: 'sarcs-host' });
   const draw = () => {
-    const W = Math.max(320, host.clientWidth); const top = 96, segH = 22, H = top + segH + 52;
+    const W = Math.max(320, host.clientWidth); const top = edges.length ? 96 : 10, segH = 22, H = top + segH + (opts.under2 ? 68 : 52);
     const weights = outline.map(o => Math.max(o.sentences || 0, 4)); const total = weights.reduce((a, b) => a + b, 0);
     let x = 0; const segs = outline.map((o, k) => { const w = (W) * weights[k] / total; const sg = { o, x, w, cx: x + w / 2 }; x += w; return sg; });
     const segOf = new Map(segs.map(sg => [sg.o.idx, sg]));
@@ -764,7 +767,9 @@ function sectionArcs(doc, edges, opts) {
     for (const sg of segs) {
       const parts = []; const lp = loops.get(sg.o.idx); const under = opts.under?.(sg.o.idx);
       if (lp) parts.push(`↺${lp}`); if (under) parts.push(under);
-      if (parts.length && sg.w > 30) svg.append(s('text', { class: 'seg-under' + (under ? ' warn' : ''), x: sg.cx, y: top + segH + 16, 'text-anchor': 'middle', text: trunc(parts.join(' · '), Math.floor(sg.w / 6)) }));
+      if (parts.length && sg.w > 30) svg.append(s('text', { class: 'seg-under' + (under && opts.warnUnder !== false ? ' warn' : ''), x: sg.cx, y: top + segH + 16, 'text-anchor': 'middle', text: trunc(parts.join(' · '), Math.floor(sg.w / 6)) }));
+      const u2 = opts.under2?.(sg.o.idx);
+      if (u2 && sg.w > 30) svg.append(s('text', { class: 'seg-under' + (u2.warn ? ' warn' : u2.good ? ' good' : ''), x: sg.cx, y: top + segH + 32, 'text-anchor': 'middle', text: trunc(u2.text, Math.floor(sg.w / 6)) }));
     }
     svg.append(s('text', { class: 'seg-axis', x: 0, y: H - 6, text: 'start of paper' }), s('text', { class: 'seg-axis', x: W, y: H - 6, 'text-anchor': 'end', text: 'end of paper' }));
     host.replaceChildren(svg);
@@ -803,8 +808,46 @@ function measureViz(m, doc) {
         h('span', { class: 'cb-bar' }, h('i', { style: { width: `${100 * (iso.get(n) || 0) / max}%` } })), h('span', { class: 'cb-val', text: String(iso.get(n) || 0) })))),
       h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--argument)' } }), 'citing sentences that relate the work to nothing else'), h('span', { class: 'muted', text: `${det.woven ?? 0} of ${m.den} citing sentences relate works to one another` })));
   }
+  if (m.key === 'figure_exposition') {
+    const fig = det.figure || {}; const kinds = det.kinds || []; if (!kinds.length) return null;
+    const key = state.job?.key || state.job?.id || opts_key.current;
+    const imgs = (fig.images || []).map(n => h('div', { class: 'fig-img' }, h('img', { src: `/api/jobs/${encodeURIComponent(key)}/files/${n}`, alt: `Figure ${fig.number || ''}`, loading: 'lazy' })));
+    const present = kinds.filter(k => k.present).length;
+    return h('div', { class: 'viz fig-viz' },
+      h('div', { class: 'fig-viz-grid' },
+        h('div', {}, ...imgs, h('div', { class: 'fig-cap', text: `Figure ${fig.number || ''}${fig.section_title ? ' · ' + fig.section_title : ''}` })),
+        h('div', {},
+          h('div', { class: 'kind-meter' }, h('b', { text: `${present} of ${kinds.length}` }), ' expository kinds present in the method figure',
+            h('span', { class: 'kind-dots' }, kinds.map(k => h('i', { class: k.present ? 'on' : '' })))),
+          h('div', { class: 'kind-grid' }, kinds.map(k => {
+            const t = h('div', { class: 'kind-tile' + (k.present ? ' on' : '') },
+              h('span', { class: 'kt-ico', text: k.present ? '✕' : '' }), h('span', { class: 'kt-l', text: k.label }),
+              h('span', { class: 'kt-ex', text: k.present ? (k.examples || []).slice(0, 2).map(e => `“${trunc(e, 40)}”`).join(' ') : 'not found' }));
+            bindTip(t, k.label, k.present ? 'Present: ' + (k.examples || []).slice(0, 4).join(' · ') : 'Not found in the figure.');
+            return t;
+          })))),
+      h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--red)', width: '10px', height: '10px', borderRadius: '50%' } }), 'kind present: material that belongs in the text, not in the method figure'), h('span', {}, h('span', { class: 'lg-box', style: { border: '1px solid var(--line-2)', width: '10px', height: '10px', borderRadius: '50%' } }), 'not found')));
+  }
+  if (m.key === 'evidence_gap') {
+    const tables = det.result_tables || []; const ex = det.exhibits || [];
+    const outline = doc?.outline || []; const norm = t => (t || '').replace(/^§[\d.]+\s*/, '').toLowerCase();
+    const find = title => { const n = norm(title); const o = outline.find(o => norm(o.title) === n) || outline.find(o => n && (norm(o.title).includes(n) || n.includes(norm(o.title)))); return o ? o.idx : -1; };
+    const tCount = new Map(), eCount = new Map(); let tOther = 0, eOther = 0;
+    for (const t of tables) { const i = find(t.section_title); if (i < 0) tOther++; else tCount.set(i, (tCount.get(i) || 0) + 1); }
+    for (const e of ex) { const i = find(e.where); if (i < 0) eOther++; else eCount.set(i, (eCount.get(i) || 0) + 1); }
+    const none = (det.exhibit_count || 0) === 0;
+    return h('div', { class: 'viz' },
+      sectionArcs(doc, [], { id: 'ev', color: 'var(--artifacts)', unit: '', aria: 'Result tables and concrete exhibits by section', warnUnder: false,
+        under: i => tCount.get(i) ? `▤ ${tCount.get(i)} result table${tCount.get(i) > 1 ? 's' : ''}` : '',
+        under2: i => eCount.get(i) ? { text: `✓ ${eCount.get(i)} exhibit${eCount.get(i) > 1 ? 's' : ''}`, good: true } : (tCount.get(i) && none ? { text: '✕ no example', warn: true } : null),
+        section: i => `${tCount.get(i) || 0} result tables · ${eCount.get(i) || 0} concrete exhibits` }),
+      h('div', { class: 'legend' },
+        h('span', {}, `▤ result tables in the body (${tables.length})`),
+        h('span', { class: none ? 'warn-t' : '' }, none ? '✕ no concrete input, output, or case anywhere in the paper' : `✓ concrete exhibits: inputs, outputs, or cases (${det.exhibit_count})${eOther ? `, ${eOther} in the appendix or elsewhere` : ''}`)));
+  }
   return null;
 }
+const opts_key = { current: null };
 async function openMeasureModal(k) {
   const job = state.job; if (!job) return;
   const m = measuresOf(job)[k]; const meta = MEASURES[k]; if (!m) return;
@@ -1227,7 +1270,7 @@ function galleryCard(x, rankNo) {
 }
 
 // ------------------------------------------------------------------ preview (gallery)
-function measureBars(ms) {
+function measureBars(ms, onPick) {
   const rows = ORDER.map(k => {
     const m = ms[k]; const meta = MEASURES[k]; const done = m && m.status === 'done' && m.score != null;
     const frac = done ? `${fmtNum(m.num)} / ${m.den} ${m.unit || ''}` : m?.status === 'na' ? 'not applicable' : m?.status === 'skipped' ? 'needs a language model' : '—';
@@ -1236,7 +1279,8 @@ function measureBars(ms) {
       h('span', { class: 'mb-bar' }, h('i', { style: { width: `${done ? m.score * 100 : 0}%`, background: PLANE_VAR[meta.plane] } })),
       h('span', { class: 'mb-val', text: done ? fmt(m.score) : '—' }),
       h('span', { class: 'mb-frac', text: frac }));
-    bindTip(row, meta.name, (m?.what || '') + (done ? ` ${frac}.` : ''));
+    bindTip(row, meta.name, (m?.what || '') + (done ? ` ${frac}.` : '') + (onPick ? ' Click to see its graph.' : ''));
+    if (onPick) { row.classList.add('pick'); row.tabIndex = 0; row.dataset.k = k; row.addEventListener('click', () => onPick(k, row)); row.addEventListener('keydown', e => { if (e.key === 'Enter') onPick(k, row); }); }
     return row;
   });
   return h('div', { class: 'mbars' }, rows);
@@ -1265,7 +1309,14 @@ async function openPreview(key) {
     d.addEventListener('click', e => { e.stopPropagation(); hideTip(); hlCard(page, hl, { x0, y0, x1, y1 }, pw, ph, () => openReportAt('findings')); });
     page.append(d);
   }
-  const ag = ms.argument_graph?.details;
+  opts_key.current = key;
+  const stage = h('div', { class: 'viz-stage' }); const stageTitle = h('h3', { text: 'Graph' }); const stageSub = h('p', { text: '' });
+  const bars = measureBars(ms, (k, row) => {
+    bars.querySelectorAll('.mb-row').forEach(r => r.classList.toggle('on', r === row));
+    const v = measureViz(ms[k], doc); stageTitle.textContent = MEASURES[k].name;
+    stageSub.textContent = v ? MEASURES[k].unit : (ms[k]?.status === 'done' ? 'No graph for this measure on this paper.' : 'This measure did not run.');
+    stage.replaceChildren(v || h('div', { class: 'muted', text: ms[k]?.status === 'done' ? 'Nothing to draw.' : ((ms[k]?.notes || [])[0] || 'Not measured.') }));
+  });
   box.replaceChildren(
     h('div', { class: 'modal-head' },
       h('div', {}, h('p', { class: 'eyebrow', text: 'Preview' }), h('h3', { text: doc.title || job.title || 'Paper' })),
@@ -1281,10 +1332,12 @@ async function openPreview(key) {
       h('div', { class: 'prev-right' },
         h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
         h('div', { class: 'card map-card', id: 'prev-map' }),
-        h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Share of units flagged.' })),
-        measureBars(ms),
-        ag && ag.sentences && ag.edges ? h('div', {}, h('div', { class: 'section-title' }, h('h3', { text: 'Argument graph' }), h('p', { text: 'Claims in the Introduction and the sentence each rests on.' })), arcDiagram(ag),
-          h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--ink-4)', height: '2px' } }), 'support comes first'), h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--red)', height: '2px' } }), 'support comes after the claim'))) : null)));
+        h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
+        bars,
+        h('div', { class: 'section-title' }, stageTitle, stageSub),
+        stage)));
+  const first = ORDER.find(k => measureViz(ms[k], doc));
+  if (first) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
   drawMap(box.querySelector('#prev-map'), doc, ms, () => openReportAt('findings'));
   requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
 }
