@@ -478,6 +478,21 @@ def _source_label(doc: dict) -> str:
     return "Upload" if "upload" in route else "Example"
 
 
+def _first_page_marks(res: dict, limit: int = 40) -> list:
+    """Finding locations on the first page, drawn over the thumbnail in the gallery."""
+    out = []
+    for m in res.get("measures", []):
+        for it in m.get("instances") or []:
+            for loc in it.get("pdf") or []:
+                if loc.get("p") != 0:
+                    continue
+                for r in loc.get("r") or []:
+                    out.append({"m": m["key"], "plane": m.get("plane"), "r": [round(v, 1) for v in r], "box": bool(loc.get("box"))})
+                    if len(out) >= limit:
+                        return out
+    return out
+
+
 @app.get("/api/gallery")
 async def gallery():
     items = []
@@ -496,6 +511,8 @@ async def gallery():
             "source": _source_label(doc), "source_kind": doc.get("source"),
             "measures": {m["key"]: (m.get("score") if m.get("status") == "done" else None)
                          for m in res.get("measures", [])},
+            "page0": ((res.get("pdf") or {}).get("sizes") or [None])[0],
+            "marks": _first_page_marks(res),
         })
     # one card per paper: the newest analysis wins (same arXiv id, link, or title)
     def ident(x):

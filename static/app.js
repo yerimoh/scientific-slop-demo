@@ -140,7 +140,7 @@ function route() {
   clearTimeout(state.timer);
   const p = location.pathname;
   const m = p.match(/^\/r\/([A-Za-z0-9_-]+)/);
-  if (m) { showPage('report'); openReport(m[1]); return; }
+  if (m) { showPage('report'); openReport(m[1], new URLSearchParams(location.search).get('tab')); return; }
   state.key = null; state.job = null; state.sig = '';
   if (p.startsWith('/leaderboard')) { showPage('leaderboard'); loadLeaderboard(); }
   else if (p.startsWith('/how')) { showPage('how'); buildHow(); }
@@ -214,8 +214,9 @@ function initInputs() {
 }
 
 // ------------------------------------------------------------------ report loading
-function openReport(key) {
+function openReport(key, tab) {
   if (state.key !== key) { state.open.clear(); state.showAll.clear(); state.hidden.clear(); state.sig = ''; state.tab = 'findings'; state.job = null; }
+  if (tab === 'paper' || tab === 'findings') { state.tab = tab; state.sig = ''; }
   state.key = key;
   const R = $('#page-report');
   if (!state.job) R.replaceChildren(h('p', { class: 'muted' }, 'Opening the report…'));
@@ -1083,16 +1084,26 @@ function shortTitle(t) {
   return w.length > 4 ? w.slice(0, 4).join(' ') + '…' : w.join(' ');
 }
 function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts * 1000); return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); }
-function hcard(x, rankNo) {
+function galleryCard(x, rankNo) {
   const b = x.index != null ? band(x.index) : null;
-  return h('a', { class: 'hcard', href: `/r/${x.key}`, 'data-link': '', style: { '--hc-color': b ? b.color : 'var(--line-2)' } },
-    h('div', { class: 'hc-main' },
-      h('div', { class: 'hc-stamp' }, h('span', { class: 'no', text: rankNo ? `#${rankNo}` : '—' }), h('span', { text: [x.source, fmtDate(x.created)].filter(Boolean).join(' · ') })),
-      h('div', { class: 'hc-title', text: x.title || 'Untitled' }),
-      h('div', { class: 'hc-bars' },
-        PLANES.map(p => h('span', { class: 'hc-bar', title: p.q }, h('span', { text: p.label }), h('i', {}, h('b', { style: { width: `${100 * (x.planes?.[p.key] || 0)}%`, background: PLANE_VAR[p.key] } })), h('span', { class: 'v', text: fmt(x.planes?.[p.key]) }))),
-        h('span', { class: 'hc-idx' }, h('span', { text: x.index != null ? String(x.index) : '—' }), h('small', { text: x.partial ? '/ 100 · partial' : '/ 100' })))),
-    h('div', { class: 'hc-thumb' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: shortTitle(x.title) })));
+  const [pw, ph] = x.page0 || [612, 792];
+  const marks = (x.marks || []).map(k => h('span', { class: `g-mark ${k.plane}${k.box ? ' box' : ''}`, 'data-plane': k.plane,
+    style: { left: `${100 * k.r[0] / pw}%`, top: `${100 * k.r[1] / ph}%`, width: `${100 * (k.r[2] - k.r[0]) / pw}%`, height: `${100 * (k.r[3] - k.r[1]) / ph}%` } }));
+  const page = h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title }), ...marks);
+  const card = h('a', { class: 'g-card', href: `/r/${x.key}?tab=paper`, 'data-link': '', title: x.title },
+    h('div', { class: 'g-thumb', style: { borderBottomColor: b ? b.color : 'var(--line-2)' } }, page,
+      marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null),
+    h('div', { class: 'g-body' },
+      h('div', { class: 'g-rank' }, h('span', { text: rankNo ? `Science Slop Index #${rankNo}` : '—' }), h('span', { class: 'score', text: x.index != null ? `${x.index} / 100${x.partial ? '*' : ''}` : '—' })),
+      h('div', { class: 'g-title', text: x.title }),
+      h('div', { class: 'g-planes' }, PLANES.map(p => {
+        const v = x.planes?.[p.key];
+        const t = h('button', { type: 'button', class: `gp gp-${p.key}`, title: `${p.label}: ${p.q}. Click to show only this plane on the page.`,
+          onclick: e => { e.preventDefault(); e.stopPropagation(); const on = card.dataset.focus === p.key; card.dataset.focus = on ? '' : p.key; card.querySelectorAll('.gp').forEach(g => g.classList.toggle('on', !on && g === t)); } },
+          h('span', { class: 'gp-l', text: p.label }), h('b', { text: v == null ? '—' : fmt(v) }));
+        return t;
+      }))));
+  return card;
 }
 async function loadHome() {
   if (!state.gallery) {
@@ -1104,7 +1115,7 @@ async function loadHome() {
   const seeds = [...state.gallery.items].filter(x => x.index != null && x.source_kind !== 'upload').sort((a, b) => (a.created || 0) - (b.created || 0)).slice(0, 4);
   ex.hidden = !seeds.length;
   ex.replaceChildren(h('span', { class: 'ex-l', text: 'Try an example:' }), ...seeds.map(x => h('a', { class: 'ex', href: `/r/${x.key}`, 'data-link': '', title: x.title, text: shortTitle(x.title) })));
-  $('#home-list').replaceChildren(...ranked.slice(0, 5).map((x, i) => hcard(x, i + 1)));
+  $('#home-list').replaceChildren(...ranked.slice(0, 4).map((x, i) => galleryCard(x, i + 1)));
 }
 
 // ------------------------------------------------------------------ gallery
@@ -1124,7 +1135,7 @@ function renderGallery() {
   items.sort(sort === 'low' ? (a, b) => (a.index ?? 999) - (b.index ?? 999) : sort === 'new' ? (a, b) => (b.created || 0) - (a.created || 0) : (a, b) => (b.index ?? -1) - (a.index ?? -1));
   const grid = $('#g-grid');
   if (!items.length) grid.replaceChildren(h('div', { class: 'g-empty' }, data.items.length ? 'No paper matches your search.' : 'No paper has been analyzed yet. ', data.items.length ? null : h('a', { href: '/', 'data-link': '' }, 'Analyze one')));
-  else grid.replaceChildren(...items.map(x => hcard(x, rank.get(x.key))));
+  else grid.replaceChildren(...items.map(x => galleryCard(x, rank.get(x.key))));
   $('#g-note').textContent = (data.items.some(x => x.partial) ? '* Partial: some measures could not run. ' : '')
     + (data.persistent ? '' : 'Reports added on this server are kept until it restarts; papers bundled with the site always stay.');
 }
