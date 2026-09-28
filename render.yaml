@@ -1,17 +1,14 @@
 # Science Slop Index on Render (Blueprint). One public Docker web service.
 # Render Dashboard -> New -> Blueprint -> this repo. No LLM key is stored on the server: visitors bring their own OpenRouter key.
-# Then point DNS: CNAME scislop.open-galapagos.com -> <service>.onrender.com (Cloudflare, proxied).
 services:
   - type: web
-    name: scislop
+    name: scientific-slop-demo
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
     region: oregon
     healthCheckPath: /api/config
     autoDeploy: true
-    domains:
-      - scislop.open-galapagos.com
     envVars:
       # No OPENROUTER_API_KEY here: each visitor enters their own key on the site.
       - key: SCISLOP_MODEL

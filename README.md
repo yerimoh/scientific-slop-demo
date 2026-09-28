@@ -72,20 +72,17 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 - **PDF 입력**: 논문의 Agents4Science 처리와 같이 PDF에서 구조를 복원합니다. LaTeX로 만든 PDF는 hyperref 내부 링크로 `\ref`/`\eqref`를 거의 그대로 복원합니다. arXiv 4편(DetectGPT, Self-Refine, Binoculars, Attention)에서 PDF와 LaTeX 결과를 비교해 섹션 구성과 Evidence gap이 일치하고, Cross-section references 차이는 0.02–0.08입니다.
 - **Index 구간**(Low < 20 ≤ Moderate < 40 ≤ High < 60 ≤ Very high)은 서술용 구분이며, 보정된 AI 확률이 아닙니다. 논문의 AI 확률은 FARS 쌍에 대한 logistic fit인데, 그 데이터가 여기 없기 때문입니다.
 
-## 배포 (scislop.open-galapagos.com, Render + Cloudflare)
+## 배포 (Render)
 
-현재 배포: https://scislop.open-galapagos.com (Render 서비스 `scislop`, `srv-das3lnrbc2fs7396k9i0`; Cloudflare DNS-only CNAME `scislop` → `scislop.onrender.com`).
-`render.yaml`은 같은 구성을 새로 만들 때 쓰는 Render Blueprint입니다 (Docker web service, Free plan, 커스텀 도메인 포함).
+현재 배포: https://scientific-slop-demo.onrender.com (Render 서비스 `scientific-slop-demo`, 저장소 `yerimoh/scientific-slop-demo`의 main을 자동 배포).
+`render.yaml`은 같은 구성을 새로 만들 때 쓰는 Render Blueprint입니다 (Docker web service, Free plan).
 
-1. Render Dashboard → **New → Blueprint** → 저장소 선택 → Apply. 서버에 넣을 키는 없습니다(방문자가 자기 OpenRouter 키를 입력).
-   (Render GitHub App이 이 repo에 접근할 수 있어야 합니다. 안 보이면 GitHub → Settings → Applications → Render → Repository access에 추가.)
-2. 배포가 끝나면 서비스 주소(`https://scislop-xxxx.onrender.com`)를 확인합니다.
-3. Cloudflare → `open-galapagos.com` → DNS → **Add record**: `CNAME`, 이름 `scislop`, 대상 `scislop-xxxx.onrender.com`, Proxied.
-4. Render 서비스 → Settings → Custom Domains에서 `scislop.open-galapagos.com`이 Verified가 되면 끝입니다.
+1. Render Dashboard → **New → Blueprint** → 이 저장소 선택 → Apply. 서버에 넣을 LLM 키는 없습니다(방문자가 홈 화면에서 자기 OpenRouter 키를 입력).
+2. 배포가 끝나면 서비스 주소(`https://<name>.onrender.com`)를 확인합니다. 커스텀 도메인은 서비스 → Settings → Custom Domains에서 붙입니다.
 
 공개 서버 보호 장치 (환경 변수로 조정):
 `SCISLOP_RATE_PER_HOUR`(IP당 시간당 분석 수, 기본 20), `SCISLOP_MAX_CONCURRENT`(동시 분석, 기본 2), `SCISLOP_MAX_UPLOAD_MB`(기본 50).
-업로드된 파일은 분석이 끝나면 삭제되고, 리포트(job.json)와 렌더링된 figure만 남습니다.
+업로드된 파일은 분석이 끝나면 삭제되고, 리포트(job.json)와 렌더링된 figure만 남습니다. 방문자가 입력한 API 키는 해당 분석 요청에만 쓰고 저장하지 않습니다.
 링크는 주소가 사설 IP로 가는지 리다이렉트마다 확인합니다.
 
 Free plan 주의: 15분간 요청이 없으면 잠들고(다음 접속 약 1분), 디스크가 휘발성이라 재시작·재배포 때 저장된 리포트 링크(`/r/<id>`)가 사라집니다.
