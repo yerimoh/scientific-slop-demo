@@ -456,10 +456,11 @@ function paperView(job) {
     ORDER.map(k => {
       const meta = MEASURES[k]; const c = counts[k] || { found: 0, total: 0 }; const on = !state.hidden.has(k);
       const toggle = () => { state.hidden.has(k) ? state.hidden.delete(k) : state.hidden.add(k); state.sig = ''; render(state.job); };
-      return h('button', { type: 'button', class: `pv-toggle ${meta.plane}` + (on ? ' on' : ''), 'aria-pressed': String(on), onclick: toggle },
-        h('span', { class: 'pv-n', text: String(c.found) }),
-        h('span', { class: 'pv-l' }, h('span', { class: 'pv-name', text: meta.name }), h('span', { class: 'pv-sub', text: c.total ? `${c.found} of ${c.total} placed` : 'nothing flagged' })),
-        h('span', { class: 'pv-eye', 'aria-hidden': 'true' }, on ? '●' : '○'));
+      return h('div', { class: `pv-toggle ${meta.plane}` + (on ? ' on' : '') },
+        h('button', { type: 'button', class: 'pv-main', title: 'Open the graph and findings for this measure', onclick: () => openMeasureModal(k) },
+          h('span', { class: 'pv-n', text: String(c.found) }),
+          h('span', { class: 'pv-l' }, h('span', { class: 'pv-name', text: meta.name }), h('span', { class: 'pv-sub', text: c.total ? `${c.found} of ${c.total} placed · graph ↗` : 'nothing flagged' }))),
+        h('button', { type: 'button', class: 'pv-eye', 'aria-pressed': String(on), title: on ? 'Hide on the paper' : 'Show on the paper', onclick: toggle }, on ? '●' : '○'));
     }),
     h('a', { class: 'btn ghost small', href: `/api/jobs/${encodeURIComponent(key)}/pdf`, download: '', style: { textAlign: 'center', textDecoration: 'none', marginTop: '8px' } }, 'Download highlighted PDF'));
   const pages = h('div', { class: 'pv-pages' });
@@ -657,13 +658,15 @@ const RENDERERS = {
           return li;
         }))]
       : [h('button', { class: 'link-btn more', type: 'button', style: { marginTop: '12px' }, onclick: () => { state.showAll.add('cross_refs:list'); state.sig = ''; render(state.job); } }, `List all ${m.instances.length} unreferenced objects`)]) : [];
-    return [h('div', { class: 'd-sub', text: 'Reference map' }), h('div', { class: 'refmap' }, rows),
+    const viz = measureViz(m, state.job?.result?.document || state.job?.document);
+    return [...(viz ? [h('div', { class: 'd-sub', text: 'Section graph' }), viz] : []), h('div', { class: 'd-sub', text: 'Reference map' }), h('div', { class: 'refmap' }, rows),
       h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--structure)' } }), 'used by another section'),
         h('span', {}, h('span', { class: 'lg-box', style: { border: '1.5px dashed var(--structure)' } }), 'never pointed to from another section')), ...list];
   },
   macro_redundancy(m, pdfOk) {
     if (!m.instances.length) return [okLine(`No sentence repeats half of itself from an earlier section (${m.den} sentences checked).`)];
-    return [h('div', { class: 'd-sub', text: `Recycled sentences · ${m.instances.length}` }),
+    const viz = measureViz(m, state.job?.result?.document || state.job?.document);
+    return [...(viz ? [h('div', { class: 'd-sub', text: 'Section graph' }), viz] : []), h('div', { class: 'd-sub', text: `Recycled sentences · ${m.instances.length}` }),
       ...findingsList(m, it => {
         const src = h('div', { class: 'src', hidden: true, text: it.source_text });
         return [whereLine(it.section_title, `${Math.round(it.coverage * 100)}% copied from ${it.source_title}`), highlighted(it.text, it.highlights),
@@ -682,7 +685,8 @@ const RENDERERS = {
   },
   citation_isolation(m, pdfOk) {
     const det = m.details || {};
-    const out = [h('div', { class: 'd-sub', text: `${det.woven ?? 0} of ${m.den} citing sentences relate works to one another` })];
+    const viz = m.instances.length ? measureViz(m, state.job?.result?.document || state.job?.document) : null;
+    const out = [...(viz ? [h('div', { class: 'd-sub', text: 'Isolated citations by section' }), viz] : []), h('div', { class: 'd-sub', text: `${det.woven ?? 0} of ${m.den} citing sentences relate works to one another` })];
     if (m.instances.length) out.push(...findingsList(m, it => [whereLine(it.section_title), h('div', { class: 'txt', text: it.text }),
       h('div', { class: 'keys' }, (it.keys || []).map(k => h('code', { text: k }))), h('div', { class: 'where', style: { marginTop: '6px', marginBottom: 0 }, text: it.why })], pdfOk));
     else out.push(okLine('Every citing sentence groups, compares, or relates its work to another.'));
@@ -712,6 +716,117 @@ const RENDERERS = {
     return out;
   },
 };
+
+// ------------------------------------------------------------------ section arcs (cross-section references, macro redundancy)
+function sectionArcs(doc, edges, opts) {
+  // edges: [{from, to, label}] between outline indices; self edges are counted as loops.
+  const outline = (doc?.outline || []).filter(o => o.idx != null);
+  if (!outline.length) return h('div', { class: 'muted', text: 'The outline of the paper is not available.' });
+  const host = h('div', { class: 'sarcs-host' });
+  const draw = () => {
+    const W = Math.max(320, host.clientWidth); const top = 96, segH = 22, H = top + segH + 52;
+    const weights = outline.map(o => Math.max(o.sentences || 0, 4)); const total = weights.reduce((a, b) => a + b, 0);
+    let x = 0; const segs = outline.map((o, k) => { const w = (W) * weights[k] / total; const sg = { o, x, w, cx: x + w / 2 }; x += w; return sg; });
+    const segOf = new Map(segs.map(sg => [sg.o.idx, sg]));
+    const name = o => (o.idx === 0 && !o.number) ? 'Abstract' : (o.number ? '§' + o.number + ' ' : '') + o.title;
+    const svg = s('svg', { class: 'sarcs', width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.aria || 'Section graph' });
+    const mk = s('marker', { id: 'arrow-' + opts.id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
+    mk.append(s('path', { d: 'M0,0 L10,5 L0,10 z', fill: opts.color }));
+    svg.append(s('defs', {}, mk));
+    // segments
+    for (const sg of segs) {
+      svg.append(s('rect', { class: 'seg', x: sg.x + 1, y: top, width: Math.max(1, sg.w - 2), height: segH, rx: 5 }));
+      const maxChars = Math.floor((sg.w - 8) / 6.4);
+      if (maxChars >= 3) svg.append(s('text', { class: 'seg-label', x: sg.cx, y: top + segH / 2 + 4, 'text-anchor': 'middle', text: trunc(name(sg.o), maxChars) }));
+      const hit = s('rect', { x: sg.x, y: top, width: sg.w, height: segH, fill: 'transparent' });
+      bindTip(hit, name(sg.o), opts.section?.(sg.o.idx) || `${sg.o.sentences || 0} sentences`);
+      svg.append(hit);
+    }
+    // aggregate edges
+    const agg = new Map(); const loops = new Map();
+    for (const e of edges) {
+      if (!segOf.has(e.from) || !segOf.has(e.to)) continue;
+      if (e.from === e.to) { loops.set(e.to, (loops.get(e.to) || 0) + 1); continue; }
+      const k = e.from + '>' + e.to; if (!agg.has(k)) agg.set(k, { from: e.from, to: e.to, labels: [] });
+      agg.get(k).labels.push(e.label);
+    }
+    const list = [...agg.values()].sort((a, b) => Math.abs(b.to - b.from) - Math.abs(a.to - a.from));
+    for (const e of list) {
+      const a = segOf.get(e.from), b = segOf.get(e.to); const n = e.labels.length;
+      const dx = Math.abs(b.cx - a.cx); const hgt = Math.min(top - 12, 26 + dx * 0.32);
+      const x1 = a.cx, x2 = b.cx, y = top - 2;
+      const path = s('path', { class: 'sarc', d: `M${x1},${y} C${x1},${y - hgt} ${x2},${y - hgt} ${x2},${y}`, fill: 'none', stroke: opts.color, 'stroke-width': Math.min(6, 1.4 + n * 0.9), 'stroke-linecap': 'round', opacity: .75, 'marker-end': `url(#arrow-${opts.id})` });
+      bindTip(path, `${name(a.o)} → ${name(b.o)} · ${n} ${opts.unit}${n === 1 ? '' : 's'}`, e.labels.slice(0, 6).join(' · ') + (n > 6 ? ` · +${n - 6} more` : ''));
+      svg.append(path);
+      if (n > 1) svg.append(s('text', { class: 'sarc-n', x: (x1 + x2) / 2, y: y - hgt * 0.75 - 3, 'text-anchor': 'middle', text: String(n) }));
+    }
+    // loops and under-labels
+    for (const sg of segs) {
+      const parts = []; const lp = loops.get(sg.o.idx); const under = opts.under?.(sg.o.idx);
+      if (lp) parts.push(`↺${lp}`); if (under) parts.push(under);
+      if (parts.length && sg.w > 30) svg.append(s('text', { class: 'seg-under' + (under ? ' warn' : ''), x: sg.cx, y: top + segH + 16, 'text-anchor': 'middle', text: trunc(parts.join(' · '), Math.floor(sg.w / 6)) }));
+    }
+    svg.append(s('text', { class: 'seg-axis', x: 0, y: H - 6, text: 'start of paper' }), s('text', { class: 'seg-axis', x: W, y: H - 6, 'text-anchor': 'end', text: 'end of paper' }));
+    host.replaceChildren(svg);
+  };
+  draw();
+  new ResizeObserver(() => { if (host.clientWidth) draw(); }).observe(host);
+  return host;
+}
+function measureViz(m, doc) {
+  if (!m || m.status !== 'done') return null;
+  const det = m.details || {};
+  if (m.key === 'cross_refs') {
+    const objs = det.objects || []; const edges = []; const never = new Map();
+    for (const o of objs) { for (const f of o.from || []) edges.push({ from: f, to: o.home, label: o.label }); for (let i = 0; i < (o.own || 0); i++) edges.push({ from: o.home, to: o.home, label: o.label }); if (!(o.from || []).length) never.set(o.home, (never.get(o.home) || 0) + 1); }
+    return h('div', { class: 'viz' },
+      sectionArcs(doc, edges, { id: 'xr', color: 'var(--structure)', unit: 'reference', aria: 'Which sections refer to objects in which other sections',
+        under: i => never.get(i) ? `${never.get(i)} never referenced` : '', section: i => { const own = objs.filter(o => o.home === i); return `${own.length} objects here · ${own.filter(o => (o.from || []).length).length} referred to from other sections · ${own.filter(o => !(o.from || []).length).length} never`; } }),
+      h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--structure)', height: '3px' } }), 'arrow: a section refers to an object in another section (thicker = more)'), h('span', {}, '↺n: references within the same section'), h('span', { class: 'warn-t' }, '“n never referenced”: objects no other section points to')));
+  }
+  if (m.key === 'macro_redundancy') {
+    if (!(m.instances || []).length) return null;
+    const edges = m.instances.filter(it => it.source_section != null && it.section != null).map(it => ({ from: it.source_section, to: it.section, label: `${Math.round((it.coverage || 0) * 100)}% “${trunc(it.text, 60)}”` }));
+    return h('div', { class: 'viz' },
+      sectionArcs(doc, edges, { id: 'mr', color: 'var(--structure-deep)', unit: 'repeated sentence', aria: 'Which earlier sections later sections repeat' }),
+      h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--structure-deep)', height: '3px' } }), 'arrow: from the section that said it first to the section that repeats it')));
+  }
+  if (m.key === 'argument_graph') return det.sentences && det.edges ? h('div', { class: 'viz' }, arcDiagram(det),
+    h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--ink-4)', height: '2px' } }), 'support comes first (built up)'), h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--red)', height: '2px' } }), 'support comes after the claim (flagged)'))) : null;
+  if (m.key === 'citation_isolation') {
+    const secs = det.sections || []; if (!secs.length && !m.den) return null;
+    const iso = new Map(); for (const it of m.instances || []) iso.set(it.section_title, (iso.get(it.section_title) || 0) + 1);
+    const names = secs.length ? secs : [...iso.keys()];
+    const max = Math.max(1, ...names.map(n => iso.get(n) || 0));
+    return h('div', { class: 'viz' },
+      h('div', { class: 'cbars' }, names.map(n => h('div', { class: 'cb-row' }, h('span', { class: 'cb-name', text: n }),
+        h('span', { class: 'cb-bar' }, h('i', { style: { width: `${100 * (iso.get(n) || 0) / max}%` } })), h('span', { class: 'cb-val', text: String(iso.get(n) || 0) })))),
+      h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--argument)' } }), 'citing sentences that relate the work to nothing else'), h('span', { class: 'muted', text: `${det.woven ?? 0} of ${m.den} citing sentences relate works to one another` })));
+  }
+  return null;
+}
+async function openMeasureModal(k) {
+  const job = state.job; if (!job) return;
+  const m = measuresOf(job)[k]; const meta = MEASURES[k]; if (!m) return;
+  const doc = job.result?.document || job.document; const pdfOk = !!job.result?.pdf?.available && !job.local;
+  document.querySelectorAll('.modal-bg').forEach(n => n.remove());
+  const close = () => { bg.remove(); hideTip(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const done = m.status === 'done' && m.score != null;
+  const box = h('div', { class: 'modal card' },
+    h('div', { class: 'modal-head' },
+      h('div', {}, h('span', { class: `tag ${meta.plane}`, text: PLANES.find(p => p.key === meta.plane).label }), h('h3', { text: meta.name }),
+        h('p', { class: 'muted', style: { margin: '4px 0 0' }, text: done ? `${fmt(m.score)} / 100 · ${fmtNum(m.num)} of ${m.den} ${m.unit || ''}` : (m.status === 'na' ? 'Not applicable to this paper' : 'Could not run') })),
+      h('div', { class: 'modal-actions' },
+        h('button', { class: 'btn small', type: 'button', onclick: () => { close(); state.tab = 'findings'; state.open.add(k); state.sig = ''; render(state.job); setTimeout(() => document.getElementById('d-' + k)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); } }, 'Open in findings →'),
+        h('button', { class: 'hl-x', type: 'button', 'aria-label': 'Close', onclick: close }, '×'))),
+    h('div', { class: 'modal-detail' }, detail(m, pdfOk)));
+  const bg = h('div', { class: 'modal-bg', onclick: e => { if (e.target === bg) close(); } }, box);
+  document.addEventListener('keydown', onKey);
+  document.body.append(bg);
+  // "Show on paper" links inside the detail should close the modal first
+  box.querySelectorAll('.onpaper').forEach(b => b.addEventListener('click', close, { capture: true }));
+}
 
 function arcDiagram(det) {
   const n = det.sentences.length; const W = 760, H = 150, pad = 14, base = 74;
