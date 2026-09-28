@@ -19,11 +19,11 @@ index = round(100 · S(p))
 ## 실행
 
 ```bash
-cp .env.example .env        # LITELLM_PROXY_API_KEY 입력 (UMN AI gateway, 모델 gpt-5.6-luna)
+cp .env.example .env        # 서버에 키를 두지 않습니다
 ./run.sh                    # http://localhost:8811
 ```
 
-키가 없어도 규칙 기반 4개 measure는 동작하고, 리포트에 "partial"로 표시됩니다.
+LLM이 필요한 두 measure(Argument graph, Figure exposition)는 **방문자가 홈 화면에 자기 OpenRouter API 키를 입력**하면 그 분석에만 쓰고 저장하지 않습니다. 키가 없어도 규칙 기반 4개 measure는 동작하고, 리포트에 "partial"로 표시됩니다.
 
 CLI:
 
@@ -33,7 +33,7 @@ uv run python cli.py paper.pdf --json report.json
 uv run python cli.py https://arxiv.org/abs/2303.17651
 ```
 
-LLM은 `LITELLM_PROXY_API_BASE`가 있으면 LiteLLM gateway(기본: UMN AI gateway), 없으면 OpenRouter(`OPENROUTER_API_KEY`)를 씁니다. 그 밖의 OpenAI 호환 엔드포인트도 됩니다 (`SCISLOP_LLM_BASE_URL`, `SCISLOP_MODEL`). 로컬 vLLM으로 테스트할 때는 `SCISLOP_LLM_EXTRA='{"chat_template_kwargs":{"enable_thinking":false}}'`.
+LLM 호출은 방문자가 입력한 OpenRouter 키로 갑니다(`SCISLOP_MODEL`, 기본 `openai/gpt-5.6-luna`). 로컬 실행에서는 `LITELLM_PROXY_API_BASE`가 있으면 LiteLLM gateway를, 그 밖의 OpenAI 호환 엔드포인트도 됩니다 (`SCISLOP_LLM_BASE_URL`, `SCISLOP_MODEL`). 로컬 vLLM으로 테스트할 때는 `SCISLOP_LLM_EXTRA='{"chat_template_kwargs":{"enable_thinking":false}}'`.
 
 ## 웹사이트 기능
 
@@ -77,8 +77,7 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 현재 배포: https://scislop.open-galapagos.com (Render 서비스 `scislop`, `srv-das3lnrbc2fs7396k9i0`; Cloudflare DNS-only CNAME `scislop` → `scislop.onrender.com`).
 `render.yaml`은 같은 구성을 새로 만들 때 쓰는 Render Blueprint입니다 (Docker web service, Free plan, 커스텀 도메인 포함).
 
-1. Render Dashboard → **New → Blueprint** → `Open-Galapagos/science-slop-index` 선택 → `OPENROUTER_API_KEY` 입력 → Apply.
-   (UMN AI gateway는 교내망 전용이라 Render에서는 닿지 않습니다. 공개 서비스는 OpenRouter, 로컬 실행은 UMN gateway를 씁니다.)
+1. Render Dashboard → **New → Blueprint** → 저장소 선택 → Apply. 서버에 넣을 키는 없습니다(방문자가 자기 OpenRouter 키를 입력).
    (Render GitHub App이 이 repo에 접근할 수 있어야 합니다. 안 보이면 GitHub → Settings → Applications → Render → Repository access에 추가.)
 2. 배포가 끝나면 서비스 주소(`https://scislop-xxxx.onrender.com`)를 확인합니다.
 3. Cloudflare → `open-galapagos.com` → DNS → **Add record**: `CNAME`, 이름 `scislop`, 대상 `scislop-xxxx.onrender.com`, Proxied.

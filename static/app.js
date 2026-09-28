@@ -36,12 +36,12 @@ const PLANES = [
   { key: 'artifacts', label: 'Artifacts', q: 'Can a reader inspect the method and the evidence?', measures: ['figure_exposition', 'evidence_gap'] },
 ];
 const MEASURES = {
-  cross_refs: { name: 'Cross-section references', short: 'Cross-refs', plane: 'structure', method: 'Rule', unit: 'Body sections and labeled objects', num: 'objects never referenced outside their own section', den: 'all objects', one: 'No object is ever referred to from another section.', pairacc: 0.905 },
-  macro_redundancy: { name: 'Macro redundancy', short: 'Redundancy', plane: 'structure', method: 'Rule', unit: 'Sentences with at least eight tokens', num: 'sentences half or more copied as 8-grams from an earlier section', den: 'all sentences', one: 'Every sentence mostly repeats earlier sections.', pairacc: 0.723 },
-  argument_graph: { name: 'Argument graph', short: 'Claims', plane: 'argument', method: 'LLM', unit: 'Key claims in the Introduction', num: 'shallow claims: nothing earlier leads up to them', den: 'all key claims', one: 'The argument is flat. Every claim stands alone with no build-up behind it.', pairacc: 0.586 },
-  citation_isolation: { name: 'Citation isolation', short: 'Citations', plane: 'argument', method: 'Rule', unit: 'Citation sentences (Intro., Related Work)', num: 'citations not grouped, compared, or related to other works', den: 'all citations', one: 'Every citation stands alone.', pairacc: 0.793 },
-  figure_exposition: { name: 'Figure exposition', short: 'Figure', plane: 'artifacts', method: 'LLM', unit: 'Content types in method figures', num: 'content types not needed to show the method', den: 'all content types in the figure', one: 'Nothing in the figure shows the method itself.', pairacc: 0.809 },
-  evidence_gap: { name: 'Evidence gap', short: 'Evidence', plane: 'artifacts', method: 'Rule', unit: 'Papers with a body result table', num: 'papers showing no concrete input, output, or case', den: 'all papers', one: 'The paper gives no concrete example at all.', pairacc: 0.764 },
+  cross_refs: { name: 'Cross-section references', short: 'Cross-refs', plane: 'structure', method: 'Rule', unit: 'Body sections and labeled objects', num: 'objects never referenced outside their own section', den: 'all objects', one: 'No object is ever referred to from another section.', pairacc: 0.905, what: 'Sections and labeled objects that no other section ever refers to.' },
+  macro_redundancy: { name: 'Macro redundancy', short: 'Redundancy', plane: 'structure', method: 'Rule', unit: 'Sentences with at least eight tokens', num: 'sentences half or more copied as 8-grams from an earlier section', den: 'all sentences', one: 'Every sentence mostly repeats earlier sections.', pairacc: 0.723, what: 'Later sections that repeat earlier material instead of developing the argument.' },
+  argument_graph: { name: 'Argument graph', short: 'Claims', plane: 'argument', method: 'LLM', unit: 'Key claims in the Introduction', num: 'shallow claims: nothing earlier leads up to them', den: 'all key claims', one: 'The argument is flat. Every claim stands alone with no build-up behind it.', pairacc: 0.586, what: 'Key claims in the Introduction stated before the context that supports them.' },
+  citation_isolation: { name: 'Citation isolation', short: 'Citations', plane: 'argument', method: 'Rule', unit: 'Citation sentences (Intro., Related Work)', num: 'citations not grouped, compared, or related to other works', den: 'all citations', one: 'Every citation stands alone.', pairacc: 0.793, what: 'Prior work cited without relating it to any other work.' },
+  figure_exposition: { name: 'Figure exposition', short: 'Figure', plane: 'artifacts', method: 'LLM', unit: 'Content types in method figures', num: 'content types not needed to show the method', den: 'all content types in the figure', one: 'Nothing in the figure shows the method itself.', pairacc: 0.809, what: 'Method diagrams crowded with material that belongs in the text.' },
+  evidence_gap: { name: 'Evidence gap', short: 'Evidence', plane: 'artifacts', method: 'Rule', unit: 'Papers with a body result table', num: 'papers showing no concrete input, output, or case', den: 'all papers', one: 'The paper gives no concrete example at all.', pairacc: 0.764, what: 'Aggregate results reported without a single concrete input, output, or case.' },
 };
 const ORDER = PLANES.flatMap(p => p.measures);
 const PLANE_VAR = { structure: 'var(--structure)', argument: 'var(--argument)', artifacts: 'var(--artifacts)' };
@@ -140,13 +140,13 @@ function route() {
   clearTimeout(state.timer);
   const p = location.pathname;
   const m = p.match(/^\/r\/([A-Za-z0-9_-]+)/);
-  if (m) { showPage('report'); openReport(m[1]); return; }
+  if (m) { showPage('report'); openReport(m[1], new URLSearchParams(location.search).get('tab')); return; }
   state.key = null; state.job = null; state.sig = '';
   if (p.startsWith('/leaderboard')) { showPage('leaderboard'); loadLeaderboard(); }
   else if (p.startsWith('/how')) { showPage('how'); buildHow(); }
   else if (p.startsWith('/gallery')) { showPage('gallery'); loadGallery(); }
   else if (p.startsWith('/view')) { showPage('view'); renderRecent(); }
-  else showPage('home');
+  else { showPage('home'); loadHome(); }
 }
 document.addEventListener('click', e => {
   const a = e.target.closest('a[data-link]');
@@ -159,12 +159,22 @@ addEventListener('popstate', route);
 async function submit(fd) {
   setError('');
   const btn = $('#go'); btn.disabled = true;
+  if (apiKey()) fd.append('api_key', apiKey());
   try {
     const r = await fetch('/api/analyze', { method: 'POST', body: fd });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.detail || 'Something went wrong. Try again.');
     go('/r/' + d.key);
   } catch (e) { setError(e.message); } finally { btn.disabled = false; }
+}
+function apiKey() { return ($('#api-key')?.value || '').trim(); }
+function initKey() {
+  const inp = $('#api-key'), rem = $('#key-remember');
+  const saved = store.get('ssi-key', '');
+  if (saved) { inp.value = saved; rem.checked = true; }
+  const sync = () => { if (rem.checked && inp.value.trim()) store.set('ssi-key', inp.value.trim()); else store.del('ssi-key'); };
+  inp.addEventListener('input', sync); rem.addEventListener('change', sync);
+  $('#bib-copy').addEventListener('click', () => copy($('#bib').textContent, 'BibTeX copied'));
 }
 function submitFile(file) {
   if (!file) return;
@@ -214,8 +224,9 @@ function initInputs() {
 }
 
 // ------------------------------------------------------------------ report loading
-function openReport(key) {
+function openReport(key, tab) {
   if (state.key !== key) { state.open.clear(); state.showAll.clear(); state.hidden.clear(); state.sig = ''; state.tab = 'findings'; state.job = null; }
+  if (tab === 'paper' || tab === 'findings') { state.tab = tab; state.sig = ''; }
   state.key = key;
   const R = $('#page-report');
   if (!state.job) R.replaceChildren(h('p', { class: 'muted' }, 'Opening the report…'));
@@ -275,12 +286,12 @@ function render(job) {
     frag.push(h('div', { class: 'paper-head' },
       h('p', { class: 'eyebrow', text: doc.route || (doc.source === 'latex' ? 'LaTeX source' : 'PDF') }),
       h('h2', { text: doc.title }),
-      h('p', { class: 'meta' },
-        h('span', { class: 'chip', title: doc.fidelity }, doc.source === 'latex' ? 'Read from LaTeX source' : 'Rebuilt from PDF'),
-        st.body_sections != null ? h('span', { text: `${st.body_sections} sections` }) : null,
-        st.body_words != null ? h('span', { text: `${Number(st.body_words).toLocaleString()} words` }) : null,
-        st.objects != null ? h('span', { text: `${st.objects} referable objects` }) : null,
-        doc.url ? h('a', { href: doc.url, target: '_blank', rel: 'noopener', text: 'Open paper ↗' }) : null)));
+      h('div', { class: 'meta-grid' },
+        h('div', {}, h('span', { class: 'ml', text: 'Read from' }), h('span', { class: 'mv', title: doc.fidelity, text: doc.source === 'latex' ? 'LaTeX source' : 'PDF' })),
+        st.body_sections != null ? h('div', {}, h('span', { class: 'ml', text: 'Sections' }), h('span', { class: 'mv', text: String(st.body_sections) })) : null,
+        st.body_words != null ? h('div', {}, h('span', { class: 'ml', text: 'Words' }), h('span', { class: 'mv', text: Number(st.body_words).toLocaleString() })) : null,
+        st.objects != null ? h('div', {}, h('span', { class: 'ml', text: 'Referable objects' }), h('span', { class: 'mv', text: String(st.objects) })) : null,
+        doc.url ? h('div', {}, h('span', { class: 'ml', text: 'Paper' }), h('a', { class: 'mv', href: doc.url, target: '_blank', rel: 'noopener', text: 'Open ↗' })) : null)));
   } else {
     frag.push(h('div', { class: 'paper-head' }, h('p', { class: 'eyebrow', text: 'Analyzing' }), h('h2', { text: trunc(job.label || 'Your paper', 120) })));
   }
@@ -384,7 +395,7 @@ function scoreCard(idx, ms, running) {
     h('span', { style: { left: '50%' }, text: 'High' }), h('span', { style: { left: '100%' }, text: 'Very high' }));
   const tiles = h('div', { class: 'plane-tiles' }, PLANES.map(p => {
     const ps = idx?.planes?.[p.key]?.score;
-    const t = h('button', { class: `tile band-${p.key}`, type: 'button', onclick: () => { state.tab = 'findings'; state.sig = ''; render(state.job); setTimeout(() => document.getElementById('plane-' + p.key)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); } },
+    const t = h('button', { class: `tile band-${p.key}`, type: 'button', onclick: () => { if (!state.job) return; state.tab = 'findings'; state.sig = ''; render(state.job); setTimeout(() => document.getElementById('plane-' + p.key)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); } },
       h('span', { class: `tag ${p.key}`, text: p.label }),
       h('div', { class: 't-val', text: ps == null ? (running ? '··' : '—') : fmt(ps) }),
       h('div', { class: 't-bar' }, h('i', { style: { width: '0%', background: PLANE_VAR[p.key] }, 'data-w': ((ps || 0) * 100) + '%' })));
@@ -451,14 +462,17 @@ function paperView(job) {
       }
     });
   }
-  const side = h('div', { class: 'pv-side' }, h('h4', { text: 'Show on the paper' }),
+  const side = h('div', { class: 'pv-side' }, h('h4', { text: 'On the paper' }),
     ORDER.map(k => {
-      const meta = MEASURES[k]; const c = counts[k] || { found: 0, total: 0 };
-      const cb = h('input', { type: 'checkbox', checked: !state.hidden.has(k) ? true : null,
-        onchange: () => { state.hidden.has(k) ? state.hidden.delete(k) : state.hidden.add(k); state.sig = ''; render(state.job); } });
-      return h('label', { class: 'pv-toggle' }, cb, h('span', { class: 'sw', style: { background: PLANE_VAR[meta.plane] } }), meta.name, h('span', { class: 'cnt', text: `${c.found}/${c.total}` }));
+      const meta = MEASURES[k]; const c = counts[k] || { found: 0, total: 0 }; const on = !state.hidden.has(k);
+      const toggle = () => { state.hidden.has(k) ? state.hidden.delete(k) : state.hidden.add(k); state.sig = ''; render(state.job); };
+      return h('div', { class: `pv-toggle ${meta.plane}` + (on ? ' on' : '') },
+        h('button', { type: 'button', class: 'pv-main', title: 'Open the graph and findings for this measure', onclick: () => openMeasureModal(k) },
+          h('span', { class: 'pv-n', text: String(c.found) }),
+          h('span', { class: 'pv-l' }, h('span', { class: 'pv-name', text: meta.name }), h('span', { class: 'pv-sub', text: c.total ? `${c.found} of ${c.total} placed · graph ↗` : 'nothing flagged' }))),
+        h('button', { type: 'button', class: 'pv-eye', 'aria-pressed': String(on), title: on ? 'Hide on the paper' : 'Show on the paper', onclick: toggle }, on ? '●' : '○'));
     }),
-    h('a', { class: 'btn ghost small', href: `/api/jobs/${encodeURIComponent(key)}/pdf`, download: '', style: { textAlign: 'center', textDecoration: 'none', marginTop: '6px' } }, 'Download highlighted PDF'));
+    h('a', { class: 'btn ghost small', href: `/api/jobs/${encodeURIComponent(key)}/pdf`, download: '', style: { textAlign: 'center', textDecoration: 'none', marginTop: '8px' } }, 'Download highlighted PDF'));
   const pages = h('div', { class: 'pv-pages' });
   (pdf.sizes || []).forEach(([w, hgt], n) => {
     const page = h('div', { class: 'pv-page', style: { aspectRatio: `${w} / ${hgt}` } },
@@ -470,20 +484,39 @@ function paperView(job) {
       const [x0, y0, x1, y1] = hl.r;
       const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, 'data-hl': `${hl.m.key}-${hl.i}`, tabindex: 0,
         style: { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` } });
-      bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 240));
-      const open = () => { hideTip(); state.tab = 'findings'; state.open.add(hl.m.key); if (hl.i >= 8) state.showAll.add(hl.m.key); if (hl.m.key === 'cross_refs') state.showAll.add('cross_refs:list'); state.flash = `f-${hl.m.key}-${hl.i}`; state.sig = ''; render(state.job); };
+      bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 160));
+      const openFindings = () => { hideTip(); state.tab = 'findings'; state.open.add(hl.m.key); if (hl.i >= 8) state.showAll.add(hl.m.key); if (hl.m.key === 'cross_refs') state.showAll.add('cross_refs:list'); state.flash = `f-${hl.m.key}-${hl.i}`; state.sig = ''; render(state.job); };
+      const open = e => { if (e && e.stopPropagation) e.stopPropagation(); hideTip(); hlCard(page, hl, { x0, y0, x1, y1 }, w, hgt, openFindings); };
       d.addEventListener('click', open);
-      d.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
+      d.addEventListener('keydown', e => { if (e.key === 'Enter') open(e); });
       page.append(d);
     }
     pages.append(page);
   });
   return h('div', { class: 'pv-layout' }, side, pages);
 }
+function hlCard(page, hl, r, w, hgt, openFindings) {
+  document.querySelectorAll('.hl-card').forEach(n => n.remove());
+  const it = hl.it; const m = hl.m;
+  const where = [it.section_title, it.label && it.kind ? `${it.label} (${it.kind})` : null].filter(Boolean).join(' · ');
+  const body = it.why || (it.coverage != null ? `${Math.round(it.coverage * 100)}% copied from ${it.source_title}` : '') || it.text || it.caption || '';
+  const card = h('div', { class: 'hl-card', role: 'dialog', onclick: e => e.stopPropagation() },
+    h('div', { class: 'hl-head' }, h('span', { class: `tag ${m.plane}`, text: (PLANES.find(p => p.key === m.plane) || {}).label || m.plane }), h('b', { text: m.name }),
+      h('button', { class: 'hl-x', type: 'button', 'aria-label': 'Close', onclick: () => card.remove() }, '×')),
+    where ? h('div', { class: 'hl-where', text: where }) : null,
+    it.text && it.why ? h('div', { class: 'hl-quote', text: '“' + trunc(it.text, 220) + '”' }) : null,
+    h('div', { class: 'hl-body', text: trunc(body, 320) }),
+    h('div', { class: 'hl-actions' }, h('button', { class: 'link-btn', type: 'button', onclick: openFindings }, 'Open in findings →')));
+  const below = r.y1 / hgt < 0.72;
+  card.style.left = `${Math.min(100 * r.x0 / w, 58)}%`;
+  if (below) card.style.top = `calc(${100 * r.y1 / hgt}% + 6px)`; else card.style.bottom = `calc(${100 * (1 - r.y0 / hgt)}% + 6px)`;
+  page.append(card);
+  setTimeout(() => document.addEventListener('click', () => card.remove(), { once: true }), 0);
+}
 function showOnPaper(key, i) { state.tab = 'paper'; state.flashHl = `${key}-${i}`; state.hidden.delete(key); state.sig = ''; render(state.job); }
 
 // ------------------------------------------------------------------ paper map
-function drawMap(host, doc, ms) {
+function drawMap(host, doc, ms, onOpen) {
   const outline = doc?.outline || [];
   const bySec = new Map(outline.map(o => [o.idx, o]));
   const items = [];
@@ -519,7 +552,7 @@ function drawMap(host, doc, ms) {
       const cy = top + ORDER.indexOf(it.key) * laneH + laneH / 2;
       const dot = s('circle', { class: 'dot', cx, cy, r: 4.5, fill: PLANE_VAR[MEASURES[it.key].plane] });
       const hit = s('circle', { class: 'hit', cx, cy, r: 11, tabindex: 0, role: 'button', 'aria-label': `${MEASURES[it.key].name}: ${trunc(it.text, 80)}` });
-      const open = () => { hideTip(); state.open.add(it.key); state.flash = `f-${it.key}-${it.i}`; if (it.i >= 8) state.showAll.add(it.key); if (it.key === 'cross_refs') state.showAll.add('cross_refs:list'); state.sig = ''; render(state.job); };
+      const open = () => { hideTip(); if (onOpen) { onOpen(); return; } state.open.add(it.key); state.flash = `f-${it.key}-${it.i}`; if (it.i >= 8) state.showAll.add(it.key); if (it.key === 'cross_refs') state.showAll.add('cross_refs:list'); state.sig = ''; render(state.job); };
       hit.addEventListener('click', open);
       hit.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
       hit.addEventListener('pointerenter', () => dot.setAttribute('r', 6.5));
@@ -635,13 +668,15 @@ const RENDERERS = {
           return li;
         }))]
       : [h('button', { class: 'link-btn more', type: 'button', style: { marginTop: '12px' }, onclick: () => { state.showAll.add('cross_refs:list'); state.sig = ''; render(state.job); } }, `List all ${m.instances.length} unreferenced objects`)]) : [];
-    return [h('div', { class: 'd-sub', text: 'Reference map' }), h('div', { class: 'refmap' }, rows),
+    const viz = measureViz(m, state.job?.result?.document || state.job?.document);
+    return [...(viz ? [h('div', { class: 'd-sub', text: 'Section graph' }), viz] : []), h('div', { class: 'd-sub', text: 'Reference map' }), h('div', { class: 'refmap' }, rows),
       h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--structure)' } }), 'used by another section'),
         h('span', {}, h('span', { class: 'lg-box', style: { border: '1.5px dashed var(--structure)' } }), 'never pointed to from another section')), ...list];
   },
   macro_redundancy(m, pdfOk) {
     if (!m.instances.length) return [okLine(`No sentence repeats half of itself from an earlier section (${m.den} sentences checked).`)];
-    return [h('div', { class: 'd-sub', text: `Recycled sentences · ${m.instances.length}` }),
+    const viz = measureViz(m, state.job?.result?.document || state.job?.document);
+    return [...(viz ? [h('div', { class: 'd-sub', text: 'Section graph' }), viz] : []), h('div', { class: 'd-sub', text: `Recycled sentences · ${m.instances.length}` }),
       ...findingsList(m, it => {
         const src = h('div', { class: 'src', hidden: true, text: it.source_text });
         return [whereLine(it.section_title, `${Math.round(it.coverage * 100)}% copied from ${it.source_title}`), highlighted(it.text, it.highlights),
@@ -660,7 +695,8 @@ const RENDERERS = {
   },
   citation_isolation(m, pdfOk) {
     const det = m.details || {};
-    const out = [h('div', { class: 'd-sub', text: `${det.woven ?? 0} of ${m.den} citing sentences relate works to one another` })];
+    const viz = m.instances.length ? measureViz(m, state.job?.result?.document || state.job?.document) : null;
+    const out = [...(viz ? [h('div', { class: 'd-sub', text: 'Isolated citations by section' }), viz] : []), h('div', { class: 'd-sub', text: `${det.woven ?? 0} of ${m.den} citing sentences relate works to one another` })];
     if (m.instances.length) out.push(...findingsList(m, it => [whereLine(it.section_title), h('div', { class: 'txt', text: it.text }),
       h('div', { class: 'keys' }, (it.keys || []).map(k => h('code', { text: k }))), h('div', { class: 'where', style: { marginTop: '6px', marginBottom: 0 }, text: it.why })], pdfOk));
     else out.push(okLine('Every citing sentence groups, compares, or relates its work to another.'));
@@ -670,6 +706,8 @@ const RENDERERS = {
     const det = m.details || {}; const fig = det.figure || {}; const out = [];
     if ((det.candidates || []).length > 1 && !state.job?.local) out.push(figurePicker(m, 'Method figure'));
     const key = state.job?.key || state.job?.id;
+    const viz = measureViz(m, state.job?.result?.document || state.job?.document);
+    if (viz) { out.push(viz); return out; }
     const imgs = (fig.images || []).map(n => h('div', { class: 'fig-img' }, h('img', { src: `/api/jobs/${encodeURIComponent(key)}/files/${n}`, alt: `Figure ${fig.number || ''}`, loading: 'lazy' })));
     const kinds = h('div', { class: 'kinds' }, (det.kinds || []).map(k => h('div', { class: 'kind' + (k.present ? ' on' : '') },
       h('span', { class: 'k-ico', text: k.present ? '✕' : '' }),
@@ -681,6 +719,7 @@ const RENDERERS = {
   },
   evidence_gap(m, pdfOk) {
     const det = m.details || {}; const out = [];
+    const viz = measureViz(m, state.job?.result?.document || state.job?.document); if (viz) out.push(h('div', { class: 'd-sub', style: { marginTop: 0 }, text: 'Result tables and exhibits by section' }), viz);
     if (m.score === 0) {
       const ex = (det.exhibits || [])[0];
       out.push(okLine(`Closed: ${det.exhibit_count} concrete exhibit${det.exhibit_count === 1 ? '' : 's'} found` + (ex ? `, e.g. ${ex.where}: “${trunc(ex.snippet, 140)}”` : '.')));
@@ -690,6 +729,157 @@ const RENDERERS = {
     return out;
   },
 };
+
+// ------------------------------------------------------------------ section arcs (cross-section references, macro redundancy)
+function sectionArcs(doc, edges, opts) {
+  // edges: [{from, to, label}] between outline indices; self edges are counted as loops.
+  const outline = (doc?.outline || []).filter(o => o.idx != null);
+  if (!outline.length) return h('div', { class: 'muted', text: 'The outline of the paper is not available.' });
+  const host = h('div', { class: 'sarcs-host' });
+  const draw = () => {
+    const W = Math.max(320, host.clientWidth); const top = edges.length ? 96 : 10, segH = 22, H = top + segH + (opts.under2 ? 68 : 52);
+    const weights = outline.map(o => Math.max(o.sentences || 0, 4)); const total = weights.reduce((a, b) => a + b, 0);
+    let x = 0; const segs = outline.map((o, k) => { const w = (W) * weights[k] / total; const sg = { o, x, w, cx: x + w / 2 }; x += w; return sg; });
+    const segOf = new Map(segs.map(sg => [sg.o.idx, sg]));
+    const name = o => (o.idx === 0 && !o.number) ? 'Abstract' : (o.number ? '§' + o.number + ' ' : '') + o.title;
+    const svg = s('svg', { class: 'sarcs', width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.aria || 'Section graph' });
+    const mk = s('marker', { id: 'arrow-' + opts.id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
+    mk.append(s('path', { d: 'M0,0 L10,5 L0,10 z', fill: opts.color }));
+    svg.append(s('defs', {}, mk));
+    // segments
+    for (const sg of segs) {
+      svg.append(s('rect', { class: 'seg', x: sg.x + 1, y: top, width: Math.max(1, sg.w - 2), height: segH, rx: 5 }));
+      const maxChars = Math.floor((sg.w - 8) / 6.4);
+      if (maxChars >= 3) svg.append(s('text', { class: 'seg-label', x: sg.cx, y: top + segH / 2 + 4, 'text-anchor': 'middle', text: trunc(name(sg.o), maxChars) }));
+      const hit = s('rect', { x: sg.x, y: top, width: sg.w, height: segH, fill: 'transparent' });
+      bindTip(hit, name(sg.o), opts.section?.(sg.o.idx) || `${sg.o.sentences || 0} sentences`);
+      svg.append(hit);
+    }
+    // aggregate edges
+    const agg = new Map(); const loops = new Map();
+    for (const e of edges) {
+      if (!segOf.has(e.from) || !segOf.has(e.to)) continue;
+      if (e.from === e.to) { loops.set(e.to, (loops.get(e.to) || 0) + 1); continue; }
+      const k = e.from + '>' + e.to; if (!agg.has(k)) agg.set(k, { from: e.from, to: e.to, labels: [] });
+      agg.get(k).labels.push(e.label);
+    }
+    const list = [...agg.values()].sort((a, b) => Math.abs(b.to - b.from) - Math.abs(a.to - a.from));
+    for (const e of list) {
+      const a = segOf.get(e.from), b = segOf.get(e.to); const n = e.labels.length;
+      const dx = Math.abs(b.cx - a.cx); const hgt = Math.min(top - 12, 26 + dx * 0.32);
+      const x1 = a.cx, x2 = b.cx, y = top - 2;
+      const path = s('path', { class: 'sarc', d: `M${x1},${y} C${x1},${y - hgt} ${x2},${y - hgt} ${x2},${y}`, fill: 'none', stroke: opts.color, 'stroke-width': Math.min(6, 1.4 + n * 0.9), 'stroke-linecap': 'round', opacity: .75, 'marker-end': `url(#arrow-${opts.id})` });
+      bindTip(path, `${name(a.o)} → ${name(b.o)} · ${n} ${opts.unit}${n === 1 ? '' : 's'}`, e.labels.slice(0, 6).join(' · ') + (n > 6 ? ` · +${n - 6} more` : ''));
+      svg.append(path);
+      if (n > 1) svg.append(s('text', { class: 'sarc-n', x: (x1 + x2) / 2, y: y - hgt * 0.75 - 3, 'text-anchor': 'middle', text: String(n) }));
+    }
+    // loops and under-labels
+    for (const sg of segs) {
+      const parts = []; const lp = loops.get(sg.o.idx); const under = opts.under?.(sg.o.idx);
+      if (lp) parts.push(`↺${lp}`); if (under) parts.push(under);
+      if (parts.length && sg.w > 30) svg.append(s('text', { class: 'seg-under' + (under && opts.warnUnder !== false ? ' warn' : ''), x: sg.cx, y: top + segH + 16, 'text-anchor': 'middle', text: trunc(parts.join(' · '), Math.floor(sg.w / 6)) }));
+      const u2 = opts.under2?.(sg.o.idx);
+      if (u2 && sg.w > 30) svg.append(s('text', { class: 'seg-under' + (u2.warn ? ' warn' : u2.good ? ' good' : ''), x: sg.cx, y: top + segH + 32, 'text-anchor': 'middle', text: trunc(u2.text, Math.floor(sg.w / 6)) }));
+    }
+    svg.append(s('text', { class: 'seg-axis', x: 0, y: H - 6, text: 'start of paper' }), s('text', { class: 'seg-axis', x: W, y: H - 6, 'text-anchor': 'end', text: 'end of paper' }));
+    host.replaceChildren(svg);
+  };
+  draw();
+  new ResizeObserver(() => { if (host.clientWidth) draw(); }).observe(host);
+  return host;
+}
+function measureViz(m, doc) {
+  if (!m || m.status !== 'done') return null;
+  const det = m.details || {};
+  if (m.key === 'cross_refs') {
+    const objs = det.objects || []; const edges = []; const never = new Map();
+    for (const o of objs) { for (const f of o.from || []) edges.push({ from: f, to: o.home, label: o.label }); for (let i = 0; i < (o.own || 0); i++) edges.push({ from: o.home, to: o.home, label: o.label }); if (!(o.from || []).length) never.set(o.home, (never.get(o.home) || 0) + 1); }
+    return h('div', { class: 'viz' },
+      sectionArcs(doc, edges, { id: 'xr', color: 'var(--structure)', unit: 'reference', aria: 'Which sections refer to objects in which other sections',
+        under: i => never.get(i) ? `${never.get(i)} never referenced` : '', section: i => { const own = objs.filter(o => o.home === i); return `${own.length} objects here · ${own.filter(o => (o.from || []).length).length} referred to from other sections · ${own.filter(o => !(o.from || []).length).length} never`; } }),
+      h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--structure)', height: '3px' } }), 'arrow: a section refers to an object in another section (thicker = more)'), h('span', {}, '↺n: references within the same section'), h('span', { class: 'warn-t' }, '“n never referenced”: objects no other section points to')));
+  }
+  if (m.key === 'macro_redundancy') {
+    if (!(m.instances || []).length) return null;
+    const edges = m.instances.filter(it => it.source_section != null && it.section != null).map(it => ({ from: it.source_section, to: it.section, label: `${Math.round((it.coverage || 0) * 100)}% “${trunc(it.text, 60)}”` }));
+    return h('div', { class: 'viz' },
+      sectionArcs(doc, edges, { id: 'mr', color: 'var(--structure-deep)', unit: 'repeated sentence', aria: 'Which earlier sections later sections repeat' }),
+      h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--structure-deep)', height: '3px' } }), 'arrow: from the section that said it first to the section that repeats it')));
+  }
+  if (m.key === 'argument_graph') return det.sentences && det.edges ? h('div', { class: 'viz' }, arcDiagram(det),
+    h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--ink-4)', height: '2px' } }), 'support comes first (built up)'), h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--red)', height: '2px' } }), 'support comes after the claim (flagged)'))) : null;
+  if (m.key === 'citation_isolation') {
+    const secs = det.sections || []; if (!secs.length && !m.den) return null;
+    const iso = new Map(); for (const it of m.instances || []) iso.set(it.section_title, (iso.get(it.section_title) || 0) + 1);
+    const names = secs.length ? secs : [...iso.keys()];
+    const max = Math.max(1, ...names.map(n => iso.get(n) || 0));
+    return h('div', { class: 'viz' },
+      h('div', { class: 'cbars' }, names.map(n => h('div', { class: 'cb-row' }, h('span', { class: 'cb-name', text: n }),
+        h('span', { class: 'cb-bar' }, h('i', { style: { width: `${100 * (iso.get(n) || 0) / max}%` } })), h('span', { class: 'cb-val', text: String(iso.get(n) || 0) })))),
+      h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--argument)' } }), 'citing sentences that relate the work to nothing else'), h('span', { class: 'muted', text: `${det.woven ?? 0} of ${m.den} citing sentences relate works to one another` })));
+  }
+  if (m.key === 'figure_exposition') {
+    const fig = det.figure || {}; const kinds = det.kinds || []; if (!kinds.length) return null;
+    const key = state.job?.key || state.job?.id || opts_key.current;
+    const imgs = (fig.images || []).map(n => h('div', { class: 'fig-img' }, h('img', { src: `/api/jobs/${encodeURIComponent(key)}/files/${n}`, alt: `Figure ${fig.number || ''}`, loading: 'lazy' })));
+    const present = kinds.filter(k => k.present).length;
+    return h('div', { class: 'viz fig-viz' },
+      h('div', { class: 'fig-viz-grid' },
+        h('div', {}, ...imgs, h('div', { class: 'fig-cap', text: `Figure ${fig.number || ''}${fig.section_title ? ' · ' + fig.section_title : ''}` })),
+        h('div', {},
+          h('div', { class: 'kind-meter' }, h('b', { text: `${present} of ${kinds.length}` }), ' expository kinds present in the method figure',
+            h('span', { class: 'kind-dots' }, kinds.map(k => h('i', { class: k.present ? 'on' : '' })))),
+          h('div', { class: 'kind-grid' }, kinds.map(k => {
+            const t = h('div', { class: 'kind-tile' + (k.present ? ' on' : '') },
+              h('span', { class: 'kt-ico', text: k.present ? '✕' : '' }), h('span', { class: 'kt-l', text: k.label }),
+              h('span', { class: 'kt-ex', text: k.present ? (k.examples || []).slice(0, 2).map(e => `“${trunc(e, 40)}”`).join(' ') : 'not found' }));
+            bindTip(t, k.label, k.present ? 'Present: ' + (k.examples || []).slice(0, 4).join(' · ') : 'Not found in the figure.');
+            return t;
+          })))),
+      h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--red)', width: '10px', height: '10px', borderRadius: '50%' } }), 'kind present: material that belongs in the text, not in the method figure'), h('span', {}, h('span', { class: 'lg-box', style: { border: '1px solid var(--line-2)', width: '10px', height: '10px', borderRadius: '50%' } }), 'not found')));
+  }
+  if (m.key === 'evidence_gap') {
+    const tables = det.result_tables || []; const ex = det.exhibits || [];
+    const outline = doc?.outline || []; const norm = t => (t || '').replace(/^§[\d.]+\s*/, '').toLowerCase();
+    const find = title => { const n = norm(title); const o = outline.find(o => norm(o.title) === n) || outline.find(o => n && (norm(o.title).includes(n) || n.includes(norm(o.title)))); return o ? o.idx : -1; };
+    const tCount = new Map(), eCount = new Map(); let tOther = 0, eOther = 0;
+    for (const t of tables) { const i = find(t.section_title); if (i < 0) tOther++; else tCount.set(i, (tCount.get(i) || 0) + 1); }
+    for (const e of ex) { const i = find(e.where); if (i < 0) eOther++; else eCount.set(i, (eCount.get(i) || 0) + 1); }
+    const none = (det.exhibit_count || 0) === 0;
+    return h('div', { class: 'viz' },
+      sectionArcs(doc, [], { id: 'ev', color: 'var(--artifacts)', unit: '', aria: 'Result tables and concrete exhibits by section', warnUnder: false,
+        under: i => tCount.get(i) ? `▤ ${tCount.get(i)} result table${tCount.get(i) > 1 ? 's' : ''}` : '',
+        under2: i => eCount.get(i) ? { text: `✓ ${eCount.get(i)} exhibit${eCount.get(i) > 1 ? 's' : ''}`, good: true } : (tCount.get(i) && none ? { text: '✕ no example', warn: true } : null),
+        section: i => `${tCount.get(i) || 0} result tables · ${eCount.get(i) || 0} concrete exhibits` }),
+      h('div', { class: 'legend' },
+        h('span', {}, `▤ result tables in the body (${tables.length})`),
+        h('span', { class: none ? 'warn-t' : '' }, none ? '✕ no concrete input, output, or case anywhere in the paper' : `✓ concrete exhibits: inputs, outputs, or cases (${det.exhibit_count})${eOther ? `, ${eOther} in the appendix or elsewhere` : ''}`)));
+  }
+  return null;
+}
+const opts_key = { current: null };
+async function openMeasureModal(k) {
+  const job = state.job; if (!job) return;
+  const m = measuresOf(job)[k]; const meta = MEASURES[k]; if (!m) return;
+  const doc = job.result?.document || job.document; const pdfOk = !!job.result?.pdf?.available && !job.local;
+  document.querySelectorAll('.modal-bg').forEach(n => n.remove());
+  const close = () => { bg.remove(); hideTip(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const done = m.status === 'done' && m.score != null;
+  const box = h('div', { class: 'modal card' },
+    h('div', { class: 'modal-head' },
+      h('div', {}, h('span', { class: `tag ${meta.plane}`, text: PLANES.find(p => p.key === meta.plane).label }), h('h3', { text: meta.name }),
+        h('p', { class: 'muted', style: { margin: '4px 0 0' }, text: done ? `${fmt(m.score)} / 100 · ${fmtNum(m.num)} of ${m.den} ${m.unit || ''}` : (m.status === 'na' ? 'Not applicable to this paper' : 'Could not run') })),
+      h('div', { class: 'modal-actions' },
+        h('button', { class: 'btn small', type: 'button', onclick: () => { close(); state.tab = 'findings'; state.open.add(k); state.sig = ''; render(state.job); setTimeout(() => document.getElementById('d-' + k)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); } }, 'Open in findings →'),
+        h('button', { class: 'hl-x', type: 'button', 'aria-label': 'Close', onclick: close }, '×'))),
+    h('div', { class: 'modal-detail' }, detail(m, pdfOk)));
+  const bg = h('div', { class: 'modal-bg', onclick: e => { if (e.target === bg) close(); } }, box);
+  document.addEventListener('keydown', onKey);
+  document.body.append(bg);
+  // "Show on paper" links inside the detail should close the modal first
+  box.querySelectorAll('.onpaper').forEach(b => b.addEventListener('click', close, { capture: true }));
+}
 
 function arcDiagram(det) {
   const n = det.sentences.length; const W = 760, H = 150, pad = 14, base = 74;
@@ -723,7 +913,7 @@ async function switchFigure(index, sel) {
   sel.disabled = true; toast('Reading the figure…');
   try {
     const key = state.job.key || state.job.id;
-    const r = await fetch(`/api/jobs/${encodeURIComponent(key)}/figure`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index }) });
+    const r = await fetch(`/api/jobs/${encodeURIComponent(key)}/figure`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index, api_key: store.get('ssi-key', '') || undefined }) });
     const d = await r.json();
     if (!r.ok) throw new Error(d.detail || 'Could not re-score the figure.');
     state.job.result = d; state.sig = ''; render(state.job); remember(d);
@@ -749,21 +939,37 @@ function footCard(res) {
 let howBuilt = false;
 function buildHow() {
   if (howBuilt) return; howBuilt = true;
-  const t = $('#spec');
-  t.append(h('thead', {}, h('tr', {}, ['', 'Item', 'Illustration', 'Unit of analysis', 'Score (share of units)', 'What 100 means', 'Pair acc.*'].map(c => h('th', { text: c })))));
-  const tb = h('tbody');
-  for (const p of PLANES) p.measures.forEach((k, i) => {
-    const m = MEASURES[k];
-    tb.append(h('tr', { class: `band-${p.key}` + (i === 0 ? ' plane-first' : '') },
-      h('td', {}, i === 0 ? h('span', { class: `tag ${p.key}`, text: p.label }) : ''),
-      h('td', { class: 'item', text: m.name }),
-      h('td', {}, h('img', { src: `/static/img/${k}.svg`, alt: `Illustration of ${m.name}` })),
-      h('td', { text: m.unit }),
-      h('td', {}, h('span', { class: `frac ${p.key}` }, h('span', { text: m.num }), h('span', { text: m.den }))),
-      h('td', { text: m.one }),
-      h('td', { class: 'num', text: m.pairacc.toFixed(3) })));
-  });
-  t.append(tb);
+  const host = $('#spec');
+  for (const p of PLANES) {
+    const group = h('div', { class: `mgroup band-${p.key}` },
+      h('div', { class: 'mgroup-head' }, h('span', { class: `tag ${p.key}`, text: p.label }), h('span', { class: 'mgroup-q', text: p.q })));
+    const row = h('div', { class: 'mgroup-row' });
+    for (const k of p.measures) {
+      const m = MEASURES[k]; const pa = m.pairacc;
+      row.append(h('div', { class: 'mcard' },
+        h('div', { class: `mc-pic band-${p.key}` }, h('img', { src: `/static/img/${k}.svg`, alt: `Illustration of ${m.name}` })),
+        h('div', { class: 'mc-head' }, h('h3', { text: m.name }), h('span', { class: 'method', text: m.method === 'LLM' ? 'Language model' : 'Counting rule', title: m.method === 'LLM' ? 'Asks a language model' : 'Exact counting rule' })),
+        h('p', { class: 'mc-what', text: m.what }),
+        h('div', { class: 'mc-score' },
+          h('span', { class: 'mc-eq', text: 'Score =' }),
+          h('span', { class: `frac ${p.key}` }, h('span', { text: m.num }), h('span', { text: m.den })),
+          h('span', { class: 'mc-unit' }, h('span', { class: 'mc-l', text: 'Unit' }), m.unit)),
+        h('div', { class: 'mc-scale' },
+          h('div', { class: 'mc-track' }, h('i', { style: { background: PLANE_VAR[p.key] } })),
+          h('div', { class: 'mc-ends' }, h('span', {}, h('b', { text: '0' }), ' none of the units'), h('span', {}, h('b', { text: '100' }), ' ' + m.one))),
+        h('div', { class: 'mc-pa', title: 'How often this measure alone ranks the human-written paper above its AI-generated counterpart (0.5 is chance)' },
+          h('span', { class: 'mc-l', text: 'Pair accuracy' }),
+          h('div', { class: 'mc-pa-bar' }, h('i', { style: { width: `${100 * pa}%`, background: PLANE_VAR[p.key] } }), h('span', { class: 'mc-chance', style: { left: '50%' } })),
+          h('span', { class: 'mc-pa-v', text: pa.toFixed(3) }))));
+    }
+    group.append(row); host.append(group);
+  }
+  const agg = $('#agg');
+  agg.append(...PLANES.map(p => h('div', { class: 'agg-col' },
+    h('div', { class: 'agg-ms' }, p.measures.map(k => h('span', { class: `agg-m band-${p.key}`, text: MEASURES[k].name }))),
+    h('div', { class: 'agg-arrow', text: 'mean' }),
+    h('div', { class: `agg-plane band-${p.key}` }, h('span', { class: `tag ${p.key}`, text: p.label }), h('span', { class: 'agg-pv', text: 'plane score' })))),
+    h('div', { class: 'agg-final' }, h('div', { class: 'agg-arrow', text: 'mean of the three planes × 100' }), h('div', { class: 'agg-idx' }, h('b', { text: 'Science Slop Index' }), h('span', { text: '0 – 100' }))));
   drawBench();
 }
 function drawBench() {
@@ -934,26 +1140,38 @@ function drawLbChart(rows, metric) {
 function renderLbTable(rows) {
   const cols = [
     { k: 'rank', l: '#' }, { k: 'title', l: 'Paper' }, { k: 'index', l: 'Index' },
-    ...PLANES.map(p => ({ k: 'plane:' + p.key, l: p.label })),
-    ...ORDER.map(k => ({ k: 'm:' + k, l: MEASURES[k].short })), { k: 'source', l: 'Source' },
+    ...PLANES.map(p => ({ k: 'plane:' + p.key, l: p.label, plane: p.key })),
+    ...ORDER.map(k => ({ k: 'm:' + k, l: MEASURES[k].short, plane: MEASURES[k].plane })), { k: 'source', l: 'Source' },
   ];
   const val = (x, k) => k === 'title' ? (x.title || '') : k === 'source' ? (x.source || '') : k === 'index' ? x.index : lbValue(x, k);
+  const raw = (x, k) => k.startsWith('plane:') ? x.planes?.[k.slice(6)] : k.startsWith('m:') ? x.measures?.[k.slice(2)] : null;   // 0–1 scores
   const ranked = rows.map((x, i) => ({ ...x, rank: i + 1 }));
   if (lb.sort !== 'value' && lb.sort !== 'rank') ranked.sort((a, b) => {
     const va = val(a, lb.sort), vb = val(b, lb.sort);
     if (va == null) return 1; if (vb == null) return -1;
     return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * lb.dir;
   });
+  // top three per numeric column are shaded (LiveBench-style)
+  const topOf = {};
+  for (const c of cols) if (c.plane) {
+    const vs = ranked.map(x => raw(x, c.k)).filter(v => v != null && v > 0).sort((a, b) => b - a);
+    topOf[c.k] = vs.length ? vs[Math.min(2, vs.length - 1)] : Infinity;
+  }
   const thead = h('thead', {}, h('tr', {}, cols.map(c => h('th', { class: lb.sort === c.k ? 'sorted' : '', title: 'Sort',
     onclick: () => { if (lb.sort === c.k) lb.dir *= -1; else { lb.sort = c.k; lb.dir = c.k === 'title' || c.k === 'source' ? 1 : -1; } renderLeaderboard(); } },
     c.l + (lb.sort === c.k ? (lb.dir > 0 ? ' ↑' : ' ↓') : '')))));
+  const cell = (x, c) => {
+    const v = raw(x, c.k);
+    return h('td', { class: (c.plane && v != null && v >= topOf[c.k] && v > 0) ? `hi hi-${c.plane}` : '', text: fmt(v) });
+  };
   const tbody = h('tbody', {}, ranked.map(x => h('tr', { onclick: () => go('/r/' + x.key), tabindex: 0, onkeydown: e => { if (e.key === 'Enter') go('/r/' + x.key); } },
-    h('td', { text: String(x.rank) }), h('td', { class: 'title', text: x.title, title: x.title }),
-    h('td', { class: 'idx', text: x.index == null ? '—' : x.index + (x.partial ? '*' : '') }),
-    ...PLANES.map(p => h('td', { text: fmt(x.planes?.[p.key]) })),
-    ...ORDER.map(k => h('td', { text: fmt(x.measures?.[k]) })),
-    h('td', { text: x.source || '' }))));
-  $('#lb-tablewrap').replaceChildren(h('table', { class: 'lb-table' }, thead, tbody));
+    h('td', { class: 'rank', text: String(x.rank) }), h('td', { class: 'title', text: x.title, title: x.title }),
+    h('td', { class: 'idx' }, h('span', { class: 'idx-v', text: x.index == null ? '—' : x.index + (x.partial ? '*' : '') }),
+      h('span', { class: 'idx-bar' }, h('i', { style: { width: `${x.index || 0}%`, background: x.index != null ? band(x.index).color : 'var(--line-2)' } }))),
+    ...cols.filter(c => c.plane).map(c => cell(x, c)),
+    h('td', { class: 'src', text: x.source || '' }))));
+  $('#lb-tablewrap').replaceChildren(h('table', { class: 'lb-table' }, thead, tbody),
+    h('p', { class: 'lb-foot', text: '// shading = top 3 per column · bar under Index = score out of 100 · click a row for its report · click a header to sort' + (ranked.some(x => x.partial) ? ' · * partial: some measures could not run' : '') }));
 }
 function lbPopover(kind, anchor) {
   const pop = $('#lb-pop');
@@ -1042,6 +1260,123 @@ function initLeaderboard() {
   new ResizeObserver(() => { const w = $('#lb-scroll').clientWidth; if (!$('#page-leaderboard').hidden && lb.data && !lb.table && Math.abs(w - last) > 8) { last = w; renderLeaderboard(); } }).observe($('#lb-scroll'));
 }
 
+// ------------------------------------------------------------------ home
+function shortTitle(t) {
+  t = (t || '').replace(/\s+/g, ' ').trim();
+  const cut = t.split(/[:：]/)[0];
+  const w = (cut.length >= 8 ? cut : t).split(' ');
+  return w.length > 4 ? w.slice(0, 4).join(' ') + '…' : w.join(' ');
+}
+function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts * 1000); return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); }
+function galleryCard(x, rankNo) {
+  const b = x.index != null ? band(x.index) : null;
+  const [pw, ph] = x.page0 || [612, 792];
+  const marks = (x.marks || []).map(k => {
+    const el = h('span', { class: `g-mark ${k.plane}${k.box ? ' box' : ''}`, 'data-plane': k.plane,
+      style: { left: `${100 * k.r[0] / pw}%`, top: `${100 * k.r[1] / ph}%`, width: `${100 * (k.r[2] - k.r[0]) / pw}%`, height: `${100 * (k.r[3] - k.r[1]) / ph}%` } });
+    bindTip(el, k.name || k.m, k.t || '');
+    return el;
+  });
+  const page = h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title }), ...marks);
+  const card = h('div', { class: 'g-card' },
+    h('button', { type: 'button', class: 'g-thumb', style: { borderBottomColor: b ? b.color : 'var(--line-2)' }, title: 'Preview: findings on the paper, map, and charts', onclick: () => openPreview(x.key) }, page,
+      marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null,
+      h('span', { class: 'g-zoom', 'aria-hidden': 'true', text: 'Preview' })),
+    h('a', { class: 'g-body', href: `/r/${x.key}?tab=paper`, 'data-link': '', title: x.title },
+      h('div', { class: 'g-rank' }, h('span', { text: rankNo ? `Science Slop Index #${rankNo}` : '—' }), h('span', { class: 'score', text: x.index != null ? `${x.index} / 100${x.partial ? '*' : ''}` : '—' })),
+      h('div', { class: 'g-title', text: x.title })),
+    h('div', { class: 'g-planes' }, PLANES.map(p => {
+      const v = x.planes?.[p.key];
+      const t = h('button', { type: 'button', class: `gp gp-${p.key}`, title: `${p.label}: ${p.q} Click to show only this plane on the page.`,
+        onclick: () => { const on = card.dataset.focus === p.key; card.dataset.focus = on ? '' : p.key; card.querySelectorAll('.gp').forEach(g => g.classList.toggle('on', !on && g === t)); } },
+        h('span', { class: 'gp-l', text: p.label }), h('b', { text: v == null ? '—' : fmt(v) }));
+      return t;
+    })));
+  return card;
+}
+
+// ------------------------------------------------------------------ preview (gallery)
+function measureBars(ms, onPick) {
+  const rows = ORDER.map(k => {
+    const m = ms[k]; const meta = MEASURES[k]; const done = m && m.status === 'done' && m.score != null;
+    const frac = done ? `${fmtNum(m.num)} / ${m.den} ${m.unit || ''}` : m?.status === 'na' ? 'not applicable' : m?.status === 'skipped' ? 'needs a language model' : '—';
+    const row = h('div', { class: 'mb-row' },
+      h('span', { class: 'mb-name' }, h('span', { class: `swatch sw-${meta.plane}` }), meta.name),
+      h('span', { class: 'mb-bar' }, h('i', { style: { width: `${done ? m.score * 100 : 0}%`, background: PLANE_VAR[meta.plane] } })),
+      h('span', { class: 'mb-val', text: done ? fmt(m.score) : '—' }),
+      h('span', { class: 'mb-frac', text: frac }));
+    bindTip(row, meta.name, (m?.what || '') + (done ? ` ${frac}.` : '') + (onPick ? ' Click to see its graph.' : ''));
+    if (onPick) { row.classList.add('pick'); row.tabIndex = 0; row.dataset.k = k; row.addEventListener('click', () => onPick(k, row)); row.addEventListener('keydown', e => { if (e.key === 'Enter') onPick(k, row); }); }
+    return row;
+  });
+  return h('div', { class: 'mbars' }, rows);
+}
+async function openPreview(key) {
+  document.querySelectorAll('.modal-bg').forEach(n => n.remove());
+  const box = h('div', { class: 'modal card' }, h('p', { class: 'muted', text: 'Loading…' }));
+  const bg = h('div', { class: 'modal-bg', onclick: e => { if (e.target === bg) close(); } }, box);
+  const close = () => { bg.remove(); hideTip(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  document.body.append(bg);
+  let job;
+  try { const r = await fetch('/api/jobs/' + encodeURIComponent(key)); job = await r.json(); if (!r.ok || !job.result) throw new Error(); }
+  catch (_) { box.replaceChildren(h('p', { class: 'muted', text: 'Could not load this report.' })); return; }
+  const res = job.result; const doc = res.document || {}; const ms = measuresOf(job);
+  const openReportAt = tab => { close(); go(`/r/${key}?tab=${tab}`); };
+  const pdf = res.pdf || {}; const [pw, ph] = (pdf.sizes || [])[0] || [612, 792];
+  const marks = [];
+  for (const m of res.measures) (m.instances || []).forEach((it, i) => (it.pdf || []).forEach(loc => { if (loc.p !== 0) return; for (const r of loc.r) marks.push({ m, it, i, r, box: !!loc.box }); }));
+  const page = h('div', { class: 'pv-page prev-page' }, pdf.available ? h('img', { src: `/api/jobs/${encodeURIComponent(key)}/pages/0.jpg`, alt: 'Page 1', width: 1100, height: Math.round(1100 * ph / pw) }) : h('div', { class: 'pv-empty', text: 'No PDF available.' }));
+  for (const hl of marks) {
+    const [x0, y0, x1, y1] = hl.r;
+    const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, tabindex: 0, style: { left: `${100 * x0 / pw}%`, top: `${100 * y0 / ph}%`, width: `${100 * (x1 - x0) / pw}%`, height: `${100 * (y1 - y0) / ph}%` } });
+    bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 160));
+    d.addEventListener('click', e => { e.stopPropagation(); hideTip(); hlCard(page, hl, { x0, y0, x1, y1 }, pw, ph, () => openReportAt('findings')); });
+    page.append(d);
+  }
+  opts_key.current = key;
+  const stage = h('div', { class: 'viz-stage' }); const stageTitle = h('h3', { text: 'Graph' }); const stageSub = h('p', { text: '' });
+  const bars = measureBars(ms, (k, row) => {
+    bars.querySelectorAll('.mb-row').forEach(r => r.classList.toggle('on', r === row));
+    const v = measureViz(ms[k], doc); stageTitle.textContent = MEASURES[k].name;
+    stageSub.textContent = v ? MEASURES[k].unit : (ms[k]?.status === 'done' ? 'No graph for this measure on this paper.' : 'This measure did not run.');
+    stage.replaceChildren(v || h('div', { class: 'muted', text: ms[k]?.status === 'done' ? 'Nothing to draw.' : ((ms[k]?.notes || [])[0] || 'Not measured.') }));
+  });
+  box.replaceChildren(
+    h('div', { class: 'modal-head' },
+      h('div', {}, h('p', { class: 'eyebrow', text: 'Preview' }), h('h3', { text: doc.title || job.title || 'Paper' })),
+      h('div', { class: 'modal-actions' },
+        h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('paper') }, 'All pages'),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('findings') }, 'Full report →'),
+        h('button', { class: 'hl-x', type: 'button', 'aria-label': 'Close', onclick: close }, '×'))),
+    scoreCard(res.index, ms, false),
+    h('div', { class: 'prev-grid' },
+      h('div', { class: 'prev-left' },
+        h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? 'Hover a highlight to read why; click it for details.' : 'Nothing flagged on the first page.' })),
+        page),
+      h('div', { class: 'prev-right' },
+        h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
+        h('div', { class: 'card map-card', id: 'prev-map' }),
+        h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
+        bars,
+        h('div', { class: 'section-title' }, stageTitle, stageSub),
+        stage)));
+  const first = ORDER.find(k => measureViz(ms[k], doc));
+  if (first) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
+  drawMap(box.querySelector('#prev-map'), doc, ms, () => openReportAt('findings'));
+  requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
+}
+
+async function loadHome() {
+  if (!state.gallery) {
+    try { const r = await fetch('/api/gallery'); state.gallery = await r.json(); }
+    catch (_) { return; }
+  }
+  const ranked = [...state.gallery.items].filter(x => x.index != null).sort((a, b) => b.index - a.index);
+  $('#home-list').replaceChildren(...ranked.slice(0, 4).map((x, i) => galleryCard(x, i + 1)));
+}
+
 // ------------------------------------------------------------------ gallery
 async function loadGallery() {
   const grid = $('#g-grid');
@@ -1059,16 +1394,7 @@ function renderGallery() {
   items.sort(sort === 'low' ? (a, b) => (a.index ?? 999) - (b.index ?? 999) : sort === 'new' ? (a, b) => (b.created || 0) - (a.created || 0) : (a, b) => (b.index ?? -1) - (a.index ?? -1));
   const grid = $('#g-grid');
   if (!items.length) grid.replaceChildren(h('div', { class: 'g-empty' }, data.items.length ? 'No paper matches your search.' : 'No paper has been analyzed yet. ', data.items.length ? null : h('a', { href: '/', 'data-link': '' }, 'Analyze one')));
-  else grid.replaceChildren(...items.map(x => {
-    const b = x.index != null ? band(x.index) : null;
-    return h('a', { class: 'g-card', href: `/r/${x.key}`, 'data-link': '' },
-      h('div', { class: 'g-thumb', style: { borderBottomColor: b ? b.color : 'var(--line-2)' } },
-        x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title })),
-      h('div', { class: 'g-body' },
-        h('div', { class: 'g-rank' }, h('span', { text: rank.has(x.key) ? `Science Slop Index #${rank.get(x.key)}` : '—' }), h('span', { class: 'score', text: x.index != null ? `${x.index} / 100${x.partial ? '*' : ''}` : '—' })),
-        h('div', { class: 'g-title', text: x.title }),
-        h('div', { class: 'g-planes' }, PLANES.map(p => h('i', { title: `${p.label} ${fmt(x.planes?.[p.key])}` }, h('b', { style: { width: `${100 * (x.planes?.[p.key] || 0)}%`, background: PLANE_VAR[p.key] } }))))));
-  }));
+  else grid.replaceChildren(...items.map(x => galleryCard(x, rank.get(x.key))));
   $('#g-note').textContent = (data.items.some(x => x.partial) ? '* Partial: some measures could not run. ' : '')
     + (data.persistent ? '' : 'Reports added on this server are kept until it restarts; papers bundled with the site always stay.');
 }
@@ -1083,13 +1409,13 @@ function renderRecent() {
 
 // ------------------------------------------------------------------ boot
 async function boot() {
-  initTheme(); initInputs(); initLeaderboard();
+  initTheme(); initInputs(); initKey(); initLeaderboard();
   $('#g-q').addEventListener('input', renderGallery);
   $('#g-sort').addEventListener('change', renderGallery);
   try {
     const r = await fetch('/api/config'); state.config = await r.json();
     if (state.config.examples?.length) { $('#example').hidden = false; $('#example').title = state.config.examples[0].title; }
-    if (!state.config.llm_available) { const n = $('#llm-notice'); n.hidden = false; n.textContent = 'Argument graph and Figure exposition need a language model. Set LITELLM_PROXY_API_KEY (or OPENROUTER_API_KEY) on the server to enable them.'; }
+    if (state.config.llm_available) { $('.key-note').textContent = 'This server already has a language model configured; your key is optional and, if given, is used instead.'; }
   } catch (_) { /* the page works without config */ }
   route();
 }

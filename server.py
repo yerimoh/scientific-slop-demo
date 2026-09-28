@@ -194,7 +194,7 @@ def _remember_doc(key: str, doc):
 
 # ----------------------------------------------------------------------------- analysis
 
-async def _run(job: dict, kind: Optional[str], path: Optional[str], url: Optional[str], meta: dict):
+async def _run(job: dict, kind: Optional[str], path: Optional[str], url: Optional[str], meta: dict, api_key: Optional[str] = None):
     key = job["id"]
     workdir = _job_dir(key)
 
@@ -221,7 +221,7 @@ async def _run(job: dict, kind: Optional[str], path: Optional[str], url: Optiona
                 doc.title = await asyncio.to_thread(_pdf_title, view_pdf)
             job["document"] = document_summary(doc, meta)
             job["stage"] = "Measuring"
-            llm = LLM()
+            llm = LLM(api_key=api_key or None)   # the visitor's own key; never stored with the report
 
             async def emit(ev: str, payload: dict):
                 if ev == "measure":
@@ -283,8 +283,10 @@ def _new_job(label: str, gallery: bool) -> dict:
 
 @app.post("/api/analyze")
 async def analyze(request: Request, file: Optional[UploadFile] = File(None), url: Optional[str] = Form(None),
-                  example: Optional[str] = Form(None), gallery: Optional[str] = Form(None)):
+                  example: Optional[str] = Form(None), gallery: Optional[str] = Form(None),
+                  api_key: Optional[str] = Form(None)):
     meta: dict = {}
+    api_key = (api_key or "").strip()[:200] or None
     if not example:
         _rate_limit(request)
     if example:
@@ -293,7 +295,7 @@ async def analyze(request: Request, file: Optional[UploadFile] = File(None), url
             raise HTTPException(404, "Example not available on this server.")
         job = _new_job(ex["title"], gallery=False)
         meta.update({"route": ex["venue"], "fallback_title": ex["title"]})
-        asyncio.create_task(_run(job, "latex", ex["path"], None, meta))
+        asyncio.create_task(_run(job, "latex", ex["path"], None, meta, api_key))
         return {"id": job["id"], "key": job["id"]}
     if file is not None and file.filename:
         data = await file.read()
@@ -314,11 +316,11 @@ async def analyze(request: Request, file: Optional[UploadFile] = File(None), url
                      "fallback_title": os.path.splitext(file.filename)[0]})
         if kind == "pdf":
             meta["view_pdf"] = path
-        asyncio.create_task(_run(job, kind, path, None, meta))
+        asyncio.create_task(_run(job, kind, path, None, meta, api_key))
         return {"id": job["id"], "key": job["id"]}
     if url and url.strip():
         job = _new_job(url.strip(), gallery=True)       # public links are listed in the gallery
-        asyncio.create_task(_run(job, None, None, url.strip(), meta))
+        asyncio.create_task(_run(job, None, None, url.strip(), meta, api_key))
         return {"id": job["id"], "key": job["id"]}
     raise HTTPException(400, "Give a link or a file.")
 
@@ -346,7 +348,8 @@ async def job_figure(key: str, body: dict):
     if doc is None:
         raise HTTPException(409, "This report was restored from storage; analyze the paper again to switch figures.")
     idx = int(body.get("index", -1))
-    result = await rerun_figure(doc, job["result"], LLM(), os.path.join(_job_dir(key), "files"), idx)
+    api_key = (str(body.get("api_key") or "")).strip()[:200] or None
+    result = await rerun_figure(doc, job["result"], LLM(api_key=api_key), os.path.join(_job_dir(key), "files"), idx)
     job["result"] = result
     _save(job)
     return JSONResponse(result)
@@ -478,6 +481,23 @@ def _source_label(doc: dict) -> str:
     return "Upload" if "upload" in route else "Example"
 
 
+def _first_page_marks(res: dict, limit: int = 40) -> list:
+    """Finding locations on the first page, drawn over the thumbnail in the gallery."""
+    out = []
+    for m in res.get("measures", []):
+        for it in m.get("instances") or []:
+            for loc in it.get("pdf") or []:
+                if loc.get("p") != 0:
+                    continue
+                why = it.get("why") or (f"{round(100 * it['coverage'])}% copied from {it.get('source_title', 'an earlier section')}" if it.get("coverage") is not None else "") or it.get("text") or it.get("caption") or ""
+                for r in loc.get("r") or []:
+                    out.append({"m": m["key"], "plane": m.get("plane"), "r": [round(v, 1) for v in r], "box": bool(loc.get("box")),
+                                "name": m.get("name"), "t": why[:180] + ("…" if len(why) > 180 else "")})
+                    if len(out) >= limit:
+                        return out
+    return out
+
+
 @app.get("/api/gallery")
 async def gallery():
     items = []
@@ -496,6 +516,8 @@ async def gallery():
             "source": _source_label(doc), "source_kind": doc.get("source"),
             "measures": {m["key"]: (m.get("score") if m.get("status") == "done" else None)
                          for m in res.get("measures", [])},
+            "page0": ((res.get("pdf") or {}).get("sizes") or [None])[0],
+            "marks": _first_page_marks(res),
         })
     # one card per paper: the newest analysis wins (same arXiv id, link, or title)
     def ident(x):
@@ -513,7 +535,9 @@ async def gallery():
 @app.get("/api/config")
 async def config():
     llm = LLM()
-    return {"llm": llm.describe(), "llm_available": llm.available, "max_upload_mb": MAX_UPLOAD // (1024 * 1024),
+    return {"llm": llm.describe(), "llm_available": llm.available, "byok": True,
+            "key_provider": "OpenRouter" if llm.provider == "openrouter" else llm.describe().get("provider", "the LLM gateway"),
+            "max_upload_mb": MAX_UPLOAD // (1024 * 1024),
             "persistent": PERSISTENT,
             "examples": [{"id": k, "title": v["title"], "venue": v["venue"]} for k, v in EXAMPLES.items()
                          if os.path.isdir(v["path"])]}
