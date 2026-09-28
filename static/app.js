@@ -275,12 +275,12 @@ function render(job) {
     frag.push(h('div', { class: 'paper-head' },
       h('p', { class: 'eyebrow', text: doc.route || (doc.source === 'latex' ? 'LaTeX source' : 'PDF') }),
       h('h2', { text: doc.title }),
-      h('p', { class: 'meta' },
-        h('span', { class: 'chip', title: doc.fidelity }, doc.source === 'latex' ? 'Read from LaTeX source' : 'Rebuilt from PDF'),
-        st.body_sections != null ? h('span', { text: `${st.body_sections} sections` }) : null,
-        st.body_words != null ? h('span', { text: `${Number(st.body_words).toLocaleString()} words` }) : null,
-        st.objects != null ? h('span', { text: `${st.objects} referable objects` }) : null,
-        doc.url ? h('a', { href: doc.url, target: '_blank', rel: 'noopener', text: 'Open paper ↗' }) : null)));
+      h('div', { class: 'meta-grid' },
+        h('div', {}, h('span', { class: 'ml', text: 'Read from' }), h('span', { class: 'mv', title: doc.fidelity, text: doc.source === 'latex' ? 'LaTeX source' : 'PDF' })),
+        st.body_sections != null ? h('div', {}, h('span', { class: 'ml', text: 'Sections' }), h('span', { class: 'mv', text: String(st.body_sections) })) : null,
+        st.body_words != null ? h('div', {}, h('span', { class: 'ml', text: 'Words' }), h('span', { class: 'mv', text: Number(st.body_words).toLocaleString() })) : null,
+        st.objects != null ? h('div', {}, h('span', { class: 'ml', text: 'Referable objects' }), h('span', { class: 'mv', text: String(st.objects) })) : null,
+        doc.url ? h('div', {}, h('span', { class: 'ml', text: 'Paper' }), h('a', { class: 'mv', href: doc.url, target: '_blank', rel: 'noopener', text: 'Open ↗' })) : null)));
   } else {
     frag.push(h('div', { class: 'paper-head' }, h('p', { class: 'eyebrow', text: 'Analyzing' }), h('h2', { text: trunc(job.label || 'Your paper', 120) })));
   }
@@ -451,14 +451,16 @@ function paperView(job) {
       }
     });
   }
-  const side = h('div', { class: 'pv-side' }, h('h4', { text: 'Show on the paper' }),
+  const side = h('div', { class: 'pv-side' }, h('h4', { text: 'On the paper' }),
     ORDER.map(k => {
-      const meta = MEASURES[k]; const c = counts[k] || { found: 0, total: 0 };
-      const cb = h('input', { type: 'checkbox', checked: !state.hidden.has(k) ? true : null,
-        onchange: () => { state.hidden.has(k) ? state.hidden.delete(k) : state.hidden.add(k); state.sig = ''; render(state.job); } });
-      return h('label', { class: 'pv-toggle' }, cb, h('span', { class: 'sw', style: { background: PLANE_VAR[meta.plane] } }), meta.name, h('span', { class: 'cnt', text: `${c.found}/${c.total}` }));
+      const meta = MEASURES[k]; const c = counts[k] || { found: 0, total: 0 }; const on = !state.hidden.has(k);
+      const toggle = () => { state.hidden.has(k) ? state.hidden.delete(k) : state.hidden.add(k); state.sig = ''; render(state.job); };
+      return h('button', { type: 'button', class: `pv-toggle ${meta.plane}` + (on ? ' on' : ''), 'aria-pressed': String(on), onclick: toggle },
+        h('span', { class: 'pv-n', text: String(c.found) }),
+        h('span', { class: 'pv-l' }, h('span', { class: 'pv-name', text: meta.name }), h('span', { class: 'pv-sub', text: c.total ? `${c.found} of ${c.total} placed` : 'nothing flagged' })),
+        h('span', { class: 'pv-eye', 'aria-hidden': 'true' }, on ? '●' : '○'));
     }),
-    h('a', { class: 'btn ghost small', href: `/api/jobs/${encodeURIComponent(key)}/pdf`, download: '', style: { textAlign: 'center', textDecoration: 'none', marginTop: '6px' } }, 'Download highlighted PDF'));
+    h('a', { class: 'btn ghost small', href: `/api/jobs/${encodeURIComponent(key)}/pdf`, download: '', style: { textAlign: 'center', textDecoration: 'none', marginTop: '8px' } }, 'Download highlighted PDF'));
   const pages = h('div', { class: 'pv-pages' });
   (pdf.sizes || []).forEach(([w, hgt], n) => {
     const page = h('div', { class: 'pv-page', style: { aspectRatio: `${w} / ${hgt}` } },
@@ -470,15 +472,34 @@ function paperView(job) {
       const [x0, y0, x1, y1] = hl.r;
       const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, 'data-hl': `${hl.m.key}-${hl.i}`, tabindex: 0,
         style: { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` } });
-      bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 240));
-      const open = () => { hideTip(); state.tab = 'findings'; state.open.add(hl.m.key); if (hl.i >= 8) state.showAll.add(hl.m.key); if (hl.m.key === 'cross_refs') state.showAll.add('cross_refs:list'); state.flash = `f-${hl.m.key}-${hl.i}`; state.sig = ''; render(state.job); };
+      bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 160));
+      const openFindings = () => { hideTip(); state.tab = 'findings'; state.open.add(hl.m.key); if (hl.i >= 8) state.showAll.add(hl.m.key); if (hl.m.key === 'cross_refs') state.showAll.add('cross_refs:list'); state.flash = `f-${hl.m.key}-${hl.i}`; state.sig = ''; render(state.job); };
+      const open = e => { if (e && e.stopPropagation) e.stopPropagation(); hideTip(); hlCard(page, hl, { x0, y0, x1, y1 }, w, hgt, openFindings); };
       d.addEventListener('click', open);
-      d.addEventListener('keydown', e => { if (e.key === 'Enter') open(); });
+      d.addEventListener('keydown', e => { if (e.key === 'Enter') open(e); });
       page.append(d);
     }
     pages.append(page);
   });
   return h('div', { class: 'pv-layout' }, side, pages);
+}
+function hlCard(page, hl, r, w, hgt, openFindings) {
+  document.querySelectorAll('.hl-card').forEach(n => n.remove());
+  const it = hl.it; const m = hl.m;
+  const where = [it.section_title, it.label && it.kind ? `${it.label} (${it.kind})` : null].filter(Boolean).join(' · ');
+  const body = it.why || (it.coverage != null ? `${Math.round(it.coverage * 100)}% copied from ${it.source_title}` : '') || it.text || it.caption || '';
+  const card = h('div', { class: 'hl-card', role: 'dialog', onclick: e => e.stopPropagation() },
+    h('div', { class: 'hl-head' }, h('span', { class: `tag ${m.plane}`, text: (PLANES.find(p => p.key === m.plane) || {}).label || m.plane }), h('b', { text: m.name }),
+      h('button', { class: 'hl-x', type: 'button', 'aria-label': 'Close', onclick: () => card.remove() }, '×')),
+    where ? h('div', { class: 'hl-where', text: where }) : null,
+    it.text && it.why ? h('div', { class: 'hl-quote', text: '“' + trunc(it.text, 220) + '”' }) : null,
+    h('div', { class: 'hl-body', text: trunc(body, 320) }),
+    h('div', { class: 'hl-actions' }, h('button', { class: 'link-btn', type: 'button', onclick: openFindings }, 'Open in findings →')));
+  const below = r.y1 / hgt < 0.72;
+  card.style.left = `${Math.min(100 * r.x0 / w, 58)}%`;
+  if (below) card.style.top = `calc(${100 * r.y1 / hgt}% + 6px)`; else card.style.bottom = `calc(${100 * (1 - r.y0 / hgt)}% + 6px)`;
+  page.append(card);
+  setTimeout(() => document.addEventListener('click', () => card.remove(), { once: true }), 0);
 }
 function showOnPaper(key, i) { state.tab = 'paper'; state.flashHl = `${key}-${i}`; state.hidden.delete(key); state.sig = ''; render(state.job); }
 
@@ -934,26 +955,38 @@ function drawLbChart(rows, metric) {
 function renderLbTable(rows) {
   const cols = [
     { k: 'rank', l: '#' }, { k: 'title', l: 'Paper' }, { k: 'index', l: 'Index' },
-    ...PLANES.map(p => ({ k: 'plane:' + p.key, l: p.label })),
-    ...ORDER.map(k => ({ k: 'm:' + k, l: MEASURES[k].short })), { k: 'source', l: 'Source' },
+    ...PLANES.map(p => ({ k: 'plane:' + p.key, l: p.label, plane: p.key })),
+    ...ORDER.map(k => ({ k: 'm:' + k, l: MEASURES[k].short, plane: MEASURES[k].plane })), { k: 'source', l: 'Source' },
   ];
   const val = (x, k) => k === 'title' ? (x.title || '') : k === 'source' ? (x.source || '') : k === 'index' ? x.index : lbValue(x, k);
+  const raw = (x, k) => k.startsWith('plane:') ? x.planes?.[k.slice(6)] : k.startsWith('m:') ? x.measures?.[k.slice(2)] : null;   // 0–1 scores
   const ranked = rows.map((x, i) => ({ ...x, rank: i + 1 }));
   if (lb.sort !== 'value' && lb.sort !== 'rank') ranked.sort((a, b) => {
     const va = val(a, lb.sort), vb = val(b, lb.sort);
     if (va == null) return 1; if (vb == null) return -1;
     return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * lb.dir;
   });
+  // top three per numeric column are shaded (LiveBench-style)
+  const topOf = {};
+  for (const c of cols) if (c.plane) {
+    const vs = ranked.map(x => raw(x, c.k)).filter(v => v != null && v > 0).sort((a, b) => b - a);
+    topOf[c.k] = vs.length ? vs[Math.min(2, vs.length - 1)] : Infinity;
+  }
   const thead = h('thead', {}, h('tr', {}, cols.map(c => h('th', { class: lb.sort === c.k ? 'sorted' : '', title: 'Sort',
     onclick: () => { if (lb.sort === c.k) lb.dir *= -1; else { lb.sort = c.k; lb.dir = c.k === 'title' || c.k === 'source' ? 1 : -1; } renderLeaderboard(); } },
     c.l + (lb.sort === c.k ? (lb.dir > 0 ? ' ↑' : ' ↓') : '')))));
+  const cell = (x, c) => {
+    const v = raw(x, c.k);
+    return h('td', { class: (c.plane && v != null && v >= topOf[c.k] && v > 0) ? `hi hi-${c.plane}` : '', text: fmt(v) });
+  };
   const tbody = h('tbody', {}, ranked.map(x => h('tr', { onclick: () => go('/r/' + x.key), tabindex: 0, onkeydown: e => { if (e.key === 'Enter') go('/r/' + x.key); } },
-    h('td', { text: String(x.rank) }), h('td', { class: 'title', text: x.title, title: x.title }),
-    h('td', { class: 'idx', text: x.index == null ? '—' : x.index + (x.partial ? '*' : '') }),
-    ...PLANES.map(p => h('td', { text: fmt(x.planes?.[p.key]) })),
-    ...ORDER.map(k => h('td', { text: fmt(x.measures?.[k]) })),
-    h('td', { text: x.source || '' }))));
-  $('#lb-tablewrap').replaceChildren(h('table', { class: 'lb-table' }, thead, tbody));
+    h('td', { class: 'rank', text: String(x.rank) }), h('td', { class: 'title', text: x.title, title: x.title }),
+    h('td', { class: 'idx' }, h('span', { class: 'idx-v', text: x.index == null ? '—' : x.index + (x.partial ? '*' : '') }),
+      h('span', { class: 'idx-bar' }, h('i', { style: { width: `${x.index || 0}%`, background: x.index != null ? band(x.index).color : 'var(--line-2)' } }))),
+    ...cols.filter(c => c.plane).map(c => cell(x, c)),
+    h('td', { class: 'src', text: x.source || '' }))));
+  $('#lb-tablewrap').replaceChildren(h('table', { class: 'lb-table' }, thead, tbody),
+    h('p', { class: 'lb-foot', text: '// shading = top 3 per column · bar under Index = score out of 100 · click a row for its report · click a header to sort' + (ranked.some(x => x.partial) ? ' · * partial: some measures could not run' : '') }));
 }
 function lbPopover(kind, anchor) {
   const pop = $('#lb-pop');
@@ -1091,16 +1124,7 @@ function renderGallery() {
   items.sort(sort === 'low' ? (a, b) => (a.index ?? 999) - (b.index ?? 999) : sort === 'new' ? (a, b) => (b.created || 0) - (a.created || 0) : (a, b) => (b.index ?? -1) - (a.index ?? -1));
   const grid = $('#g-grid');
   if (!items.length) grid.replaceChildren(h('div', { class: 'g-empty' }, data.items.length ? 'No paper matches your search.' : 'No paper has been analyzed yet. ', data.items.length ? null : h('a', { href: '/', 'data-link': '' }, 'Analyze one')));
-  else grid.replaceChildren(...items.map(x => {
-    const b = x.index != null ? band(x.index) : null;
-    return h('a', { class: 'g-card', href: `/r/${x.key}`, 'data-link': '' },
-      h('div', { class: 'g-thumb', style: { borderBottomColor: b ? b.color : 'var(--line-2)' } },
-        x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title })),
-      h('div', { class: 'g-body' },
-        h('div', { class: 'g-rank' }, h('span', { text: rank.has(x.key) ? `Science Slop Index #${rank.get(x.key)}` : '—' }), h('span', { class: 'score', text: x.index != null ? `${x.index} / 100${x.partial ? '*' : ''}` : '—' })),
-        h('div', { class: 'g-title', text: x.title }),
-        h('div', { class: 'g-planes' }, PLANES.map(p => h('i', { title: `${p.label} ${fmt(x.planes?.[p.key])}` }, h('b', { style: { width: `${100 * (x.planes?.[p.key] || 0)}%`, background: PLANE_VAR[p.key] } }))))));
-  }));
+  else grid.replaceChildren(...items.map(x => hcard(x, rank.get(x.key))));
   $('#g-note').textContent = (data.items.some(x => x.partial) ? '* Partial: some measures could not run. ' : '')
     + (data.persistent ? '' : 'Reports added on this server are kept until it restarts; papers bundled with the site always stay.');
 }
