@@ -36,12 +36,12 @@ const PLANES = [
   { key: 'artifacts', label: 'Artifacts', q: 'Can a reader inspect the method and the evidence?', measures: ['figure_exposition', 'evidence_gap'] },
 ];
 const MEASURES = {
-  cross_refs: { name: 'Cross-section references', short: 'Cross-refs', plane: 'structure', method: 'Rule', unit: 'Body sections and labeled objects', num: 'objects never referenced outside their own section', den: 'all objects', one: 'No object is ever referred to from another section.', pairacc: 0.905 },
-  macro_redundancy: { name: 'Macro redundancy', short: 'Redundancy', plane: 'structure', method: 'Rule', unit: 'Sentences with at least eight tokens', num: 'sentences half or more copied as 8-grams from an earlier section', den: 'all sentences', one: 'Every sentence mostly repeats earlier sections.', pairacc: 0.723 },
-  argument_graph: { name: 'Argument graph', short: 'Claims', plane: 'argument', method: 'LLM', unit: 'Key claims in the Introduction', num: 'shallow claims: nothing earlier leads up to them', den: 'all key claims', one: 'The argument is flat. Every claim stands alone with no build-up behind it.', pairacc: 0.586 },
-  citation_isolation: { name: 'Citation isolation', short: 'Citations', plane: 'argument', method: 'Rule', unit: 'Citation sentences (Intro., Related Work)', num: 'citations not grouped, compared, or related to other works', den: 'all citations', one: 'Every citation stands alone.', pairacc: 0.793 },
-  figure_exposition: { name: 'Figure exposition', short: 'Figure', plane: 'artifacts', method: 'LLM', unit: 'Content types in method figures', num: 'content types not needed to show the method', den: 'all content types in the figure', one: 'Nothing in the figure shows the method itself.', pairacc: 0.809 },
-  evidence_gap: { name: 'Evidence gap', short: 'Evidence', plane: 'artifacts', method: 'Rule', unit: 'Papers with a body result table', num: 'papers showing no concrete input, output, or case', den: 'all papers', one: 'The paper gives no concrete example at all.', pairacc: 0.764 },
+  cross_refs: { name: 'Cross-section references', short: 'Cross-refs', plane: 'structure', method: 'Rule', unit: 'Body sections and labeled objects', num: 'objects never referenced outside their own section', den: 'all objects', one: 'No object is ever referred to from another section.', pairacc: 0.905, what: 'Sections and labeled objects that no other section ever refers to.' },
+  macro_redundancy: { name: 'Macro redundancy', short: 'Redundancy', plane: 'structure', method: 'Rule', unit: 'Sentences with at least eight tokens', num: 'sentences half or more copied as 8-grams from an earlier section', den: 'all sentences', one: 'Every sentence mostly repeats earlier sections.', pairacc: 0.723, what: 'Later sections that repeat earlier material instead of developing the argument.' },
+  argument_graph: { name: 'Argument graph', short: 'Claims', plane: 'argument', method: 'LLM', unit: 'Key claims in the Introduction', num: 'shallow claims: nothing earlier leads up to them', den: 'all key claims', one: 'The argument is flat. Every claim stands alone with no build-up behind it.', pairacc: 0.586, what: 'Key claims in the Introduction stated before the context that supports them.' },
+  citation_isolation: { name: 'Citation isolation', short: 'Citations', plane: 'argument', method: 'Rule', unit: 'Citation sentences (Intro., Related Work)', num: 'citations not grouped, compared, or related to other works', den: 'all citations', one: 'Every citation stands alone.', pairacc: 0.793, what: 'Prior work cited without relating it to any other work.' },
+  figure_exposition: { name: 'Figure exposition', short: 'Figure', plane: 'artifacts', method: 'LLM', unit: 'Content types in method figures', num: 'content types not needed to show the method', den: 'all content types in the figure', one: 'Nothing in the figure shows the method itself.', pairacc: 0.809, what: 'Method diagrams crowded with material that belongs in the text.' },
+  evidence_gap: { name: 'Evidence gap', short: 'Evidence', plane: 'artifacts', method: 'Rule', unit: 'Papers with a body result table', num: 'papers showing no concrete input, output, or case', den: 'all papers', one: 'The paper gives no concrete example at all.', pairacc: 0.764, what: 'Aggregate results reported without a single concrete input, output, or case.' },
 };
 const ORDER = PLANES.flatMap(p => p.measures);
 const PLANE_VAR = { structure: 'var(--structure)', argument: 'var(--argument)', artifacts: 'var(--artifacts)' };
@@ -935,14 +935,22 @@ function buildHow() {
       h('div', { class: 'mgroup-head' }, h('span', { class: `tag ${p.key}`, text: p.label }), h('span', { class: 'mgroup-q', text: p.q })));
     const row = h('div', { class: 'mgroup-row' });
     for (const k of p.measures) {
-      const m = MEASURES[k];
+      const m = MEASURES[k]; const pa = m.pairacc;
       row.append(h('div', { class: 'mcard' },
-        h('img', { src: `/static/img/${k}.svg`, alt: `Illustration of ${m.name}` }),
-        h('h3', { text: m.name }),
-        h('div', { class: 'mc-unit' }, h('span', { class: 'mc-l', text: 'Counts' }), m.unit),
-        h('div', { class: `frac ${p.key}` }, h('span', { text: m.num }), h('span', { text: m.den })),
-        h('div', { class: 'mc-100' }, h('span', { class: 'mc-l', text: '100 means' }), m.one),
-        h('div', { class: 'mc-foot' }, h('span', { class: 'chip', text: `${m.method === 'LLM' ? 'Language model' : 'Counting rule'}` }), h('span', { class: 'chip', text: `Pair acc. ${m.pairacc.toFixed(3)}` }))));
+        h('div', { class: `mc-pic band-${p.key}` }, h('img', { src: `/static/img/${k}.svg`, alt: `Illustration of ${m.name}` })),
+        h('div', { class: 'mc-head' }, h('h3', { text: m.name }), h('span', { class: 'method', text: m.method === 'LLM' ? 'Language model' : 'Counting rule', title: m.method === 'LLM' ? 'Asks a language model' : 'Exact counting rule' })),
+        h('p', { class: 'mc-what', text: m.what }),
+        h('div', { class: 'mc-score' },
+          h('span', { class: 'mc-eq', text: 'Score =' }),
+          h('span', { class: `frac ${p.key}` }, h('span', { text: m.num }), h('span', { text: m.den })),
+          h('span', { class: 'mc-unit' }, h('span', { class: 'mc-l', text: 'Unit' }), m.unit)),
+        h('div', { class: 'mc-scale' },
+          h('div', { class: 'mc-track' }, h('i', { style: { background: PLANE_VAR[p.key] } })),
+          h('div', { class: 'mc-ends' }, h('span', {}, h('b', { text: '0' }), ' none of the units'), h('span', {}, h('b', { text: '100' }), ' ' + m.one))),
+        h('div', { class: 'mc-pa', title: 'How often this measure alone ranks the human-written paper above its AI-generated counterpart (0.5 is chance)' },
+          h('span', { class: 'mc-l', text: 'Pair accuracy' }),
+          h('div', { class: 'mc-pa-bar' }, h('i', { style: { width: `${100 * pa}%`, background: PLANE_VAR[p.key] } }), h('span', { class: 'mc-chance', style: { left: '50%' } })),
+          h('span', { class: 'mc-pa-v', text: pa.toFixed(3) }))));
     }
     group.append(row); host.append(group);
   }
