@@ -159,12 +159,22 @@ addEventListener('popstate', route);
 async function submit(fd) {
   setError('');
   const btn = $('#go'); btn.disabled = true;
+  if (apiKey()) fd.append('api_key', apiKey());
   try {
     const r = await fetch('/api/analyze', { method: 'POST', body: fd });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.detail || 'Something went wrong. Try again.');
     go('/r/' + d.key);
   } catch (e) { setError(e.message); } finally { btn.disabled = false; }
+}
+function apiKey() { return ($('#api-key')?.value || '').trim(); }
+function initKey() {
+  const inp = $('#api-key'), rem = $('#key-remember');
+  const saved = store.get('ssi-key', '');
+  if (saved) { inp.value = saved; rem.checked = true; }
+  const sync = () => { if (rem.checked && inp.value.trim()) store.set('ssi-key', inp.value.trim()); else store.del('ssi-key'); };
+  inp.addEventListener('input', sync); rem.addEventListener('change', sync);
+  $('#bib-copy').addEventListener('click', () => copy($('#bib').textContent, 'BibTeX copied'));
 }
 function submitFile(file) {
   if (!file) return;
@@ -903,7 +913,7 @@ async function switchFigure(index, sel) {
   sel.disabled = true; toast('Reading the figure…');
   try {
     const key = state.job.key || state.job.id;
-    const r = await fetch(`/api/jobs/${encodeURIComponent(key)}/figure`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index }) });
+    const r = await fetch(`/api/jobs/${encodeURIComponent(key)}/figure`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index, api_key: store.get('ssi-key', '') || undefined }) });
     const d = await r.json();
     if (!r.ok) throw new Error(d.detail || 'Could not re-score the figure.');
     state.job.result = d; state.sig = ''; render(state.job); remember(d);
@@ -1403,13 +1413,13 @@ function renderRecent() {
 
 // ------------------------------------------------------------------ boot
 async function boot() {
-  initTheme(); initInputs(); initLeaderboard();
+  initTheme(); initInputs(); initKey(); initLeaderboard();
   $('#g-q').addEventListener('input', renderGallery);
   $('#g-sort').addEventListener('change', renderGallery);
   try {
     const r = await fetch('/api/config'); state.config = await r.json();
     if (state.config.examples?.length) { $('#example').hidden = false; $('#example').title = state.config.examples[0].title; }
-    if (!state.config.llm_available) { const n = $('#llm-notice'); n.hidden = false; n.textContent = 'Argument graph and Figure exposition need a language model. Set LITELLM_PROXY_API_KEY (or OPENROUTER_API_KEY) on the server to enable them.'; }
+    if (state.config.llm_available) { $('.key-note').textContent = 'This server already has a language model configured; your key is optional and, if given, is used instead.'; }
   } catch (_) { /* the page works without config */ }
   route();
 }

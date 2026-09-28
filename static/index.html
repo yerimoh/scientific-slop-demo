@@ -58,6 +58,12 @@
         <div class="under-ask">
           <span class="pill soft"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Reads LaTeX source or PDF · six measures · highlighted on the paper</span>
         </div>
+        <div class="keyrow" id="keyrow">
+          <label class="keyfield"><span class="key-l">Your OpenRouter API key</span><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-…  (optional)" aria-label="OpenRouter API key"></label>
+          <label class="check" title="Kept only in this browser's storage"><input type="checkbox" id="key-remember"> remember on this browser</label>
+          <a class="key-help" href="https://openrouter.ai/keys" target="_blank" rel="noopener">Get a key ↗</a>
+        </div>
+        <p class="notice key-note">The key is sent with your analysis only and is not stored on the server. Without a key, the four counting-rule measures still run and the report is marked partial.</p>
         <div class="examples" id="examples" hidden><span class="ex-l">Try an example:</span></div>
         <div class="alt">
           <span class="file-btn"><button class="link-btn" type="button" tabindex="-1">Upload a PDF or LaTeX .zip</button><input id="file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF or LaTeX archive"></span>
@@ -136,6 +142,17 @@
         <div id="home-list" class="g-grid home-grid"></div>
       </div>
     </div>
+    <div class="wrap cite">
+      <h2 class="sec-h left">Cite</h2>
+      <p class="cap muted" style="margin:4px 0 12px">If you use the Science Slop Index or SciSlopBench, please cite the paper.</p>
+      <div class="bib card"><pre id="bib">@article{scislop2026,
+  title   = {Science or Slop?: Benchmarking and Mitigating Scientific Slop in AI-Generated Papers},
+  author  = {Anonymous},
+  journal = {arXiv preprint arXiv:2610.00000},
+  year    = {2026}
+}</pre><button class="btn ghost small bib-copy" type="button" id="bib-copy">Copy BibTeX</button></div>
+    </div>
+
   </section>
 
   <!-- how it works -->
