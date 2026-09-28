@@ -146,7 +146,7 @@ function route() {
   else if (p.startsWith('/how')) { showPage('how'); buildHow(); }
   else if (p.startsWith('/gallery')) { showPage('gallery'); loadGallery(); }
   else if (p.startsWith('/view')) { showPage('view'); renderRecent(); }
-  else showPage('home');
+  else { showPage('home'); loadHome(); }
 }
 document.addEventListener('click', e => {
   const a = e.target.closest('a[data-link]');
@@ -1040,6 +1040,38 @@ function initLeaderboard() {
   document.addEventListener('click', e => { if (lb.pop && !e.target.closest('#lb-pop')) { $('#lb-pop').hidden = true; lb.pop = null; } });
   let last = 0;
   new ResizeObserver(() => { const w = $('#lb-scroll').clientWidth; if (!$('#page-leaderboard').hidden && lb.data && !lb.table && Math.abs(w - last) > 8) { last = w; renderLeaderboard(); } }).observe($('#lb-scroll'));
+}
+
+// ------------------------------------------------------------------ home
+function shortTitle(t) {
+  t = (t || '').replace(/\s+/g, ' ').trim();
+  const cut = t.split(/[:：]/)[0];
+  const w = (cut.length >= 8 ? cut : t).split(' ');
+  return w.length > 4 ? w.slice(0, 4).join(' ') + '…' : w.join(' ');
+}
+function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts * 1000); return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); }
+function hcard(x, rankNo) {
+  const b = x.index != null ? band(x.index) : null;
+  return h('a', { class: 'hcard', href: `/r/${x.key}`, 'data-link': '', style: { '--hc-color': b ? b.color : 'var(--line-2)' } },
+    h('div', { class: 'hc-main' },
+      h('div', { class: 'hc-stamp' }, h('span', { class: 'no', text: rankNo ? `#${rankNo}` : '—' }), h('span', { text: [x.source, fmtDate(x.created)].filter(Boolean).join(' · ') })),
+      h('div', { class: 'hc-title', text: x.title || 'Untitled' }),
+      h('div', { class: 'hc-bars' },
+        PLANES.map(p => h('span', { class: 'hc-bar', title: p.q }, h('span', { text: p.label }), h('i', {}, h('b', { style: { width: `${100 * (x.planes?.[p.key] || 0)}%`, background: PLANE_VAR[p.key] } })), h('span', { class: 'v', text: fmt(x.planes?.[p.key]) }))),
+        h('span', { class: 'hc-idx' }, h('span', { text: x.index != null ? String(x.index) : '—' }), h('small', { text: x.partial ? '/ 100 · partial' : '/ 100' })))),
+    h('div', { class: 'hc-thumb' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: shortTitle(x.title) })));
+}
+async function loadHome() {
+  if (!state.gallery) {
+    try { const r = await fetch('/api/gallery'); state.gallery = await r.json(); }
+    catch (_) { return; }
+  }
+  const ranked = [...state.gallery.items].filter(x => x.index != null).sort((a, b) => b.index - a.index);
+  const ex = $('#examples');
+  const seeds = [...state.gallery.items].filter(x => x.index != null && x.source_kind !== 'upload').sort((a, b) => (a.created || 0) - (b.created || 0)).slice(0, 4);
+  ex.hidden = !seeds.length;
+  ex.replaceChildren(h('span', { class: 'ex-l', text: 'Try an example:' }), ...seeds.map(x => h('a', { class: 'ex', href: `/r/${x.key}`, 'data-link': '', title: x.title, text: shortTitle(x.title) })));
+  $('#home-list').replaceChildren(...ranked.slice(0, 5).map((x, i) => hcard(x, i + 1)));
 }
 
 // ------------------------------------------------------------------ gallery
