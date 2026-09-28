@@ -486,8 +486,10 @@ def _first_page_marks(res: dict, limit: int = 40) -> list:
             for loc in it.get("pdf") or []:
                 if loc.get("p") != 0:
                     continue
+                why = it.get("why") or (f"{round(100 * it['coverage'])}% copied from {it.get('source_title', 'an earlier section')}" if it.get("coverage") is not None else "") or it.get("text") or it.get("caption") or ""
                 for r in loc.get("r") or []:
-                    out.append({"m": m["key"], "plane": m.get("plane"), "r": [round(v, 1) for v in r], "box": bool(loc.get("box"))})
+                    out.append({"m": m["key"], "plane": m.get("plane"), "r": [round(v, 1) for v in r], "box": bool(loc.get("box")),
+                                "name": m.get("name"), "t": why[:180] + ("…" if len(why) > 180 else "")})
                     if len(out) >= limit:
                         return out
     return out

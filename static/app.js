@@ -385,7 +385,7 @@ function scoreCard(idx, ms, running) {
     h('span', { style: { left: '50%' }, text: 'High' }), h('span', { style: { left: '100%' }, text: 'Very high' }));
   const tiles = h('div', { class: 'plane-tiles' }, PLANES.map(p => {
     const ps = idx?.planes?.[p.key]?.score;
-    const t = h('button', { class: `tile band-${p.key}`, type: 'button', onclick: () => { state.tab = 'findings'; state.sig = ''; render(state.job); setTimeout(() => document.getElementById('plane-' + p.key)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); } },
+    const t = h('button', { class: `tile band-${p.key}`, type: 'button', onclick: () => { if (!state.job) return; state.tab = 'findings'; state.sig = ''; render(state.job); setTimeout(() => document.getElementById('plane-' + p.key)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); } },
       h('span', { class: `tag ${p.key}`, text: p.label }),
       h('div', { class: 't-val', text: ps == null ? (running ? '··' : '—') : fmt(ps) }),
       h('div', { class: 't-bar' }, h('i', { style: { width: '0%', background: PLANE_VAR[p.key] }, 'data-w': ((ps || 0) * 100) + '%' })));
@@ -505,7 +505,7 @@ function hlCard(page, hl, r, w, hgt, openFindings) {
 function showOnPaper(key, i) { state.tab = 'paper'; state.flashHl = `${key}-${i}`; state.hidden.delete(key); state.sig = ''; render(state.job); }
 
 // ------------------------------------------------------------------ paper map
-function drawMap(host, doc, ms) {
+function drawMap(host, doc, ms, onOpen) {
   const outline = doc?.outline || [];
   const bySec = new Map(outline.map(o => [o.idx, o]));
   const items = [];
@@ -541,7 +541,7 @@ function drawMap(host, doc, ms) {
       const cy = top + ORDER.indexOf(it.key) * laneH + laneH / 2;
       const dot = s('circle', { class: 'dot', cx, cy, r: 4.5, fill: PLANE_VAR[MEASURES[it.key].plane] });
       const hit = s('circle', { class: 'hit', cx, cy, r: 11, tabindex: 0, role: 'button', 'aria-label': `${MEASURES[it.key].name}: ${trunc(it.text, 80)}` });
-      const open = () => { hideTip(); state.open.add(it.key); state.flash = `f-${it.key}-${it.i}`; if (it.i >= 8) state.showAll.add(it.key); if (it.key === 'cross_refs') state.showAll.add('cross_refs:list'); state.sig = ''; render(state.job); };
+      const open = () => { hideTip(); if (onOpen) { onOpen(); return; } state.open.add(it.key); state.flash = `f-${it.key}-${it.i}`; if (it.i >= 8) state.showAll.add(it.key); if (it.key === 'cross_refs') state.showAll.add('cross_refs:list'); state.sig = ''; render(state.job); };
       hit.addEventListener('click', open);
       hit.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
       hit.addEventListener('pointerenter', () => dot.setAttribute('r', 6.5));
@@ -1087,24 +1087,93 @@ function fmtDate(ts) { if (!ts) return ''; const d = new Date(ts * 1000); return
 function galleryCard(x, rankNo) {
   const b = x.index != null ? band(x.index) : null;
   const [pw, ph] = x.page0 || [612, 792];
-  const marks = (x.marks || []).map(k => h('span', { class: `g-mark ${k.plane}${k.box ? ' box' : ''}`, 'data-plane': k.plane,
-    style: { left: `${100 * k.r[0] / pw}%`, top: `${100 * k.r[1] / ph}%`, width: `${100 * (k.r[2] - k.r[0]) / pw}%`, height: `${100 * (k.r[3] - k.r[1]) / ph}%` } }));
+  const marks = (x.marks || []).map(k => {
+    const el = h('span', { class: `g-mark ${k.plane}${k.box ? ' box' : ''}`, 'data-plane': k.plane,
+      style: { left: `${100 * k.r[0] / pw}%`, top: `${100 * k.r[1] / ph}%`, width: `${100 * (k.r[2] - k.r[0]) / pw}%`, height: `${100 * (k.r[3] - k.r[1]) / ph}%` } });
+    bindTip(el, k.name || k.m, k.t || '');
+    return el;
+  });
   const page = h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title }), ...marks);
-  const card = h('a', { class: 'g-card', href: `/r/${x.key}?tab=paper`, 'data-link': '', title: x.title },
-    h('div', { class: 'g-thumb', style: { borderBottomColor: b ? b.color : 'var(--line-2)' } }, page,
-      marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null),
-    h('div', { class: 'g-body' },
+  const card = h('div', { class: 'g-card' },
+    h('button', { type: 'button', class: 'g-thumb', style: { borderBottomColor: b ? b.color : 'var(--line-2)' }, title: 'Preview: findings on the paper, map, and charts', onclick: () => openPreview(x.key) }, page,
+      marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null,
+      h('span', { class: 'g-zoom', 'aria-hidden': 'true', text: 'Preview' })),
+    h('a', { class: 'g-body', href: `/r/${x.key}?tab=paper`, 'data-link': '', title: x.title },
       h('div', { class: 'g-rank' }, h('span', { text: rankNo ? `Science Slop Index #${rankNo}` : '—' }), h('span', { class: 'score', text: x.index != null ? `${x.index} / 100${x.partial ? '*' : ''}` : '—' })),
-      h('div', { class: 'g-title', text: x.title }),
-      h('div', { class: 'g-planes' }, PLANES.map(p => {
-        const v = x.planes?.[p.key];
-        const t = h('button', { type: 'button', class: `gp gp-${p.key}`, title: `${p.label}: ${p.q}. Click to show only this plane on the page.`,
-          onclick: e => { e.preventDefault(); e.stopPropagation(); const on = card.dataset.focus === p.key; card.dataset.focus = on ? '' : p.key; card.querySelectorAll('.gp').forEach(g => g.classList.toggle('on', !on && g === t)); } },
-          h('span', { class: 'gp-l', text: p.label }), h('b', { text: v == null ? '—' : fmt(v) }));
-        return t;
-      }))));
+      h('div', { class: 'g-title', text: x.title })),
+    h('div', { class: 'g-planes' }, PLANES.map(p => {
+      const v = x.planes?.[p.key];
+      const t = h('button', { type: 'button', class: `gp gp-${p.key}`, title: `${p.label}: ${p.q} Click to show only this plane on the page.`,
+        onclick: () => { const on = card.dataset.focus === p.key; card.dataset.focus = on ? '' : p.key; card.querySelectorAll('.gp').forEach(g => g.classList.toggle('on', !on && g === t)); } },
+        h('span', { class: 'gp-l', text: p.label }), h('b', { text: v == null ? '—' : fmt(v) }));
+      return t;
+    })));
   return card;
 }
+
+// ------------------------------------------------------------------ preview (gallery)
+function measureBars(ms) {
+  const rows = ORDER.map(k => {
+    const m = ms[k]; const meta = MEASURES[k]; const done = m && m.status === 'done' && m.score != null;
+    const frac = done ? `${fmtNum(m.num)} / ${m.den} ${m.unit || ''}` : m?.status === 'na' ? 'not applicable' : m?.status === 'skipped' ? 'needs a language model' : '—';
+    const row = h('div', { class: 'mb-row' },
+      h('span', { class: 'mb-name' }, h('span', { class: `swatch sw-${meta.plane}` }), meta.name),
+      h('span', { class: 'mb-bar' }, h('i', { style: { width: `${done ? m.score * 100 : 0}%`, background: PLANE_VAR[meta.plane] } })),
+      h('span', { class: 'mb-val', text: done ? fmt(m.score) : '—' }),
+      h('span', { class: 'mb-frac', text: frac }));
+    bindTip(row, meta.name, (m?.what || '') + (done ? ` ${frac}.` : ''));
+    return row;
+  });
+  return h('div', { class: 'mbars' }, rows);
+}
+async function openPreview(key) {
+  document.querySelectorAll('.modal-bg').forEach(n => n.remove());
+  const box = h('div', { class: 'modal card' }, h('p', { class: 'muted', text: 'Loading…' }));
+  const bg = h('div', { class: 'modal-bg', onclick: e => { if (e.target === bg) close(); } }, box);
+  const close = () => { bg.remove(); hideTip(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  document.body.append(bg);
+  let job;
+  try { const r = await fetch('/api/jobs/' + encodeURIComponent(key)); job = await r.json(); if (!r.ok || !job.result) throw new Error(); }
+  catch (_) { box.replaceChildren(h('p', { class: 'muted', text: 'Could not load this report.' })); return; }
+  const res = job.result; const doc = res.document || {}; const ms = measuresOf(job);
+  const openReportAt = tab => { close(); go(`/r/${key}?tab=${tab}`); };
+  const pdf = res.pdf || {}; const [pw, ph] = (pdf.sizes || [])[0] || [612, 792];
+  const marks = [];
+  for (const m of res.measures) (m.instances || []).forEach((it, i) => (it.pdf || []).forEach(loc => { if (loc.p !== 0) return; for (const r of loc.r) marks.push({ m, it, i, r, box: !!loc.box }); }));
+  const page = h('div', { class: 'pv-page prev-page' }, pdf.available ? h('img', { src: `/api/jobs/${encodeURIComponent(key)}/pages/0.jpg`, alt: 'Page 1', width: 1100, height: Math.round(1100 * ph / pw) }) : h('div', { class: 'pv-empty', text: 'No PDF available.' }));
+  for (const hl of marks) {
+    const [x0, y0, x1, y1] = hl.r;
+    const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, tabindex: 0, style: { left: `${100 * x0 / pw}%`, top: `${100 * y0 / ph}%`, width: `${100 * (x1 - x0) / pw}%`, height: `${100 * (y1 - y0) / ph}%` } });
+    bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 160));
+    d.addEventListener('click', e => { e.stopPropagation(); hideTip(); hlCard(page, hl, { x0, y0, x1, y1 }, pw, ph, () => openReportAt('findings')); });
+    page.append(d);
+  }
+  const ag = ms.argument_graph?.details;
+  box.replaceChildren(
+    h('div', { class: 'modal-head' },
+      h('div', {}, h('p', { class: 'eyebrow', text: 'Preview' }), h('h3', { text: doc.title || job.title || 'Paper' })),
+      h('div', { class: 'modal-actions' },
+        h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('paper') }, 'All pages'),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('findings') }, 'Full report →'),
+        h('button', { class: 'hl-x', type: 'button', 'aria-label': 'Close', onclick: close }, '×'))),
+    scoreCard(res.index, ms, false),
+    h('div', { class: 'prev-grid' },
+      h('div', { class: 'prev-left' },
+        h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? 'Hover a highlight to read why; click it for details.' : 'Nothing flagged on the first page.' })),
+        page),
+      h('div', { class: 'prev-right' },
+        h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
+        h('div', { class: 'card map-card', id: 'prev-map' }),
+        h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Share of units flagged.' })),
+        measureBars(ms),
+        ag && ag.sentences && ag.edges ? h('div', {}, h('div', { class: 'section-title' }, h('h3', { text: 'Argument graph' }), h('p', { text: 'Claims in the Introduction and the sentence each rests on.' })), arcDiagram(ag),
+          h('div', { class: 'legend' }, h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--ink-4)', height: '2px' } }), 'support comes first'), h('span', {}, h('span', { class: 'lg-box', style: { background: 'var(--red)', height: '2px' } }), 'support comes after the claim'))) : null)));
+  drawMap(box.querySelector('#prev-map'), doc, ms, () => openReportAt('findings'));
+  requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
+}
+
 async function loadHome() {
   if (!state.gallery) {
     try { const r = await fetch('/api/gallery'); state.gallery = await r.json(); }
