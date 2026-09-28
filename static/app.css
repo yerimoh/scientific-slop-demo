@@ -442,7 +442,7 @@ h1.hero em { font-style: italic; color: var(--red); font-weight: 600; }
 .g-controls input { flex: 1; max-width: 380px; }
 .g-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; }
 .g-card { display: flex; flex-direction: column; text-decoration: none; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; box-shadow: var(--shadow); transition: transform .15s, box-shadow .15s; padding-bottom: 14px; }
-.g-card:hover { transform: translateY(-3px); box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 18px 40px rgba(31,41,55,.12); }
+.g-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,.05), 0 14px 32px rgba(31,41,55,.12); }
 .g-thumb { aspect-ratio: 1 / 1.05; background: #fff; overflow: hidden; border: 0; border-bottom: 4px solid var(--red); position: relative; padding: 0; cursor: zoom-in; display: block; width: 100%; text-align: left; }
 .g-zoom { pointer-events: none; position: absolute; left: 8px; bottom: 8px; font-size: 10.5px; font-weight: 600; color: var(--ink-2); background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; opacity: 0; transition: opacity .15s; }
 .g-thumb:hover .g-zoom, .g-thumb:focus-visible .g-zoom { opacity: 1; }
