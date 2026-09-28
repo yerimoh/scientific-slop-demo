@@ -929,21 +929,29 @@ function footCard(res) {
 let howBuilt = false;
 function buildHow() {
   if (howBuilt) return; howBuilt = true;
-  const t = $('#spec');
-  t.append(h('thead', {}, h('tr', {}, ['', 'Item', 'Illustration', 'Unit of analysis', 'Score (share of units)', 'What 100 means', 'Pair acc.*'].map(c => h('th', { text: c })))));
-  const tb = h('tbody');
-  for (const p of PLANES) p.measures.forEach((k, i) => {
-    const m = MEASURES[k];
-    tb.append(h('tr', { class: `band-${p.key}` + (i === 0 ? ' plane-first' : '') },
-      h('td', {}, i === 0 ? h('span', { class: `tag ${p.key}`, text: p.label }) : ''),
-      h('td', { class: 'item', text: m.name }),
-      h('td', {}, h('img', { src: `/static/img/${k}.svg`, alt: `Illustration of ${m.name}` })),
-      h('td', { text: m.unit }),
-      h('td', {}, h('span', { class: `frac ${p.key}` }, h('span', { text: m.num }), h('span', { text: m.den }))),
-      h('td', { text: m.one }),
-      h('td', { class: 'num', text: m.pairacc.toFixed(3) })));
-  });
-  t.append(tb);
+  const host = $('#spec');
+  for (const p of PLANES) {
+    const group = h('div', { class: `mgroup band-${p.key}` },
+      h('div', { class: 'mgroup-head' }, h('span', { class: `tag ${p.key}`, text: p.label }), h('span', { class: 'mgroup-q', text: p.q })));
+    const row = h('div', { class: 'mgroup-row' });
+    for (const k of p.measures) {
+      const m = MEASURES[k];
+      row.append(h('div', { class: 'mcard' },
+        h('img', { src: `/static/img/${k}.svg`, alt: `Illustration of ${m.name}` }),
+        h('h3', { text: m.name }),
+        h('div', { class: 'mc-unit' }, h('span', { class: 'mc-l', text: 'Counts' }), m.unit),
+        h('div', { class: `frac ${p.key}` }, h('span', { text: m.num }), h('span', { text: m.den })),
+        h('div', { class: 'mc-100' }, h('span', { class: 'mc-l', text: '100 means' }), m.one),
+        h('div', { class: 'mc-foot' }, h('span', { class: 'chip', text: `${m.method === 'LLM' ? 'Language model' : 'Counting rule'}` }), h('span', { class: 'chip', text: `Pair acc. ${m.pairacc.toFixed(3)}` }))));
+    }
+    group.append(row); host.append(group);
+  }
+  const agg = $('#agg');
+  agg.append(...PLANES.map(p => h('div', { class: 'agg-col' },
+    h('div', { class: 'agg-ms' }, p.measures.map(k => h('span', { class: `agg-m band-${p.key}`, text: MEASURES[k].name }))),
+    h('div', { class: 'agg-arrow', text: 'mean' }),
+    h('div', { class: `agg-plane band-${p.key}` }, h('span', { class: `tag ${p.key}`, text: p.label }), h('span', { class: 'agg-pv', text: 'plane score' })))),
+    h('div', { class: 'agg-final' }, h('div', { class: 'agg-arrow', text: 'mean of the three planes × 100' }), h('div', { class: 'agg-idx' }, h('b', { text: 'Science Slop Index' }), h('span', { text: '0 – 100' }))));
   drawBench();
 }
 function drawBench() {
