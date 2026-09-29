@@ -1048,7 +1048,7 @@ const METRICS = [
   ...PLANES.map(p => ({ id: 'plane:' + p.key, label: `${p.label} plane`, plane: p.key })),
   ...ORDER.map(k => ({ id: 'm:' + k, label: MEASURES[k].name, plane: MEASURES[k].plane })),
 ];
-const lb = { metric: 'index', top: 30, picked: null, excluded: new Set(), hidePartial: false, table: false, sort: 'value', dir: -1, pop: null, data: null };
+const lb = { metric: 'index', top: 30, picked: null, excluded: new Set(), hidePartial: false, view: 'list', sort: 'value', dir: -1, pop: null, data: null };
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function lbValue(x, metric) {
   if (metric === 'index') return x.index;
@@ -1061,7 +1061,7 @@ function lbReadParams() {
   if (q.get('n')) lb.top = q.get('n') === 'all' ? Infinity : Math.max(1, parseInt(q.get('n'), 10) || 30);
   if (q.get('exclude')) lb.excluded = new Set(q.get('exclude').split(','));
   lb.hidePartial = q.get('partial') === '0';
-  lb.table = q.get('view') === 'table';
+  lb.view = ['list', 'chart', 'table'].includes(q.get('view')) ? q.get('view') : 'list';
 }
 function lbUrl() {
   const q = new URLSearchParams();
@@ -1069,15 +1069,15 @@ function lbUrl() {
   if (lb.top !== 30) q.set('n', lb.top === Infinity ? 'all' : lb.top);
   if (lb.excluded.size) q.set('exclude', [...lb.excluded].join(','));
   if (lb.hidePartial) q.set('partial', '0');
-  if (lb.table) q.set('view', 'table');
+  if (lb.view !== 'list') q.set('view', lb.view);
   const s = q.toString();
   return location.origin + '/leaderboard' + (s ? '?' + s : '');
 }
 async function loadLeaderboard() {
   lbReadParams();
-  $('#lb-chart').replaceChildren(h('div', { class: 'lb-empty', text: 'Loading…' }));
+  $('#lb-list').replaceChildren(h('div', { class: 'lb-empty', text: 'Loading…' }));
   try { const r = await fetch('/api/gallery'); lb.data = await r.json(); state.gallery = lb.data; }
-  catch (_) { $('#lb-chart').replaceChildren(h('div', { class: 'lb-empty', text: 'Could not load the leaderboard.' })); return; }
+  catch (_) { $('#lb-list').replaceChildren(h('div', { class: 'lb-empty', text: 'Could not load the leaderboard.' })); return; }
   renderLeaderboard();
 }
 function lbRows() {
@@ -1092,12 +1092,13 @@ function renderLeaderboard() {
   const metric = METRICS.find(m => m.id === lb.metric);
   $('#lb-count-t').textContent = `${shown.length} of ${all.length} papers`;
   $('#lb-metricname').textContent = metric.stacked ? 'Science Slop Index · contribution of each plane' : `${metric.label} · score out of 100`;
-  $('#lb-table').setAttribute('aria-pressed', String(lb.table));
+  document.querySelectorAll('.seg-b').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === lb.view)));
   $('#lb-filter').classList.toggle('on', lb.excluded.size > 0 || lb.hidePartial);
   $('#lb-metric').classList.toggle('on', lb.metric !== 'index');
-  $('#lb-scroll').parentElement.hidden = lb.table;
-  $('#lb-tablewrap').hidden = !lb.table;
-  if (lb.table) renderLbTable(shown); else drawLbChart(shown, metric);
+  $('#lb-list').hidden = lb.view !== 'list';
+  $('#lb-scroll').parentElement.hidden = lb.view !== 'chart';
+  $('#lb-tablewrap').hidden = lb.view !== 'table';
+  if (lb.view === 'table') renderLbTable(shown); else if (lb.view === 'chart') drawLbChart(shown, metric); else renderLbList(shown, metric);
   $('#lb-legend').replaceChildren(...(metric.stacked
     ? [...PLANES.map(p => h('span', {}, h('span', { class: 'lg-box', style: { background: PLANE_VAR[p.key], borderRadius: '3px', width: '12px', height: '12px' } }), `${p.label} share`)),
       h('span', { class: 'muted', text: 'Each bar is the index; its segments show how much each plane adds.' })]
@@ -1105,6 +1106,37 @@ function renderLeaderboard() {
   const partial = shown.some(x => x.partial) ? '* Partial: some measures could not run for this paper. ' : '';
   $('#lb-note').textContent = partial + (pool.length > shown.length ? `Showing the top ${shown.length} of ${pool.length}. ` : '')
     + (lb.data?.persistent ? '' : 'Papers analyzed on this server are listed until it restarts; bundled papers always stay.');
+}
+function renderLbList(rows, metric) {
+  const host = $('#lb-list');
+  if (!rows.length) { host.replaceChildren(h('div', { class: 'lb-empty' }, 'No paper to rank yet. ', h('a', { href: '/', 'data-link': '' }, 'Analyze one'))); return; }
+  const max = Math.max(1, ...rows.map(x => lbValue(x, lb.metric)));
+  const scaleMax = Math.min(100, Math.max(20, Math.ceil(max * 1.15 / 10) * 10));
+  const bandBg = `linear-gradient(90deg, var(--surface-2) 0 ${2000 / scaleMax}%, color-mix(in oklab, var(--surface-2) 70%, var(--line)) ${2000 / scaleMax}% ${4000 / scaleMax}%, color-mix(in oklab, var(--surface-2) 45%, var(--line)) ${4000 / scaleMax}% ${6000 / scaleMax}%, color-mix(in oklab, var(--surface-2) 20%, var(--line)) ${6000 / scaleMax}%)`;
+  host.replaceChildren(
+    h('div', { class: 'lbl-head' },
+      h('span', { class: 'lbl-c rank', text: '#' }), h('span', { class: 'lbl-c paper', text: 'Paper' }),
+      h('span', { class: 'lbl-c track' }, metric.stacked ? h('span', { class: 'lbl-scale' }, ...[['Low', 0], ['Moderate', 20], ['High', 40], ['Very high', 60]].filter(([, v]) => v < scaleMax).map(([l, v]) => h('i', { style: { left: `${100 * v / scaleMax}%` }, text: l }))) : h('span', { text: `${metric.label} · 0 to ${scaleMax}` })),
+      h('span', { class: 'lbl-c idx', text: metric.stacked ? 'Index' : 'Score' }),
+      h('span', { class: 'lbl-c planes' }, PLANES.map(p => h('span', { class: `lbl-ph lbl-${p.key}`, title: p.label, text: p.label.slice(0, 3) })))),
+    ...rows.map((x, i) => {
+      const v = lbValue(x, lb.metric); const b = x.index != null ? band(x.index) : null;
+      let segs;
+      if (metric.stacked) { const planes = PLANES.filter(p => x.planes?.[p.key] != null); segs = planes.map(p => ({ k: p.key, v: 100 * x.planes[p.key] / planes.length, label: `${p.label} adds ${fmt(x.planes[p.key] / planes.length)}` })); }
+      else segs = [{ k: metric.plane, v, label: `${metric.label} ${Math.round(v)}` }];
+      const bar = h('span', { class: 'lbl-track', style: metric.stacked ? { background: bandBg } : {} }, ...segs.map(sg => { const e = h('i', { class: `sg sg-${sg.k}`, style: { width: '0%' }, 'data-w': `${100 * sg.v / scaleMax}%` }); bindTip(e, x.title, sg.label); return e; }));
+      const row = h('a', { class: 'lbl-row' + (i < 3 ? ` top${i + 1}` : ''), href: `/r/${x.key}`, 'data-link': '', title: x.title },
+        h('span', { class: 'lbl-c rank' }, h('span', { class: 'lbl-rank', text: String(i + 1) })),
+        h('span', { class: 'lbl-c paper' },
+          h('span', { class: 'lbl-thumb' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : null),
+          h('span', { class: 'lbl-t' }, h('span', { class: 'lbl-title', text: x.title || 'Untitled' }), h('span', { class: 'lbl-meta', text: [x.source, fmtDate(x.created), x.partial ? 'partial' : null].filter(Boolean).join(' · ') }))),
+        h('span', { class: 'lbl-c track' }, bar),
+        h('span', { class: 'lbl-c idx' }, h('b', { style: { color: b ? b.color : 'inherit' }, text: v == null ? '—' : String(Math.round(v)) + (x.partial && metric.stacked ? '*' : '') }), b && metric.stacked ? h('small', { text: b.label }) : null),
+        h('span', { class: 'lbl-c planes' }, PLANES.map(p => h('span', { class: `lbl-p lbl-${p.key}`, title: p.label, text: fmt(x.planes?.[p.key]) }))),
+        h('button', { type: 'button', class: 'lbl-digest', title: 'Digest: first page, map, graphs', 'aria-label': 'Open digest', onclick: e => { e.preventDefault(); e.stopPropagation(); openPreview(x.key); } }, '◫'));
+      return row;
+    }));
+  requestAnimationFrame(() => requestAnimationFrame(() => host.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
 }
 function drawLbChart(rows, metric) {
   const host = $('#lb-chart');
@@ -1273,7 +1305,8 @@ function lbPopover(kind, anchor) {
   pop.style.left = `${Math.max(0, Math.min(r.right - pr.left - 340, pr.width - 340))}px`;
 }
 async function lbDownloadPng() {
-  const svg = $('#lb-chart svg'); if (!svg) { toast('Switch to the chart first'); return; }
+  if (lb.view !== 'chart') { lb.view = 'chart'; renderLeaderboard(); }
+  const svg = $('#lb-chart svg'); if (!svg) { toast('Nothing to draw yet'); return; }
   const clone = svg.cloneNode(true);
   // inline the computed styles the CSS classes provide, so the image stands alone
   const map = [['.grid', { stroke: cssVar('--line') }], ['.axis', { fill: cssVar('--ink-4'), 'font-size': '11px' }], ['.cap', { fill: cssVar('--ink'), 'font-size': '14px', 'font-weight': '700' }],
@@ -1285,7 +1318,7 @@ async function lbDownloadPng() {
   wrap.setAttribute('xmlns', SVGNS); wrap.setAttribute('width', W); wrap.setAttribute('height', Hh + head);
   wrap.append(s('rect', { width: W, height: Hh + head, fill: cssVar('--surface') }),
     s('text', { x: 16, y: 32, 'font-size': '20', 'font-weight': '700', fill: cssVar('--ink'), 'font-family': 'Avenir Next, Avenir, Nunito Sans, Helvetica, sans-serif', text: 'Science Slop Index' }),
-    s('text', { x: 16, y: 52, 'font-size': '12', fill: cssVar('--ink-3'), 'font-family': 'Avenir Next, Avenir, Nunito Sans, Helvetica, sans-serif', text: `${$('#lb-metricname').textContent} · scislop.open-galapagos.com` }));
+    s('text', { x: 16, y: 52, 'font-size': '12', fill: cssVar('--ink-3'), 'font-family': 'Avenir Next, Avenir, Nunito Sans, Helvetica, sans-serif', text: `${$('#lb-metricname').textContent} · scientific-slop-demo.onrender.com` }));
   const g = document.createElementNS(SVGNS, 'g'); g.setAttribute('transform', `translate(0,${head})`); g.append(...clone.childNodes); wrap.append(g);
   const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(wrap)], { type: 'image/svg+xml' }));
   const img = new Image();
@@ -1300,12 +1333,12 @@ function initLeaderboard() {
   $('#lb-count').addEventListener('click', e => { e.stopPropagation(); lbPopover('count', e.currentTarget); });
   $('#lb-filter').addEventListener('click', e => { e.stopPropagation(); lbPopover('filter', e.currentTarget); });
   $('#lb-metric').addEventListener('click', e => { e.stopPropagation(); lbPopover('metric', e.currentTarget); });
-  $('#lb-table').addEventListener('click', () => { lb.table = !lb.table; renderLeaderboard(); });
+  document.querySelectorAll('.seg-b').forEach(b => b.addEventListener('click', () => { lb.view = b.dataset.view; renderLeaderboard(); }));
   $('#lb-link').addEventListener('click', () => copy(lbUrl(), 'Link to this view copied'));
   $('#lb-png').addEventListener('click', lbDownloadPng);
   document.addEventListener('click', e => { if (lb.pop && !e.target.closest('#lb-pop')) { $('#lb-pop').hidden = true; lb.pop = null; } });
   let last = 0;
-  new ResizeObserver(() => { const w = $('#lb-scroll').clientWidth; if (!$('#page-leaderboard').hidden && lb.data && !lb.table && Math.abs(w - last) > 8) { last = w; renderLeaderboard(); } }).observe($('#lb-scroll'));
+  new ResizeObserver(() => { const w = $('#lb-scroll').clientWidth; if (!$('#page-leaderboard').hidden && lb.data && lb.view === 'chart' && Math.abs(w - last) > 8) { last = w; renderLeaderboard(); } }).observe($('#lb-scroll'));
 }
 
 // ------------------------------------------------------------------ home

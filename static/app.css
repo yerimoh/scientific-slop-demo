@@ -594,6 +594,48 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
   .lb-pop { width: calc(100vw - 32px); left: 16px !important; }
 }
 
+/* leaderboard: ranked list */
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 12px; overflow: hidden; height: 44px; }
+.seg-b { border: 0; background: var(--surface); color: var(--ink-2); padding: 0 14px; font-weight: 600; font-size: 14px; cursor: pointer; border-left: 1px solid var(--line); }
+.seg-b:first-child { border-left: 0; }
+.seg-b[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.lb-list { display: grid; gap: 8px; }
+.lbl-head, .lbl-row { display: grid; grid-template-columns: 44px minmax(220px, 1.5fr) minmax(200px, 2fr) 84px 150px 34px; gap: 14px; align-items: center; }
+.lbl-head { padding: 0 16px 6px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); font-weight: 700; }
+.lbl-head .lbl-c.idx { text-align: right; }
+.lbl-scale { position: relative; display: block; height: 14px; }
+.lbl-scale i { position: absolute; top: 0; font-style: normal; padding-left: 6px; border-left: 1px solid var(--line-2); line-height: 14px; white-space: nowrap; }
+.lbl-row { padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; text-decoration: none; color: inherit; box-shadow: var(--shadow); transition: border-color .15s, transform .15s; position: relative; }
+.lbl-row:hover { border-color: var(--line-2); transform: translateY(-1px); }
+.lbl-rank { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); font-weight: 700; font-variant-numeric: tabular-nums; font-size: 14px; color: var(--ink-2); }
+.lbl-row.top1 .lbl-rank { background: var(--ink); color: var(--bg); }
+.lbl-row.top2 .lbl-rank, .lbl-row.top3 .lbl-rank { background: var(--line); color: var(--ink); }
+.lbl-c.paper { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.lbl-thumb { flex: none; width: 40px; height: 52px; border-radius: 4px; border: 1px solid var(--line); background: #fff; overflow: hidden; }
+.lbl-thumb img { width: 100%; display: block; }
+.lbl-t { min-width: 0; display: grid; gap: 2px; }
+.lbl-title { font-weight: 700; font-size: 15px; line-height: 1.25; letter-spacing: -.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lbl-meta { font-size: 12px; color: var(--ink-3); }
+.lbl-track { position: relative; display: flex; height: 14px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.lbl-track .sg { display: block; height: 100%; transition: width .8s cubic-bezier(.2,.8,.2,1); }
+.lbl-track .sg + .sg { border-left: 2px solid var(--surface); }
+.sg-structure { background: var(--structure); } .sg-argument { background: var(--argument); } .sg-artifacts { background: var(--artifacts); }
+.lbl-c.idx { text-align: right; display: grid; justify-items: end; line-height: 1.1; }
+.lbl-c.idx b { font-size: 22px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.lbl-c.idx small { font-size: 11px; color: var(--ink-3); }
+.lbl-c.planes { display: flex; gap: 6px; justify-content: flex-start; }
+.lbl-ph { flex: 1; text-align: center; padding: 2px 0; border-radius: 6px; font-size: 10.5px; }
+.lbl-p { flex: 1; text-align: center; font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 3px 0; border-radius: 6px; }
+.lbl-structure { color: var(--structure-deep); background: var(--structure-band); } .lbl-argument { color: var(--argument-deep); background: var(--argument-band); } .lbl-artifacts { color: var(--artifacts-deep); background: var(--artifacts-band); }
+.lbl-digest { border: 1px solid var(--line); background: var(--surface); color: var(--ink-3); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 15px; }
+.lbl-digest:hover { color: var(--ink); border-color: var(--ink); }
+@media (max-width: 860px) {
+  .lbl-head { display: none; }
+  .lbl-row { grid-template-columns: 34px 1fr 64px; grid-template-areas: "rank paper idx" "track track track" "planes planes digest"; gap: 8px 10px; }
+  .lbl-c.rank { grid-area: rank; } .lbl-c.paper { grid-area: paper; } .lbl-c.idx { grid-area: idx; } .lbl-c.track { grid-area: track; } .lbl-c.planes { grid-area: planes; } .lbl-digest { grid-area: digest; justify-self: end; }
+  .seg { height: 40px; }
+}
+
 /* ------------------------------------------------------------------ gallery */
 .g-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 0 0 22px; }
 .g-controls input, .g-controls select { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); min-width: 0; }
