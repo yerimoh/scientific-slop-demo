@@ -1438,8 +1438,9 @@ async function loadTeam() {
     const initials = m.name.split(/[\s-]+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const avatar = h('div', { class: 'tm-avatar' }, h('span', { text: initials }));
     if (m.photo) { const img = h('img', { src: `/static/img/team/${m.photo}`, alt: m.name, loading: 'lazy' }); img.addEventListener('error', () => img.remove()); avatar.append(img); }
-    const name = m.url ? h('a', { class: 'tm-name', href: m.url, target: '_blank', rel: 'noopener', text: m.name }) : h('span', { class: 'tm-name', text: m.name });
-    return h('div', { class: 'tm' }, avatar, name, m.affiliation ? h('span', { class: 'tm-aff', text: m.affiliation }) : null, m.role ? h('span', { class: 'tm-role', text: m.role }) : null);
+    const name = h('span', { class: 'tm-name', text: m.name });
+    const kids = [avatar, name, m.affiliation ? h('span', { class: 'tm-aff', text: m.affiliation }) : null, m.role ? h('span', { class: 'tm-role', text: m.role }) : null];
+    return m.url ? h('a', { class: 'tm', href: m.url, target: '_blank', rel: 'noopener', title: m.name + ' ↗' }, ...kids) : h('div', { class: 'tm' }, ...kids);
   }));
 }
 let homeFeatured = null;
