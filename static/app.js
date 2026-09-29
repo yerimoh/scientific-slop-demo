@@ -964,7 +964,7 @@ async function loadPlaneExplainer() {
     for (const it of (m.instances || []).slice(0, 2)) pool[m.key].push({ key: m.key, job: job.key || job.id, title, it, img });
   }
   // interleave papers so the first examples are not all from one paper
-  for (const k of ORDER) { const byJob = new Map(); for (const e of pool[k]) byJob.set(e.job, (byJob.get(e.job) || []).concat(e)); const out = []; const lists = [...byJob.values()]; for (let r = 0; lists.some(l => l.length > r); r++) for (const l of lists) if (l[r]) out.push(l[r]); pool[k] = out; }
+  for (const k of ORDER) { const byJob = new Map(); for (const e of pool[k]) byJob.set(e.job, (byJob.get(e.job) || []).concat(e)); const out = []; const lists = [...byJob.values()]; for (let r = 0; lists.some(l => l.length > r); r++) for (const l of lists) if (l[r]) out.push(l[r]); const rot = out.length ? ORDER.indexOf(k) % out.length : 0; pool[k] = out.slice(rot).concat(out.slice(0, rot)); }
   host.replaceChildren(...PLANES.map(p => {
     const block = h('section', { class: `plane-block band-${p.key}` },
       h('div', { class: 'pb-head' }, h('span', { class: `tag ${p.key}`, text: p.label }), h('h3', { text: p.q })),
