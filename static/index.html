@@ -38,6 +38,7 @@
     <a href="/leaderboard" data-link data-nav="leaderboard">Leaderboard</a>
     <a href="/gallery" data-link data-nav="gallery">Gallery</a>
     <a href="/how" data-link data-nav="how">How it works</a>
+    <a href="/propose" data-link data-nav="propose">Propose</a>
     <a href="/view" data-link data-nav="view">View report</a>
     <button class="icon-btn" id="theme" type="button" aria-label="Switch color theme" title="Switch theme">◐</button>
   </nav>
@@ -86,6 +87,22 @@
           <button class="cf-nav cf-next" id="cf-next" type="button" aria-label="Next paper">›</button>
         </div>
         <div id="cf-dots" class="cf-dots"></div>
+      </div>
+    </div>
+
+    <div class="wrap propose-teaser">
+      <div class="pt-card card">
+        <div class="pt-text">
+          <p class="eyebrow">Open call</p>
+          <h2 class="sec-h left">Found a slop pattern we don't measure?</h2>
+          <p>The six measures are a start, not a census. If you have noticed a recurring breakdown in how AI-generated papers reason, describe it in the form of Table 1. We implement it, run it on the 390 paper pairs of SciSlopBench, and adopt it if it separates AI from human papers. Adopted patterns are credited here and, if you wish, as a contribution to the next version of the paper.</p>
+          <div class="pt-actions"><a class="btn" href="/propose" data-link>Propose a pattern →</a><span class="muted" id="pt-count"></span></div>
+        </div>
+        <div class="pt-steps">
+          <div class="pt-step"><b>1</b><span>Describe the pattern: what is counted, and what a score of 100 means.</span></div>
+          <div class="pt-step"><b>2</b><span>We implement it and test it on SciSlopBench, 390 AI–human pairs.</span></div>
+          <div class="pt-step"><b>3</b><span>If it separates the pairs above chance, it joins the index with your name.</span></div>
+        </div>
       </div>
     </div>
 
@@ -252,6 +269,86 @@
       <ul class="recent" id="recent"></ul>
       <div class="d-sub">Or open a downloaded report</div>
       <span class="file-btn"><button class="btn ghost small" type="button" tabindex="-1">Open a report file (.json)</button><input id="open-json" type="file" accept=".json,application/json" aria-label="Open a report file"></span>
+    </div>
+  </section>
+
+  <!-- propose -->
+  <section id="page-propose" class="wrap page" hidden>
+    <p class="eyebrow">Propose a pattern</p>
+    <h1 class="page-title">Propose a scientific slop pattern</h1>
+    <p class="page-lede">A pattern is a recurring breakdown in how a paper's reasoning connects, countable as a share of units. Describe yours the way Table 1 of the paper describes the six we have; the card on the right shows how it will read. We test every proposal on SciSlopBench and adopt the ones that hold up.</p>
+
+    <div class="pp-grid">
+      <form id="pp-form" class="pp-form card" autocomplete="off">
+        <div class="pp-sec"><span class="pp-n">1</span><h3>The pattern</h3></div>
+        <label class="pp-f"><span>Name</span><input name="name" required maxlength="80" placeholder="e.g. Orphan hyperparameters"></label>
+        <div class="pp-f"><span>Plane</span>
+          <div class="chips" id="pp-planes">
+            <button type="button" class="chip-b structure" data-plane="structure">Structure</button>
+            <button type="button" class="chip-b argument" data-plane="argument">Argument</button>
+            <button type="button" class="chip-b artifacts" data-plane="artifacts">Artifacts</button>
+            <button type="button" class="chip-b" data-plane="other">Something else</button>
+          </div>
+          <input type="hidden" name="plane" value="">
+        </div>
+        <label class="pp-f"><span>What it is <small>one sentence, as a reader would notice it</small></span><textarea name="what" required rows="2" maxlength="300" placeholder="e.g. Hyperparameters listed in the setup that no experiment ever varies or refers to."></textarea></label>
+
+        <div class="pp-sec"><span class="pp-n">2</span><h3>How it is counted</h3></div>
+        <label class="pp-f"><span>Unit of analysis <small>what gets counted</small></span><input name="unit" required maxlength="120" placeholder="e.g. Hyperparameters named in the experimental setup"></label>
+        <div class="pp-f"><span>Score = share of units</span>
+          <div class="pp-frac">
+            <input name="numerator" required maxlength="160" placeholder="units that show the pattern, e.g. hyperparameters never referred to again">
+            <span class="pp-line"></span>
+            <input name="denominator" required maxlength="120" placeholder="all units, e.g. all named hyperparameters">
+          </div>
+        </div>
+        <label class="pp-f"><span>What a score of 100 means</span><input name="one_means" maxlength="160" placeholder="e.g. No listed hyperparameter is ever used or varied."></label>
+        <label class="pp-f"><span>How to detect it <small>optional: counting rule, language model, or unsure</small></span><input name="detect" maxlength="300" placeholder="e.g. Match names in the setup table against the rest of the paper."></label>
+
+        <div class="pp-sec"><span class="pp-n">3</span><h3>Evidence <small>optional but persuasive</small></h3></div>
+        <div class="pp-ex">
+          <input name="example_url" type="url" maxlength="300" placeholder="Paper link (arXiv, OpenReview…)">
+          <textarea name="example_quote" rows="2" maxlength="600" placeholder="Quote or describe where the pattern shows up in that paper."></textarea>
+        </div>
+        <div class="pp-ex">
+          <input name="example2_url" type="url" maxlength="300" placeholder="A second paper (optional)">
+          <textarea name="example2_quote" rows="2" maxlength="600" placeholder="Where it shows up there."></textarea>
+        </div>
+
+        <div class="pp-sec"><span class="pp-n">4</span><h3>You</h3></div>
+        <div class="pp-two">
+          <label class="pp-f"><span>Name</span><input name="author" maxlength="80" placeholder="How you want to be credited"></label>
+          <label class="pp-f"><span>Affiliation</span><input name="affiliation" maxlength="120" placeholder="optional"></label>
+        </div>
+        <label class="pp-f"><span>Email <small>only so we can reach you about the result; never shown</small></span><input name="email" type="email" maxlength="120" placeholder="optional"></label>
+        <label class="check pp-check"><input type="checkbox" name="credit_site" checked> If adopted, list my name on this site</label>
+        <label class="check pp-check"><input type="checkbox" name="credit_paper"> If adopted, consider me as a contributor on the next version of the paper</label>
+
+        <div class="pp-submit">
+          <button class="btn" type="submit" id="pp-go">Submit proposal</button>
+          <span class="muted" id="pp-hint">Every proposal is public: it is filed as an issue in the project repository so you can follow its review.</span>
+        </div>
+        <p class="form-error" id="pp-error" role="alert"></p>
+      </form>
+
+      <aside class="pp-side">
+        <div class="pp-preview-l">Preview · how it will read</div>
+        <div id="pp-preview" class="mcard pp-preview"></div>
+        <div class="pp-bar card">
+          <h3>What gets a pattern adopted</h3>
+          <ol class="pp-crit">
+            <li><b>It separates the pairs.</b> Implemented as a measure and run on SciSlopBench, 390 AI-generated papers each matched with a human-written one, it must rank the AI paper higher in clearly more than half of the pairs. The six current measures score between 0.586 and 0.905.</li>
+            <li><b>It is not one of the six in disguise.</b> Its scores should not simply track an existing measure.</li>
+            <li><b>It can be counted.</b> A share of clearly defined units, by a rule or a language model with a fixed prompt.</li>
+          </ol>
+          <p class="muted">Adopted patterns join the index with a credit line here. Contributor credit on the next paper version is offered case by case.</p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="pp-list-wrap">
+      <div class="section-title"><h3>Proposals so far</h3><p id="pp-list-note"></p></div>
+      <div id="pp-list" class="pp-list"></div>
     </div>
   </section>
 

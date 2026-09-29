@@ -128,12 +128,12 @@ function initTheme() {
 }
 
 // ------------------------------------------------------------------ routing
-const PAGES = ['home', 'leaderboard', 'how', 'gallery', 'view', 'report'];
+const PAGES = ['home', 'leaderboard', 'how', 'gallery', 'view', 'propose', 'report'];
 function showPage(name) {
   for (const p of PAGES) $('#page-' + p).hidden = p !== name;
   document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === name));
   hideTip();
-  if (name !== 'report') document.title = { home: 'Science Slop Index', leaderboard: 'Leaderboard · Science Slop Index', how: 'How it works · Science Slop Index', gallery: 'Gallery · Science Slop Index', view: 'View report · Science Slop Index' }[name];
+  if (name !== 'report') document.title = { home: 'Science Slop Index', leaderboard: 'Leaderboard · Science Slop Index', how: 'How it works · Science Slop Index', gallery: 'Gallery · Science Slop Index', view: 'View report · Science Slop Index', propose: 'Propose a pattern · Science Slop Index' }[name];
 }
 function go(path) { history.pushState({}, '', path); route(); scrollTo({ top: 0 }); }
 function route() {
@@ -146,6 +146,7 @@ function route() {
   else if (p.startsWith('/how')) { showPage('how'); buildHow(); }
   else if (p.startsWith('/gallery')) { showPage('gallery'); loadGallery(); }
   else if (p.startsWith('/view')) { showPage('view'); renderRecent(); }
+  else if (p.startsWith('/propose')) { showPage('propose'); initPropose(); loadProposals(); }
   else { showPage('home'); loadHome(); }
 }
 document.addEventListener('click', e => {
@@ -1510,6 +1511,77 @@ async function loadTeam() {
     return m.url ? h('a', { class: 'tm', href: m.url, target: '_blank', rel: 'noopener', title: m.name + ' ↗' }, ...kids) : h('div', { class: 'tm' }, ...kids);
   }));
 }
+// ------------------------------------------------------------------ proposals
+const PLANE_LABEL = { structure: 'Structure', argument: 'Argument', artifacts: 'Artifacts', other: 'New plane' };
+function proposalCard(pr) {
+  const plane = pr.plane || ''; const tagCls = ['structure', 'argument', 'artifacts'].includes(plane) ? plane : '';
+  const ph = (v, t) => v ? h('span', { text: v }) : h('span', { class: 'pp-ph', text: t });
+  return [
+    h('div', { class: `mc-pic band-${tagCls || 'structure'} pp-pic` }, h('span', { class: `tag ${tagCls}`, text: PLANE_LABEL[plane] || 'Plane' }), h('span', { class: 'pp-pic-t', text: pr.name || 'Your pattern' })),
+    h('div', { class: 'mc-head' }, h('h3', {}, ph(pr.name, 'Pattern name')), h('span', { class: 'method', text: pr.detect ? (/(llm|language model|model)/i.test(pr.detect) ? 'Language model' : 'Counting rule') : 'Proposed' })),
+    h('p', { class: 'mc-what' }, ph(pr.what, 'One sentence: what a reader would notice.')),
+    h('div', { class: 'mc-score' }, h('span', { class: 'mc-eq', text: 'Score =' }),
+      h('span', { class: `frac ${tagCls || 'structure'}` }, h('span', {}, ph(pr.numerator, 'units that show the pattern')), h('span', {}, ph(pr.denominator, 'all units'))),
+      h('span', { class: 'mc-unit' }, h('span', { class: 'mc-l', text: 'Unit' }), ph(pr.unit, 'What gets counted'))),
+    h('div', { class: 'mc-scale' }, h('div', { class: 'mc-track' }, h('i', { style: { background: PLANE_VAR[tagCls] || 'var(--ink-3)' } })),
+      h('div', { class: 'mc-ends' }, h('span', {}, h('b', { text: '0' }), ' none of the units'), h('span', {}, h('b', { text: '100' }), ' ', ph(pr.one_means, 'what the extreme means')))),
+    h('div', { class: 'mc-pa' }, h('span', { class: 'mc-l', text: 'Pair accuracy' }), h('div', { class: 'mc-pa-bar' }, h('i', { style: { width: '0%' } }), h('span', { class: 'mc-chance', style: { left: '50%' } })), h('span', { class: 'mc-pa-v muted', text: 'to be tested' })),
+  ];
+}
+function ppRead() {
+  const f = $('#pp-form'); const d = Object.fromEntries(new FormData(f).entries());
+  d.credit_site = f.credit_site.checked; d.credit_paper = f.credit_paper.checked; return d;
+}
+let ppInit = false;
+function initPropose() {
+  if (ppInit) return; ppInit = true;
+  const f = $('#pp-form'); const prev = $('#pp-preview');
+  const draw = () => prev.replaceChildren(...proposalCard(ppRead()));
+  f.addEventListener('input', draw);
+  $('#pp-planes').querySelectorAll('.chip-b').forEach(b => b.addEventListener('click', () => {
+    $('#pp-planes').querySelectorAll('.chip-b').forEach(c => c.classList.toggle('on', c === b)); f.plane.value = b.dataset.plane; draw();
+  }));
+  draw();
+  f.addEventListener('submit', async e => {
+    e.preventDefault(); const err = $('#pp-error'); err.textContent = '';
+    const d = ppRead();
+    if (!d.plane) { err.textContent = 'Pick a plane, or "Something else".'; return; }
+    const btn = $('#pp-go'); btn.disabled = true;
+    try {
+      const r = await fetch('/api/proposals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
+      const res = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(res.detail || 'Could not submit. Try again.');
+      const done = h('div', { class: 'pp-done card' },
+        h('h3', { text: 'Thank you. Your proposal is in.' }),
+        h('p', {}, `Proposal ${res.id}: `, h('b', { text: d.name }), '. We will implement it, run it on SciSlopBench, and update its status below.'),
+        res.issue_url ? h('p', {}, 'Follow the review here: ', h('a', { href: res.issue_url, target: '_blank', rel: 'noopener', text: res.issue_url }))
+          : h('p', {}, 'To make it public and trackable, also file it as an issue in one click: ', h('a', { class: 'btn small', href: res.fallback_issue_url, target: '_blank', rel: 'noopener', text: 'Open as GitHub issue ↗' })),
+        h('div', { class: 'pp-done-a' }, h('button', { class: 'btn ghost small', type: 'button', onclick: () => { f.reset(); f.hidden = false; done.remove(); $('#pp-planes').querySelectorAll('.chip-b').forEach(c => c.classList.remove('on')); draw(); } }, 'Propose another')));
+      f.hidden = true; f.parentElement.insertBefore(done, f);
+      loadProposals();
+    } catch (ex) { err.textContent = ex.message; } finally { btn.disabled = false; }
+  });
+}
+async function loadProposals() {
+  const host = $('#pp-list'); host.replaceChildren(h('p', { class: 'muted', text: 'Loading…' }));
+  let d; try { d = await (await fetch('/api/proposals')).json(); } catch (_) { host.replaceChildren(); return; }
+  const items = d.items || [];
+  $('#pp-list-note').replaceChildren(items.length ? h('span', {}, `${items.length} proposal${items.length === 1 ? '' : 's'} · reviewed in the open at `, h('a', { href: `https://github.com/${d.repo}/issues?q=label%3Aproposal`, target: '_blank', rel: 'noopener', text: d.repo })) : h('span', { text: 'None yet. Yours could be the first.' }));
+  const order = { accepted: 0, testing: 1, 'under-review': 2, 'not-adopted': 3 };
+  items.sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9) || (b.created || '').localeCompare(a.created || ''));
+  host.replaceChildren(...items.map(pr => {
+    const tagCls = ['structure', 'argument', 'artifacts'].includes(pr.plane) ? pr.plane : '';
+    const row = h(pr.url ? 'a' : 'div', { class: `pp-row st-${pr.status}`, href: pr.url || null, target: pr.url ? '_blank' : null, rel: pr.url ? 'noopener' : null },
+      h('span', { class: `pp-status st-${pr.status}`, text: pr.status_label }),
+      h('span', { class: 'pp-row-main' }, h('span', { class: 'pp-row-name' }, h('span', { class: `tag ${tagCls}`, text: PLANE_LABEL[pr.plane] || 'Plane' }), ' ', pr.name), pr.what ? h('span', { class: 'pp-row-what', text: pr.what }) : null),
+      h('span', { class: 'pp-row-by', text: pr.author || 'Anonymous' }));
+    return row;
+  }));
+}
+async function loadProposalCount() {
+  try { const d = await (await fetch('/api/proposals')).json(); const n = (d.items || []).length; const acc = (d.items || []).filter(x => x.status === 'accepted').length;
+    $('#pt-count').textContent = n ? `${n} proposal${n === 1 ? '' : 's'} so far${acc ? `, ${acc} adopted` : ''}` : ''; } catch (_) { /* optional */ }
+}
 let homeFeatured = null;
 async function loadHome() {
   if (!state.gallery) {
@@ -1517,7 +1589,7 @@ async function loadHome() {
     catch (_) { return; }
   }
   const ranked = [...state.gallery.items].filter(x => x.index != null).sort((a, b) => b.index - a.index);
-  buildCoverflow(ranked); loadTeam();
+  buildCoverflow(ranked); loadTeam(); loadProposalCount();
   const key = state.config?.featured || ranked[0]?.key;
   if (key && homeFeatured !== key) { homeFeatured = key; renderDeepDive(key, ranked); }
 }

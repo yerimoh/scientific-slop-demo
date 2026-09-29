@@ -532,6 +532,111 @@ async def gallery():
     return {"items": list(newest.values()), "persistent": PERSISTENT}
 
 
+# ---------------------------------------------------------------- proposals (new slop patterns)
+PROPOSALS_REPO = os.environ.get("SCISLOP_PROPOSALS_REPO", "yerimoh/scientific-slop-demo")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+PROPOSALS_DIR = os.path.join(DATA, "proposals")
+_PROPOSAL_CACHE: dict = {"at": 0.0, "items": []}
+PROPOSAL_FIELDS = ("name", "plane", "what", "unit", "numerator", "denominator", "one_means", "detect", "example_url", "example_quote", "example2_url", "example2_quote",
+                   "author", "affiliation", "email", "credit_site", "credit_paper")
+PROPOSAL_STATUS = {"accepted": "Accepted", "not-adopted": "Not adopted", "under-review": "Under review", "testing": "Testing on SciSlopBench"}
+
+
+def _proposal_markdown(pr: dict) -> str:
+    plane = pr.get("plane") or "unassigned"
+    lines = [f"**Plane:** {plane}", "", f"**What it is:** {pr.get('what', '')}", "", f"**Unit of analysis:** {pr.get('unit', '')}", "",
+             "**Score =**", "", f"> {pr.get('numerator', '')}", "> ───", f"> {pr.get('denominator', '')}", "",
+             f"**A score of 100 means:** {pr.get('one_means', '')}", "", f"**How to detect it:** {pr.get('detect', '') or '—'}", ""]
+    for k in ("", "2"):
+        if pr.get(f"example{k}_url") or pr.get(f"example{k}_quote"):
+            lines += [f"**Example{' ' + k if k else ''}:** {pr.get(f'example{k}_url', '')}", "", f"> {pr.get(f'example{k}_quote', '')}", ""]
+    who = pr.get("author") or "Anonymous"
+    if pr.get("affiliation"):
+        who += f" ({pr['affiliation']})"
+    credit = [c for c, on in (("listed on the site", pr.get("credit_site")), ("contributor on the next paper version", pr.get("credit_paper"))) if on]
+    lines += ["---", f"Proposed by {who}." + (f" Credit requested: {', '.join(credit)}." if credit else ""), f"Proposal id `{pr['id']}` · submitted via the Science Slop Index site."]
+    return "\n".join(lines)
+
+
+def _github_issue(pr: dict) -> Optional[str]:
+    """Create a GitHub issue for the proposal (durable inbox). Returns the issue URL, or None without a token."""
+    if not GITHUB_TOKEN:
+        return None
+    import urllib.request
+    body = json.dumps({"title": f"Proposal: {pr['name']}", "body": _proposal_markdown(pr), "labels": ["proposal", "under-review"]}).encode()
+    req = urllib.request.Request(f"https://api.github.com/repos/{PROPOSALS_REPO}/issues", data=body, method="POST",
+                                 headers={"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return json.load(r).get("html_url")
+    except Exception as e:  # noqa: BLE001
+        print("github issue failed:", e)
+        return None
+
+
+def _github_proposals() -> list:
+    """Proposals that live as GitHub issues (public read, cached 5 minutes). Status comes from labels."""
+    if time.time() - _PROPOSAL_CACHE["at"] < 300:
+        return _PROPOSAL_CACHE["items"]
+    import urllib.request
+    items = []
+    try:
+        req = urllib.request.Request(f"https://api.github.com/repos/{PROPOSALS_REPO}/issues?labels=proposal&state=all&per_page=100",
+                                     headers={"Accept": "application/vnd.github+json", **({"Authorization": f"Bearer {GITHUB_TOKEN}"} if GITHUB_TOKEN else {})})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            for it in json.load(r):
+                labels = [l["name"] for l in it.get("labels", [])]
+                status = next((k for k in ("accepted", "not-adopted", "testing", "under-review") if k in labels), "under-review")
+                body = it.get("body") or ""
+                m_plane = re.search(r"\*\*Plane:\*\* (\w+)", body); m_what = re.search(r"\*\*What it is:\*\* (.+)", body)
+                m_by = re.search(r"Proposed by (.+?)\.", body)
+                items.append({"id": f"gh-{it['number']}", "name": re.sub(r"^Proposal:\s*", "", it["title"]), "plane": (m_plane.group(1).lower() if m_plane else None),
+                              "what": (m_what.group(1).strip() if m_what else ""), "author": (m_by.group(1) if m_by else "Anonymous"),
+                              "status": status, "status_label": PROPOSAL_STATUS[status], "url": it["html_url"], "created": it.get("created_at")})
+    except Exception as e:  # noqa: BLE001
+        print("github proposals fetch failed:", e)
+    _PROPOSAL_CACHE.update(at=time.time(), items=items)
+    return items
+
+
+@app.get("/api/proposals")
+async def proposals():
+    gh = await asyncio.to_thread(_github_proposals)
+    local = []
+    if os.path.isdir(PROPOSALS_DIR):
+        for f in sorted(os.listdir(PROPOSALS_DIR)):
+            try:
+                with open(os.path.join(PROPOSALS_DIR, f)) as fh:
+                    pr = json.load(fh)
+                if pr.get("issue_url"):
+                    continue          # already listed through GitHub
+                local.append({"id": pr["id"], "name": pr["name"], "plane": pr.get("plane"), "what": pr.get("what", ""), "author": pr.get("author") or "Anonymous",
+                              "status": "under-review", "status_label": PROPOSAL_STATUS["under-review"], "url": None, "created": pr.get("created")})
+            except Exception:  # noqa: BLE001
+                continue
+    return {"items": gh + local, "github": bool(GITHUB_TOKEN), "repo": PROPOSALS_REPO,
+            "existing": [{"key": k, "name": v} for k, v in (("cross_refs", "Cross-section references"), ("macro_redundancy", "Macro redundancy"), ("argument_graph", "Argument graph"),
+                                                             ("citation_isolation", "Citation isolation"), ("figure_exposition", "Figure exposition"), ("evidence_gap", "Evidence gap"))]}
+
+
+@app.post("/api/proposals")
+async def propose(request: Request, body: dict):
+    _rate_limit(request)
+    pr = {k: (str(body.get(k) or "").strip()[:2000] if not k.startswith("credit_") else bool(body.get(k))) for k in PROPOSAL_FIELDS}
+    if len(pr["name"]) < 3 or len(pr["what"]) < 10 or not pr["numerator"] or not pr["denominator"]:
+        raise HTTPException(400, "Give the pattern a name, a one-sentence definition, and the numerator and denominator of its score.")
+    if pr["plane"] not in ("structure", "argument", "artifacts", "other"):
+        pr["plane"] = "other"
+    pr["id"] = _new_key(); pr["created"] = time.time()
+    os.makedirs(PROPOSALS_DIR, exist_ok=True)
+    pr["issue_url"] = await asyncio.to_thread(_github_issue, pr)
+    with open(os.path.join(PROPOSALS_DIR, pr["id"] + ".json"), "w") as f:
+        json.dump(pr, f)
+    _PROPOSAL_CACHE["at"] = 0.0
+    fallback = f"https://github.com/{PROPOSALS_REPO}/issues/new?" + __import__("urllib.parse").parse.urlencode({"title": f"Proposal: {pr['name']}", "body": _proposal_markdown(pr), "labels": "proposal,under-review"})
+    return {"id": pr["id"], "issue_url": pr["issue_url"], "fallback_issue_url": None if pr["issue_url"] else fallback}
+
+
 @app.get("/api/config")
 async def config():
     llm = LLM()
@@ -559,6 +664,7 @@ async def favicon():
 @app.get("/how")
 @app.get("/gallery")
 @app.get("/view")
+@app.get("/propose")
 @app.get("/r/{key}")
 async def index(key: Optional[str] = None):
     return FileResponse(os.path.join(HERE, "static", "index.html"))
