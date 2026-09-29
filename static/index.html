@@ -89,38 +89,6 @@
       </div>
     </div>
 
-    <div class="wrap planes-wrap">
-      <h2 class="sec-h">Reads the paper, not the prose.</h2>
-      <p class="sec-sub">AI text detectors score sentences. The Science Slop Index counts, for six patterns, the share of a paper's units in which the scientific reasoning fails to connect. Each pattern is more common in AI-generated papers than in human-written papers on the same problem.</p>
-      <div class="planes-intro">
-        <div class="pi">
-          <span class="pi-ico band-structure"><span class="tag structure">Structure</span></span>
-          <p>Do the sections build on one another?</p>
-          <ul>
-            <li><img src="/static/img/cross_refs.svg" alt=""><span><b>Cross-section references</b>Figures, tables, and sections that no other section points to.</span></li>
-            <li><img src="/static/img/macro_redundancy.svg" alt=""><span><b>Macro redundancy</b>Later sections that restate earlier ones instead of developing them.</span></li>
-          </ul>
-        </div>
-        <div class="pi">
-          <span class="pi-ico band-argument"><span class="tag argument">Argument</span></span>
-          <p>Are claims and citations argued, not just stated?</p>
-          <ul>
-            <li><img src="/static/img/argument_graph.svg" alt=""><span><b>Argument graph</b>Key claims stated before anything leads up to them.</span></li>
-            <li><img src="/static/img/citation_isolation.svg" alt=""><span><b>Citation isolation</b>Prior work cited without being related to any other work.</span></li>
-          </ul>
-        </div>
-        <div class="pi">
-          <span class="pi-ico band-artifacts"><span class="tag artifacts">Artifacts</span></span>
-          <p>Can a reader inspect the method and the evidence?</p>
-          <ul>
-            <li><img src="/static/img/figure_exposition.svg" alt=""><span><b>Figure exposition</b>Method figures crowded with detail that belongs in the text.</span></li>
-            <li><img src="/static/img/evidence_gap.svg" alt=""><span><b>Evidence gap</b>Result tables with no concrete input, output, or case anywhere.</span></li>
-          </ul>
-        </div>
-      </div>
-      <p class="home-bench">On SciSlopBench, 390 AI-generated papers each paired with a human-written paper on the same problem, these six measures pick out the AI-generated paper in 85.9% of pairs. Binoculars, the strongest text detector, reaches 68.7%. <a href="/how" data-link>How the index is computed</a></p>
-    </div>
-
     <div class="wrap cite">
       <h2 class="sec-h left">Cite</h2>
       <p class="cap muted" style="margin:4px 0 12px">If you use the Science Slop Index or SciSlopBench, please cite the paper.</p>
@@ -140,6 +108,13 @@
       <p class="eyebrow">How it works</p>
       <h1 class="page-title">Six measures, three planes, one number</h1>
       <p class="page-lede">Each measure counts the share of a paper's units that show one pattern. The index averages the measures within each plane, then averages the planes, and reports the result out of 100. Higher means more of the patterns that set AI-generated papers apart from matched human papers.</p>
+    </div>
+
+    <div class="wrap how-sec how-article">
+      <h2 class="sec-h left">Reads the paper, not the prose</h2>
+      <p class="art-p">AI text detectors score sentences: how predictable each token is, how a model would have phrased it. A paper written or revised by a language model can pass that test and still fail as science. Each paragraph looks fine on its own while the connections between paragraphs do not hold: a figure that no section ever refers to, a claim that arrives before anything leads up to it, a related-work paragraph that lists citations without relating them, a method diagram crowded with hyperparameters, a results table with no concrete example anywhere in the paper.</p>
+      <p class="art-p">The Science Slop Index counts these breakdowns. It reads the whole paper, groups six patterns into three planes, and asks three questions. Below, each plane is illustrated with real findings from the papers analyzed on this site; use the arrows to browse them, and click a finding to open it on the paper.</p>
+      <div id="plane-explainer" class="plane-explainer"></div>
     </div>
 
     <div class="dots-band">

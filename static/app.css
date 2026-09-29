@@ -479,6 +479,35 @@ h1.hero em { font-style: italic; color: var(--red); font-weight: 600; }
 .bands-n { display: grid; grid-template-columns: 20% 20% 20% 40%; font-size: 13px; color: var(--ink-2); font-weight: 600; text-align: center; margin-top: 2px; }
 @media (max-width: 860px) { .steps3, .mgroup-row { grid-template-columns: 1fr; } .agg { grid-template-columns: 1fr; } .agg-final { justify-content: flex-start; } .agg-final .agg-arrow::before { content: "↓ "; } .how-sec { padding: 40px 16px 16px; } }
 
+/* how: article + plane explainer with real examples */
+.how-article { padding-top: 8px; }
+.art-p { max-width: 760px; color: var(--ink-2); font-size: 16px; line-height: 1.65; margin: 0 0 14px; }
+.plane-explainer { display: grid; gap: 18px; margin-top: 26px; }
+.plane-block { border-radius: var(--radius); border: 1px solid var(--line); padding: 18px 20px 20px; }
+.pb-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.pb-head h3 { margin: 0; font-size: 19px; letter-spacing: -.015em; }
+.pb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.pb-measure { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 16px; display: grid; gap: 8px; align-content: start; }
+.pb-pic { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; place-items: center; }
+.pb-pic img { width: 100%; max-width: 360px; display: block; }
+.pb-measure h4 { margin: 4px 0 0; font-size: 17px; }
+.pb-what { margin: 0; color: var(--ink-2); font-size: 14px; }
+.ex-nav { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.ex-nav .ex-l { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); font-weight: 700; }
+.ex-nav .ex-n { margin-left: auto; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.ib.small { width: 28px; height: 28px; border-radius: 8px; font-size: 18px; }
+.ex-stage { min-height: 120px; }
+.ex-card { background: var(--surface-2); border-radius: 10px; padding: 10px 12px 10px; font-size: 13.5px; display: grid; gap: 6px; }
+.ex-where { font-size: 12px; color: var(--ink-3); } .ex-where b { color: var(--ink-2); font-weight: 600; }
+.ex-text { color: var(--ink); line-height: 1.5; }
+.ex-text .obj { font-size: 11.5px; }
+.ex-why { color: var(--ink-2); font-size: 13px; border-left: 2px solid var(--line-2); padding-left: 8px; }
+.ex-fig { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px; max-width: 320px; }
+.ex-fig img { width: 100%; display: block; }
+.ex-actions { font-size: 12.5px; }
+.ex-empty { color: var(--ink-3); font-size: 13px; padding: 10px 0; }
+@media (max-width: 860px) { .pb-grid { grid-template-columns: 1fr; } }
+
 /* ------------------------------------------------------------------ leaderboard */
 .lb-head { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 18px; }
 .lb-title { flex: 1 1 420px; min-width: 0; }

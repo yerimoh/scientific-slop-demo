@@ -937,7 +937,55 @@ function footCard(res) {
 
 // ------------------------------------------------------------------ how it works
 let howBuilt = false;
+function exampleNode(ex) {
+  const it = ex.it; const k = ex.key; const parts = [];
+  const where = h('div', { class: 'ex-where' }, h('b', { text: trunc(ex.title, 70) }), h('span', { text: it.section_title ? ' · ' + it.section_title : '' }));
+  if (k === 'cross_refs') parts.push(h('div', { class: 'ex-text' }, h('span', { class: 'obj miss', text: it.label }), ' ', it.caption ? trunc(it.caption, 160) : ''), h('div', { class: 'ex-why', text: it.text }));
+  else if (k === 'macro_redundancy') parts.push(highlighted(it.text, it.highlights), h('div', { class: 'ex-why', text: `${Math.round((it.coverage || 0) * 100)}% copied from ${it.source_title}: “${trunc(it.source_text, 140)}”` }));
+  else if (k === 'argument_graph') parts.push(h('div', { class: 'ex-text', text: `Claim (sentence ${it.sentence + 1}): “${trunc(it.text, 220)}”` }), h('div', { class: 'ex-why', text: `${it.why} Support: “${trunc(it.support_text, 140)}”` }));
+  else if (k === 'citation_isolation') parts.push(h('div', { class: 'ex-text', text: '“' + trunc(it.text, 220) + '”' }), h('div', { class: 'ex-why', text: it.why }));
+  else if (k === 'figure_exposition') parts.push(ex.img ? h('div', { class: 'ex-fig' }, h('img', { src: ex.img, alt: '', loading: 'lazy' })) : null, h('div', { class: 'ex-text' }, h('span', { class: 'kt-ico on', text: '✕' }), ' ', it.label + ': ' + (it.examples || []).slice(0, 4).map(e => `“${trunc(e, 36)}”`).join(' ')), h('div', { class: 'ex-why', text: 'Material that belongs in the text, found inside the method figure.' }));
+  else parts.push(h('div', { class: 'ex-text', text: trunc(it.text || '', 220) }), h('div', { class: 'ex-why', text: it.why || '' }));
+  const pages = [...new Set((it.pdf || []).map(l => l.p + 1))];
+  parts.push(h('div', { class: 'ex-actions' }, h('a', { href: `/r/${ex.job}?tab=paper`, 'data-link': '', class: 'onpaper', text: pages.length ? `Show on paper · p. ${pages[0]}` : 'Open the report' })));
+  return h('div', { class: 'ex-card' }, where, ...parts.filter(Boolean));
+}
+async function loadPlaneExplainer() {
+  const host = $('#plane-explainer'); if (!host || host.dataset.built) return; host.dataset.built = '1';
+  host.replaceChildren(h('p', { class: 'muted', text: 'Loading examples from the analyzed papers…' }));
+  let items = [];
+  try { if (!state.gallery) { const r = await fetch('/api/gallery'); state.gallery = await r.json(); } items = state.gallery.items.filter(x => x.index != null).slice(0, 8); } catch (_) { host.replaceChildren(); return; }
+  const jobs = (await Promise.all(items.map(x => fetchReport(x.key).catch(() => null)))).filter(Boolean);
+  const pool = {}; for (const k of ORDER) pool[k] = [];
+  for (const job of jobs) for (const m of job.result.measures) {
+    if (m.status !== 'done') continue;
+    const title = job.result.document?.title || job.title;
+    const fig = m.details?.figure; const img = fig?.images?.length ? `/api/jobs/${job.key || job.id}/files/${fig.images[0]}` : null;
+    for (const it of (m.instances || []).slice(0, 2)) pool[m.key].push({ key: m.key, job: job.key || job.id, title, it, img });
+  }
+  // interleave papers so the first examples are not all from one paper
+  for (const k of ORDER) { const byJob = new Map(); for (const e of pool[k]) byJob.set(e.job, (byJob.get(e.job) || []).concat(e)); const out = []; const lists = [...byJob.values()]; for (let r = 0; lists.some(l => l.length > r); r++) for (const l of lists) if (l[r]) out.push(l[r]); pool[k] = out; }
+  host.replaceChildren(...PLANES.map(p => {
+    const block = h('section', { class: `plane-block band-${p.key}` },
+      h('div', { class: 'pb-head' }, h('span', { class: `tag ${p.key}`, text: p.label }), h('h3', { text: p.q })),
+      h('div', { class: 'pb-grid' }, p.measures.map(k => {
+        const m = MEASURES[k]; const exs = pool[k]; let i = 0;
+        const stage = h('div', { class: 'ex-stage' }); const counter = h('span', { class: 'ex-n' });
+        const draw = () => { if (!exs.length) { stage.replaceChildren(h('div', { class: 'ex-empty', text: 'None of the papers on this site is flagged by this measure.' })); counter.textContent = ''; return; } stage.replaceChildren(exampleNode(exs[i])); counter.textContent = `${i + 1} / ${exs.length}`; };
+        draw();
+        return h('div', { class: 'pb-measure' },
+          h('div', { class: 'pb-pic' }, h('img', { src: `/static/img/${k}.svg`, alt: `Illustration of ${m.name}` })),
+          h('h4', { text: m.name }), h('p', { class: 'pb-what', text: m.what }),
+          h('div', { class: 'ex-nav' }, h('span', { class: 'ex-l', text: 'Real findings' }), counter,
+            h('button', { type: 'button', class: 'ib small', 'aria-label': 'Previous example', onclick: () => { if (exs.length) { i = (i - 1 + exs.length) % exs.length; draw(); } } }, '‹'),
+            h('button', { type: 'button', class: 'ib small', 'aria-label': 'Next example', onclick: () => { if (exs.length) { i = (i + 1) % exs.length; draw(); } } }, '›')),
+          stage);
+      })));
+    return block;
+  }));
+}
 function buildHow() {
+  loadPlaneExplainer();
   if (howBuilt) return; howBuilt = true;
   const host = $('#spec');
   for (const p of PLANES) {
