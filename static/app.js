@@ -1431,6 +1431,17 @@ async function openPreview(key) {
   init();
 }
 
+async function loadTeam() {
+  const host = $('#team'); if (!host || host.dataset.built) return; host.dataset.built = '1';
+  let team = []; try { team = await (await fetch('/static/team.json')).json(); } catch (_) { return; }
+  host.replaceChildren(...team.map(m => {
+    const initials = m.name.split(/[\s-]+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const avatar = h('div', { class: 'tm-avatar' }, h('span', { text: initials }));
+    if (m.photo) { const img = h('img', { src: `/static/img/team/${m.photo}`, alt: m.name, loading: 'lazy' }); img.addEventListener('error', () => img.remove()); avatar.append(img); }
+    const name = m.url ? h('a', { class: 'tm-name', href: m.url, target: '_blank', rel: 'noopener', text: m.name }) : h('span', { class: 'tm-name', text: m.name });
+    return h('div', { class: 'tm' }, avatar, name, m.affiliation ? h('span', { class: 'tm-aff', text: m.affiliation }) : null, m.role ? h('span', { class: 'tm-role', text: m.role }) : null);
+  }));
+}
 let homeFeatured = null;
 async function loadHome() {
   if (!state.gallery) {
@@ -1438,7 +1449,7 @@ async function loadHome() {
     catch (_) { return; }
   }
   const ranked = [...state.gallery.items].filter(x => x.index != null).sort((a, b) => b.index - a.index);
-  buildCoverflow(ranked);
+  buildCoverflow(ranked); loadTeam();
   const key = state.config?.featured || ranked[0]?.key;
   if (key && homeFeatured !== key) { homeFeatured = key; renderDeepDive(key, ranked); }
 }
