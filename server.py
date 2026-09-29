@@ -535,7 +535,10 @@ async def gallery():
 @app.get("/api/config")
 async def config():
     llm = LLM()
-    return {"llm": llm.describe(), "llm_available": llm.available, "byok": True,
+    featured = os.environ.get("SCISLOP_FEATURED", "4jrs-rg3f-g5uq")
+    if featured not in JOBS:
+        featured = next((k for k, j in JOBS.items() if j.get("status") == "done" and j.get("gallery")), None)
+    return {"llm": llm.describe(), "llm_available": llm.available, "byok": True, "featured": featured,
             "key_provider": "OpenRouter" if llm.provider == "openrouter" else llm.describe().get("provider", "the LLM gateway"),
             "max_upload_mb": MAX_UPLOAD // (1024 * 1024),
             "persistent": PERSISTENT,

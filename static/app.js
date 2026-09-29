@@ -1311,19 +1311,14 @@ function measureBars(ms, onPick) {
   });
   return h('div', { class: 'mbars' }, rows);
 }
-async function openPreview(key) {
-  document.querySelectorAll('.modal-bg').forEach(n => n.remove());
-  const box = h('div', { class: 'modal card' }, h('p', { class: 'muted', text: 'Loading…' }));
-  const bg = h('div', { class: 'modal-bg', onclick: e => { if (e.target === bg) close(); } }, box);
-  const close = () => { bg.remove(); hideTip(); document.removeEventListener('keydown', onKey); };
-  const onKey = e => { if (e.key === 'Escape') close(); };
-  document.addEventListener('keydown', onKey);
-  document.body.append(bg);
-  let job;
-  try { const r = await fetch('/api/jobs/' + encodeURIComponent(key)); job = await r.json(); if (!r.ok || !job.result) throw new Error(); }
-  catch (_) { box.replaceChildren(h('p', { class: 'muted', text: 'Could not load this report.' })); return; }
+async function fetchReport(key) {
+  const r = await fetch('/api/jobs/' + encodeURIComponent(key)); const job = await r.json();
+  if (!r.ok || !job.result) throw new Error('no report');
+  return job;
+}
+// The report digest: score card, first page with highlights, paper map, six measures with a graph stage.
+function previewBody(key, job, openReportAt, opts = {}) {
   const res = job.result; const doc = res.document || {}; const ms = measuresOf(job);
-  const openReportAt = tab => { close(); go(`/r/${key}?tab=${tab}`); };
   const pdf = res.pdf || {}; const [pw, ph] = (pdf.sizes || [])[0] || [612, 792];
   const marks = [];
   for (const m of res.measures) (m.instances || []).forEach((it, i) => (it.pdf || []).forEach(loc => { if (loc.p !== 0) return; for (const r of loc.r) marks.push({ m, it, i, r, box: !!loc.box }); }));
@@ -1343,6 +1338,40 @@ async function openPreview(key) {
     stageSub.textContent = v ? MEASURES[k].unit : (ms[k]?.status === 'done' ? 'No graph for this measure on this paper.' : 'This measure did not run.');
     stage.replaceChildren(v || h('div', { class: 'muted', text: ms[k]?.status === 'done' ? 'Nothing to draw.' : ((ms[k]?.notes || [])[0] || 'Not measured.') }));
   });
+  const map = h('div', { class: 'card map-card' });
+  const body = h('div', { class: 'prev-body' },
+    scoreCard(res.index, ms, false),
+    h('div', { class: 'prev-grid' },
+      h('div', { class: 'prev-left' },
+        h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings placed here. Hover one to read why; click it for details.` : 'Nothing flagged on the first page.' })),
+        page),
+      h('div', { class: 'prev-right' },
+        h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
+        map,
+        h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
+        bars,
+        h('div', { class: 'section-title' }, stageTitle, stageSub),
+        stage)));
+  const init = () => {
+    const first = ORDER.find(k => measureViz(ms[k], doc));
+    if (first) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
+    drawMap(map, doc, ms, () => openReportAt('findings'));
+    requestAnimationFrame(() => requestAnimationFrame(() => body.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
+  };
+  return { body, init, doc };
+}
+async function openPreview(key) {
+  document.querySelectorAll('.modal-bg').forEach(n => n.remove());
+  const box = h('div', { class: 'modal card' }, h('p', { class: 'muted', text: 'Loading…' }));
+  const bg = h('div', { class: 'modal-bg', onclick: e => { if (e.target === bg) close(); } }, box);
+  const close = () => { bg.remove(); hideTip(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  document.body.append(bg);
+  let job;
+  try { job = await fetchReport(key); } catch (_) { box.replaceChildren(h('p', { class: 'muted', text: 'Could not load this report.' })); return; }
+  const openReportAt = tab => { close(); go(`/r/${key}?tab=${tab}`); };
+  const { body, init, doc } = previewBody(key, job, openReportAt);
   box.replaceChildren(
     h('div', { class: 'modal-head' },
       h('div', {}, h('p', { class: 'eyebrow', text: 'Preview' }), h('h3', { text: doc.title || job.title || 'Paper' })),
@@ -1350,31 +1379,88 @@ async function openPreview(key) {
         h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('paper') }, 'All pages'),
         h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('findings') }, 'Full report →'),
         h('button', { class: 'hl-x', type: 'button', 'aria-label': 'Close', onclick: close }, '×'))),
-    scoreCard(res.index, ms, false),
-    h('div', { class: 'prev-grid' },
-      h('div', { class: 'prev-left' },
-        h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? 'Hover a highlight to read why; click it for details.' : 'Nothing flagged on the first page.' })),
-        page),
-      h('div', { class: 'prev-right' },
-        h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
-        h('div', { class: 'card map-card', id: 'prev-map' }),
-        h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
-        bars,
-        h('div', { class: 'section-title' }, stageTitle, stageSub),
-        stage)));
-  const first = ORDER.find(k => measureViz(ms[k], doc));
-  if (first) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
-  drawMap(box.querySelector('#prev-map'), doc, ms, () => openReportAt('findings'));
-  requestAnimationFrame(() => requestAnimationFrame(() => box.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
+    body);
+  init();
 }
 
+let homeFeatured = null;
 async function loadHome() {
   if (!state.gallery) {
     try { const r = await fetch('/api/gallery'); state.gallery = await r.json(); }
     catch (_) { return; }
   }
   const ranked = [...state.gallery.items].filter(x => x.index != null).sort((a, b) => b.index - a.index);
-  $('#home-list').replaceChildren(...ranked.slice(0, 4).map((x, i) => galleryCard(x, i + 1)));
+  buildCoverflow(ranked);
+  const key = state.config?.featured || ranked[0]?.key;
+  if (key && homeFeatured !== key) { homeFeatured = key; renderDeepDive(key, ranked); }
+}
+async function renderDeepDive(key, ranked) {
+  const host = $('#dive'); host.replaceChildren(h('p', { class: 'muted', text: 'Loading the example…' }));
+  let job; try { job = await fetchReport(key); } catch (_) { host.replaceChildren(); return; }
+  const openReportAt = tab => go(`/r/${key}?tab=${tab}`);
+  const { body, init, doc } = previewBody(key, job, openReportAt);
+  const x = ranked.find(r => r.key === key); const rank = x ? ranked.indexOf(x) + 1 : null;
+  host.replaceChildren(
+    h('div', { class: 'dive-head' },
+      h('div', {},
+        h('p', { class: 'eyebrow', text: 'Example · what a report looks like' }),
+        h('h2', { class: 'dive-title', text: doc.title || job.title }),
+        h('p', { class: 'dive-meta', text: [x?.source, rank ? `ranked #${rank} of ${ranked.length} papers on this site` : null].filter(Boolean).join(' · ') })),
+      h('div', { class: 'modal-actions' },
+        h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('paper') }, 'All pages'),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('findings') }, 'Full report →'))),
+    body);
+  init();
+}
+// ------------------------------------------------------------------ coverflow
+const cf = { items: [], i: 0, timer: null };
+function buildCoverflow(items) {
+  const stage = $('#cf-stage'); const dots = $('#cf-dots');
+  cf.items = items; if (!items.length) { stage.replaceChildren(h('div', { class: 'g-empty', text: 'No paper has been analyzed yet.' })); return; }
+  stage.replaceChildren(...items.map((x, i) => {
+    const b = x.index != null ? band(x.index) : null;
+    const [pw, ph] = x.page0 || [612, 792];
+    const marks = (x.marks || []).map(k => h('span', { class: `g-mark ${k.plane}${k.box ? ' box' : ''}`, style: { left: `${100 * k.r[0] / pw}%`, top: `${100 * k.r[1] / ph}%`, width: `${100 * (k.r[2] - k.r[0]) / pw}%`, height: `${100 * (k.r[3] - k.r[1]) / ph}%` } }));
+    const card = h('div', { class: 'cf-card', 'data-i': i, role: 'button', tabindex: 0, 'aria-label': x.title,
+      onclick: () => { if (cf.i === i) openPreview(x.key); else cfGo(i); },
+      onkeydown: e => { if (e.key === 'Enter') { cf.i === i ? openPreview(x.key) : cfGo(i); } } },
+      h('div', { class: 'cf-thumb' }, h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy', draggable: false }) : h('div', { class: 'ph', text: x.title }), ...marks),
+        marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null),
+      h('div', { class: 'cf-cap' },
+        h('div', { class: 'cf-title', text: x.title }),
+        h('div', { class: 'cf-sub' }, h('span', { class: 'cf-idx', style: { color: b ? 'var(--red)' : 'var(--ink-3)' }, text: x.index != null ? `Science Slop Index ${x.index}` : '—' }),
+          h('span', { class: 'cf-planes' }, PLANES.map(p => h('span', { class: `cf-p cf-${p.key}`, title: p.label, text: `${p.label.slice(0, 3)} ${fmt(x.planes?.[p.key])}` }))))));
+    return card;
+  }));
+  dots.replaceChildren(...items.map((x, i) => h('button', { type: 'button', class: 'cf-dot', 'aria-label': `Paper ${i + 1}`, onclick: () => cfGo(i) })));
+  cf.i = Math.min(cf.i, items.length - 1); cfLayout();
+  if (!cf.timer) {
+    cf.timer = setInterval(() => { if (!document.hidden && !$('#page-home').hidden && !$('#coverflow').matches(':hover')) cfGo((cf.i + 1) % cf.items.length); }, 5000);
+    $('#cf-prev').addEventListener('click', () => cfGo((cf.i - 1 + cf.items.length) % cf.items.length));
+    $('#cf-next').addEventListener('click', () => cfGo((cf.i + 1) % cf.items.length));
+    $('#coverflow').addEventListener('keydown', e => { if (e.key === 'ArrowLeft') $('#cf-prev').click(); if (e.key === 'ArrowRight') $('#cf-next').click(); });
+    let sx = null;
+    $('#cf-stage').addEventListener('pointerdown', e => { sx = e.clientX; });
+    $('#cf-stage').addEventListener('pointerup', e => { if (sx == null) return; const dx = e.clientX - sx; sx = null; if (Math.abs(dx) > 40) (dx < 0 ? $('#cf-next') : $('#cf-prev')).click(); });
+    new ResizeObserver(cfLayout).observe($('#cf-stage'));
+  }
+}
+function cfGo(i) { cf.i = i; cfLayout(); }
+function cfLayout() {
+  const stage = $('#cf-stage'); if (!stage) return;
+  const W = stage.clientWidth; const n = cf.items.length; const narrow = W < 700;
+  const step = narrow ? W * 0.44 : W * 0.30;
+  stage.querySelectorAll('.cf-card').forEach(c => {
+    let off = Number(c.dataset.i) - cf.i;                      // circular: cards sit on both sides
+    if (n > 2) { off = ((off % n) + n) % n; if (off > n / 2) off -= n; }
+    const a = Math.abs(off);
+    const x = Math.sign(off) * (step * Math.min(a, 1) + step * 0.55 * Math.max(a - 1, 0));
+    c.style.transform = `translateX(-50%) translateX(${x}px) translateZ(${-170 * Math.min(a, 3)}px) rotateY(${-Math.sign(off) * Math.min(a, 1) * 42}deg)`;
+    c.style.zIndex = String(20 - a); c.style.opacity = a > 2 ? '0' : String(1 - a * 0.12);
+    c.classList.toggle('on', off === 0); c.setAttribute('aria-hidden', String(a > 2));
+  });
+  $('#cf-dots').querySelectorAll('.cf-dot').forEach((d, i) => d.classList.toggle('on', i === cf.i));
+  $('#cf-label').textContent = cf.items[cf.i] ? `${cf.i + 1} / ${cf.items.length}` : '';
 }
 
 // ------------------------------------------------------------------ gallery

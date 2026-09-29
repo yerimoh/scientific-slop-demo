@@ -74,73 +74,53 @@
       </div>
     </div>
 
-    <div class="dots-band">
+    <div class="wrap dive-wrap"><div id="dive" class="dive card"></div></div>
+
+    <div class="dots-band cf-band">
       <div class="wrap">
-        <h2 class="sec-h">Reads the paper, not the prose.</h2>
-        <p class="sec-sub">AI text detectors score sentences. The Science Slop Index counts, for six patterns, the share of a paper's units in which the scientific reasoning fails to connect. Each pattern is more common in AI-generated papers than in human-written papers on the same problem.</p>
-        <div class="planes-intro">
-          <div class="pi">
-            <span class="pi-ico band-structure"><span class="tag structure">Structure</span></span>
-            <p>Do the sections build on one another?</p>
-            <ul>
-              <li><img src="/static/img/cross_refs.svg" alt=""><span><b>Cross-section references</b>Figures, tables, and sections that no other section points to.</span></li>
-              <li><img src="/static/img/macro_redundancy.svg" alt=""><span><b>Macro redundancy</b>Later sections that restate earlier ones instead of developing them.</span></li>
-            </ul>
-          </div>
-          <div class="pi">
-            <span class="pi-ico band-argument"><span class="tag argument">Argument</span></span>
-            <p>Are claims and citations argued, not just stated?</p>
-            <ul>
-              <li><img src="/static/img/argument_graph.svg" alt=""><span><b>Argument graph</b>Key claims stated before anything leads up to them.</span></li>
-              <li><img src="/static/img/citation_isolation.svg" alt=""><span><b>Citation isolation</b>Prior work cited without being related to any other work.</span></li>
-            </ul>
-          </div>
-          <div class="pi">
-            <span class="pi-ico band-artifacts"><span class="tag artifacts">Artifacts</span></span>
-            <p>Can a reader inspect the method and the evidence?</p>
-            <ul>
-              <li><img src="/static/img/figure_exposition.svg" alt=""><span><b>Figure exposition</b>Method figures crowded with detail that belongs in the text.</span></li>
-              <li><img src="/static/img/evidence_gap.svg" alt=""><span><b>Evidence gap</b>Result tables with no concrete input, output, or case anywhere.</span></li>
-            </ul>
-          </div>
+        <div class="section-title"><h2 class="sec-h left">Papers analyzed so far</h2><p><span id="cf-label" class="muted"></span> · <a href="/leaderboard" data-link>Leaderboard</a> · <a href="/gallery" data-link>Gallery</a></p></div>
+        <p class="sec-sub left">Click the center paper for its digest, or a side one to bring it forward. Highlights on each first page are the findings.</p>
+        <div id="coverflow" class="coverflow" tabindex="0" aria-roledescription="carousel">
+          <button class="cf-nav cf-prev" id="cf-prev" type="button" aria-label="Previous paper">‹</button>
+          <div id="cf-stage" class="cf-stage"></div>
+          <button class="cf-nav cf-next" id="cf-next" type="button" aria-label="Next paper">›</button>
         </div>
+        <div id="cf-dots" class="cf-dots"></div>
       </div>
     </div>
 
-    <div class="wrap feats">
-      <h2 class="sec-h">What a report shows</h2>
-      <div class="feat-row">
-        <div class="feat-illus"><img src="/static/img/shot_page_top.jpg" alt="A paper page with flagged sentences highlighted in the plane colors" loading="lazy"></div>
-        <div class="feat-text">
-          <h3>Every finding, placed on the paper</h3>
-          <p>Each flagged unit is located on the PDF and colored by plane. Click a highlight to read why it was flagged, switch measures on and off, and download the highlighted PDF with a summary page.</p>
-          <ul class="checks"><li>Sentences, claims, citations, figures, and tables</li><li>Findings tab and Paper tab stay linked both ways</li><li>Export as highlighted PDF, JSON, or CSV</li></ul>
+    <div class="wrap planes-wrap">
+      <h2 class="sec-h">Reads the paper, not the prose.</h2>
+      <p class="sec-sub">AI text detectors score sentences. The Science Slop Index counts, for six patterns, the share of a paper's units in which the scientific reasoning fails to connect. Each pattern is more common in AI-generated papers than in human-written papers on the same problem.</p>
+      <div class="planes-intro">
+        <div class="pi">
+          <span class="pi-ico band-structure"><span class="tag structure">Structure</span></span>
+          <p>Do the sections build on one another?</p>
+          <ul>
+            <li><img src="/static/img/cross_refs.svg" alt=""><span><b>Cross-section references</b>Figures, tables, and sections that no other section points to.</span></li>
+            <li><img src="/static/img/macro_redundancy.svg" alt=""><span><b>Macro redundancy</b>Later sections that restate earlier ones instead of developing them.</span></li>
+          </ul>
+        </div>
+        <div class="pi">
+          <span class="pi-ico band-argument"><span class="tag argument">Argument</span></span>
+          <p>Are claims and citations argued, not just stated?</p>
+          <ul>
+            <li><img src="/static/img/argument_graph.svg" alt=""><span><b>Argument graph</b>Key claims stated before anything leads up to them.</span></li>
+            <li><img src="/static/img/citation_isolation.svg" alt=""><span><b>Citation isolation</b>Prior work cited without being related to any other work.</span></li>
+          </ul>
+        </div>
+        <div class="pi">
+          <span class="pi-ico band-artifacts"><span class="tag artifacts">Artifacts</span></span>
+          <p>Can a reader inspect the method and the evidence?</p>
+          <ul>
+            <li><img src="/static/img/figure_exposition.svg" alt=""><span><b>Figure exposition</b>Method figures crowded with detail that belongs in the text.</span></li>
+            <li><img src="/static/img/evidence_gap.svg" alt=""><span><b>Evidence gap</b>Result tables with no concrete input, output, or case anywhere.</span></li>
+          </ul>
         </div>
       </div>
-      <div class="feat-row rev">
-        <div class="feat-illus"><img src="/static/img/shot_measure_top.jpg" alt="The Cross-section references measure opened, showing which objects each section refers to" loading="lazy"></div>
-        <div class="feat-text">
-          <h3>Six measures you can open</h3>
-          <p>Every measure is a count you can check: which figures no section refers to, which sentences repeat an earlier section, which claims come before their support. Four measures are exact rules; two ask a language model.</p>
-          <ul class="checks"><li>Numerator and denominator shown for every score</li><li>Reference map, argument arcs, figure content kinds</li><li>Rules follow Table 1 of the paper</li></ul>
-        </div>
-      </div>
-      <div class="feat-row">
-        <div class="feat-illus"><img src="/static/img/shot_score.jpg" alt="The Science Slop Index score card with three plane scores" loading="lazy"></div>
-        <div class="feat-text">
-          <h3>One number, three planes</h3>
-          <p>The index averages the measures within each plane, then averages the planes. On SciSlopBench, 390 AI-generated papers each paired with a human-written paper on the same problem, it identifies the AI-generated paper in 85.9% of pairs; Binoculars, the strongest text detector, reaches 68.7%.</p>
-          <ul class="checks"><li>Higher means more scientific slop, not a probability of AI authorship</li><li>Partial reports say which measures could not run</li><li><a href="/how" data-link>How the index is computed →</a></li></ul>
-        </div>
-      </div>
+      <p class="home-bench">On SciSlopBench, 390 AI-generated papers each paired with a human-written paper on the same problem, these six measures pick out the AI-generated paper in 85.9% of pairs. Binoculars, the strongest text detector, reaches 68.7%. <a href="/how" data-link>How the index is computed</a></p>
     </div>
 
-    <div class="dots-band">
-      <div class="wrap">
-        <div class="section-title"><h2 class="sec-h left">Papers analyzed so far</h2><p><a href="/leaderboard" data-link>Leaderboard</a> · <a href="/gallery" data-link>Gallery</a></p></div>
-        <div id="home-list" class="g-grid home-grid"></div>
-      </div>
-    </div>
     <div class="wrap cite">
       <h2 class="sec-h left">Cite</h2>
       <p class="cap muted" style="margin:4px 0 12px">If you use the Science Slop Index or SciSlopBench, please cite the paper.</p>
