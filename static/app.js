@@ -1048,7 +1048,7 @@ const METRICS = [
   ...PLANES.map(p => ({ id: 'plane:' + p.key, label: `${p.label} plane`, plane: p.key })),
   ...ORDER.map(k => ({ id: 'm:' + k, label: MEASURES[k].name, plane: MEASURES[k].plane })),
 ];
-const lb = { metric: 'index', top: 30, picked: null, excluded: new Set(), hidePartial: false, view: 'list', sort: 'value', dir: -1, pop: null, data: null };
+const lb = { metric: 'index', top: 30, picked: null, excluded: new Set(), hidePartial: false, view: 'list', sort: 'value', dir: -1, pop: null, data: null, q: '', open: new Set() };
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function lbValue(x, metric) {
   if (metric === 'index') return x.index;
@@ -1062,6 +1062,7 @@ function lbReadParams() {
   if (q.get('exclude')) lb.excluded = new Set(q.get('exclude').split(','));
   lb.hidePartial = q.get('partial') === '0';
   lb.view = ['list', 'chart', 'table'].includes(q.get('view')) ? q.get('view') : 'list';
+  lb.q = q.get('q') || '';
 }
 function lbUrl() {
   const q = new URLSearchParams();
@@ -1070,6 +1071,7 @@ function lbUrl() {
   if (lb.excluded.size) q.set('exclude', [...lb.excluded].join(','));
   if (lb.hidePartial) q.set('partial', '0');
   if (lb.view !== 'list') q.set('view', lb.view);
+  if (lb.q) q.set('q', lb.q);
   const s = q.toString();
   return location.origin + '/leaderboard' + (s ? '?' + s : '');
 }
@@ -1082,7 +1084,8 @@ async function loadLeaderboard() {
 }
 function lbRows() {
   const all = (lb.data?.items || []).filter(x => lbValue(x, lb.metric) != null);
-  const pool = all.filter(x => !lb.excluded.has(x.source) && !(lb.hidePartial && x.partial));
+  const ql = lb.q.trim().toLowerCase();
+  const pool = all.filter(x => !lb.excluded.has(x.source) && !(lb.hidePartial && x.partial) && (!ql || (x.title || '').toLowerCase().includes(ql)));
   pool.sort((a, b) => lbValue(b, lb.metric) - lbValue(a, lb.metric));
   const shown = lb.picked ? pool.filter(x => lb.picked.has(x.key)) : pool.slice(0, lb.top);
   return { all, pool, shown };
@@ -1092,9 +1095,22 @@ function renderLeaderboard() {
   const metric = METRICS.find(m => m.id === lb.metric);
   $('#lb-count-t').textContent = `${shown.length} of ${all.length} papers`;
   $('#lb-metricname').textContent = metric.stacked ? 'Science Slop Index · contribution of each plane' : `${metric.label} · score out of 100`;
+  // stats strip
+  const items = lb.data?.items || []; const idx = items.map(x => x.index).filter(v => v != null).sort((a, b) => a - b);
+  const median = idx.length ? idx[Math.floor(idx.length / 2)] : null; const newest = Math.max(0, ...items.map(x => x.created || 0));
+  $('#lb-stats').replaceChildren(
+    h('span', {}, h('b', { text: String(items.length) }), ' papers'),
+    h('span', {}, h('b', { text: '6' }), ' measures · ', h('b', { text: '3' }), ' planes'),
+    median != null ? h('span', {}, 'median index ', h('b', { text: String(median) })) : null,
+    newest ? h('span', {}, 'updated ', h('b', { text: new Date(newest * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })) : null);
+  // rank-by chips and the single-measure select
+  const cats = [['index', 'Overall'], ...PLANES.map(p => ['plane:' + p.key, p.label])];
+  $('#lb-cats').replaceChildren(...cats.map(([id, label]) => h('button', { type: 'button', class: 'chip-b' + (lb.metric === id ? ' on' : '') + (id.startsWith('plane:') ? ' ' + id.slice(6) : ''), onclick: () => { lb.metric = id; lb.sort = 'value'; renderLeaderboard(); } }, label)));
+  const sel = $('#lb-measure');
+  if (sel.options.length === 1) for (const k of ORDER) sel.append(h('option', { value: 'm:' + k, text: MEASURES[k].name }));
+  sel.value = lb.metric.startsWith('m:') ? lb.metric : ''; sel.classList.toggle('on', lb.metric.startsWith('m:'));
   document.querySelectorAll('.seg-b').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === lb.view)));
   $('#lb-filter').classList.toggle('on', lb.excluded.size > 0 || lb.hidePartial);
-  $('#lb-metric').classList.toggle('on', lb.metric !== 'index');
   $('#lb-list').hidden = lb.view !== 'list';
   $('#lb-scroll').parentElement.hidden = lb.view !== 'chart';
   $('#lb-tablewrap').hidden = lb.view !== 'table';
@@ -1104,8 +1120,9 @@ function renderLeaderboard() {
       h('span', { class: 'muted', text: 'Each bar is the index; its segments show how much each plane adds.' })]
     : [h('span', {}, h('span', { class: 'lg-box', style: { background: PLANE_VAR[metric.plane], borderRadius: '3px', width: '12px', height: '12px' } }), metric.label)]));
   const partial = shown.some(x => x.partial) ? '* Partial: some measures could not run for this paper. ' : '';
-  $('#lb-note').textContent = partial + (pool.length > shown.length ? `Showing the top ${shown.length} of ${pool.length}. ` : '')
-    + (lb.data?.persistent ? '' : 'Papers analyzed on this server are listed until it restarts; bundled papers always stay.');
+  const smax = Math.min(100, Math.max(20, Math.ceil(Math.max(1, ...shown.map(x => lbValue(x, lb.metric))) * 1.15 / 10) * 10));
+  $('#lb-note').textContent = '// ' + (metric.stacked ? `bar = index on a 0–${smax} scale; segments = what each plane adds` : `bar = ${metric.label.toLowerCase()} on a 0–${smax} scale`) + ' · click a row for its six measures · ' + partial + (pool.length > shown.length ? `showing the top ${shown.length} of ${pool.length} · ` : '')
+    + (lb.data?.persistent ? 'reports persist' : 'reports added on this server last until it restarts; bundled papers always stay');
 }
 function renderLbList(rows, metric) {
   const host = $('#lb-list');
@@ -1125,7 +1142,10 @@ function renderLbList(rows, metric) {
       if (metric.stacked) { const planes = PLANES.filter(p => x.planes?.[p.key] != null); segs = planes.map(p => ({ k: p.key, v: 100 * x.planes[p.key] / planes.length, label: `${p.label} adds ${fmt(x.planes[p.key] / planes.length)}` })); }
       else segs = [{ k: metric.plane, v, label: `${metric.label} ${Math.round(v)}` }];
       const bar = h('span', { class: 'lbl-track', style: metric.stacked ? { background: bandBg } : {} }, ...segs.map(sg => { const e = h('i', { class: `sg sg-${sg.k}`, style: { width: '0%' }, 'data-w': `${100 * sg.v / scaleMax}%` }); bindTip(e, x.title, sg.label); return e; }));
-      const row = h('a', { class: 'lbl-row' + (i < 3 ? ` top${i + 1}` : ''), href: `/r/${x.key}`, 'data-link': '', title: x.title },
+      const isOpen = lb.open.has(x.key);
+      const row = h('div', { class: 'lbl-row' + (i < 3 ? ` top${i + 1}` : '') + (isOpen ? ' open' : ''), role: 'button', tabindex: 0, 'aria-expanded': String(isOpen), title: x.title,
+        onclick: () => { lb.open.has(x.key) ? lb.open.delete(x.key) : lb.open.add(x.key); renderLeaderboard(); },
+        onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } } },
         h('span', { class: 'lbl-c rank' }, h('span', { class: 'lbl-rank', text: String(i + 1) })),
         h('span', { class: 'lbl-c paper' },
           h('span', { class: 'lbl-thumb' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : null),
@@ -1133,7 +1153,20 @@ function renderLbList(rows, metric) {
         h('span', { class: 'lbl-c track' }, bar),
         h('span', { class: 'lbl-c idx' }, h('b', { style: { color: b ? b.color : 'inherit' }, text: v == null ? '—' : String(Math.round(v)) + (x.partial && metric.stacked ? '*' : '') }), b && metric.stacked ? h('small', { text: b.label }) : null),
         h('span', { class: 'lbl-c planes' }, PLANES.map(p => h('span', { class: `lbl-p lbl-${p.key}`, title: p.label, text: fmt(x.planes?.[p.key]) }))),
-        h('button', { type: 'button', class: 'lbl-digest', title: 'Digest: first page, map, graphs', 'aria-label': 'Open digest', onclick: e => { e.preventDefault(); e.stopPropagation(); openPreview(x.key); } }, '◫'));
+        h('span', { class: 'lbl-chev', 'aria-hidden': 'true', text: '›' }));
+      if (!isOpen) return row;
+      const detail = h('div', { class: 'lbl-detail', onclick: e => e.stopPropagation() },
+        h('div', { class: 'lbl-dm' }, ORDER.map(k => { const m = MEASURES[k]; const sv = x.measures?.[k];
+          const r = h('div', { class: 'lbl-dm-row' }, h('span', { class: 'lbl-dm-name' }, h('span', { class: `swatch sw-${m.plane}` }), m.name),
+            h('span', { class: 'lbl-dm-bar' }, h('i', { style: { width: '0%', background: PLANE_VAR[m.plane] }, 'data-w': `${sv == null ? 0 : 100 * sv}%` })),
+            h('span', { class: 'lbl-dm-v', text: sv == null ? 'n/a' : fmt(sv) }));
+          bindTip(r, m.name, m.what); return r; })),
+        h('div', { class: 'lbl-da' },
+          h('button', { class: 'btn small', type: 'button', onclick: () => go(`/r/${x.key}`) }, 'Full report →'),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => go(`/r/${x.key}?tab=paper`) }, 'On the paper'),
+          h('button', { class: 'btn ghost small', type: 'button', onclick: () => openPreview(x.key) }, 'Digest'),
+          x.url ? h('a', { class: 'link-btn', href: x.url, target: '_blank', rel: 'noopener', text: 'Source ↗' }) : null));
+      return h('div', { class: 'lbl-group' }, row, detail);
       return row;
     }));
   requestAnimationFrame(() => requestAnimationFrame(() => host.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
@@ -1332,7 +1365,8 @@ async function lbDownloadPng() {
 function initLeaderboard() {
   $('#lb-count').addEventListener('click', e => { e.stopPropagation(); lbPopover('count', e.currentTarget); });
   $('#lb-filter').addEventListener('click', e => { e.stopPropagation(); lbPopover('filter', e.currentTarget); });
-  $('#lb-metric').addEventListener('click', e => { e.stopPropagation(); lbPopover('metric', e.currentTarget); });
+  $('#lb-measure').addEventListener('change', e => { lb.metric = e.target.value || 'index'; lb.sort = 'value'; renderLeaderboard(); });
+  $('#lb-q').addEventListener('input', e => { lb.q = e.target.value; lb.picked = null; renderLeaderboard(); });
   document.querySelectorAll('.seg-b').forEach(b => b.addEventListener('click', () => { lb.view = b.dataset.view; renderLeaderboard(); }));
   $('#lb-link').addEventListener('click', () => copy(lbUrl(), 'Link to this view copied'));
   $('#lb-png').addEventListener('click', lbDownloadPng);
