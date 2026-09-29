@@ -60,12 +60,10 @@ a { color: inherit; }
 
 /* ------------------------------------------------------------------ top bar */
 .top { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: 12px; }
-.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -.01em; text-decoration: none; white-space: nowrap; }
-.mark { display: inline-flex; gap: 3px; }
-.mark i { width: 8px; height: 8px; border-radius: 50%; display: block; }
-.mark i:nth-child(1) { background: var(--structure); }
-.mark i:nth-child(2) { background: var(--argument); }
-.mark i:nth-child(3) { background: var(--artifacts); }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 700; letter-spacing: -.01em; text-decoration: none; white-space: nowrap; }
+.mark { display: inline-flex; align-items: center; color: var(--ink); }
+.mark .mark-svg { width: 26px; height: 26px; display: block; }
+.lb-brand .mark .mark-svg { width: 20px; height: 20px; }
 .top nav { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; justify-content: flex-end; }
 .top nav a, .icon-btn { text-decoration: none; color: var(--ink-2); padding: 7px 12px; border-radius: 999px; border: 0; background: none; cursor: pointer; font-size: 14.5px; font-weight: 500; }
 .top nav a:hover, .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
