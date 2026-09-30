@@ -203,11 +203,14 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .coverflow { position: relative; outline: none; }
 .cf-stage { position: relative; height: 430px; perspective: 1400px; perspective-origin: 50% 40%; overflow: hidden; touch-action: pan-y; user-select: none; }
 .cf-card { position: absolute; left: 50%; top: 10px; width: min(520px, 50%); transform-style: preserve-3d; transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .4s; cursor: pointer; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; box-shadow: 0 18px 44px rgba(31,41,55,.22); will-change: transform; }
-.cf-card.on { cursor: zoom-in; }
+.cf-card.on { cursor: pointer; }
+.cf-digest { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-3); cursor: pointer; font-size: 14px; }
+.cf-digest:hover { color: var(--ink); border-color: var(--ink); }
+.cf-card:not(.on) .cf-digest { display: none; }
 .cf-thumb { position: relative; aspect-ratio: 16 / 9.6; background: #fff; overflow: hidden; border-bottom: 4px solid var(--red); }
 .cf-thumb .g-page img, .cf-thumb .g-page .ph { width: 100%; display: block; }
 .cf-thumb .g-page { position: relative; }
-.cf-cap { padding: 12px 18px 14px; text-align: center; background: var(--surface); }
+.cf-cap { padding: 12px 44px 14px; text-align: center; background: var(--surface); position: relative; }
 .cf-title { font-weight: 700; font-size: 17px; line-height: 1.25; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cf-sub { margin-top: 4px; display: flex; justify-content: center; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 13px; }
 .cf-idx { font-weight: 700; }

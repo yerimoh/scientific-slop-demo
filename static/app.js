@@ -1741,11 +1741,12 @@ function buildCoverflow(items) {
     const [pw, ph] = x.page0 || [612, 792];
     const marks = (x.marks || []).map(k => h('span', { class: `g-mark ${k.plane}${k.box ? ' box' : ''}`, style: { left: `${100 * k.r[0] / pw}%`, top: `${100 * k.r[1] / ph}%`, width: `${100 * (k.r[2] - k.r[0]) / pw}%`, height: `${100 * (k.r[3] - k.r[1]) / ph}%` } }));
     const card = h('div', { class: 'cf-card', 'data-i': i, role: 'button', tabindex: 0, 'aria-label': x.title,
-      onclick: () => { if (cf.i === i) openPreview(x.key); else cfGo(i); },
-      onkeydown: e => { if (e.key === 'Enter') { cf.i === i ? openPreview(x.key) : cfGo(i); } } },
+      onclick: () => { if (cf.i === i) go(`/r/${x.key}`); else cfGo(i); },
+      onkeydown: e => { if (e.key === 'Enter') { cf.i === i ? go(`/r/${x.key}`) : cfGo(i); } } },
       h('div', { class: 'cf-thumb' }, h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `${API}/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy', draggable: false }) : h('div', { class: 'ph', text: x.title }), ...marks),
         marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null),
       h('div', { class: 'cf-cap' },
+        h('button', { type: 'button', class: 'cf-digest', title: 'Quick digest without leaving this page', 'aria-label': 'Digest', onclick: e => { e.stopPropagation(); openPreview(x.key); } }, '◫'),
         h('div', { class: 'cf-title', text: x.title }),
         h('div', { class: 'cf-sub' }, h('span', { class: 'cf-idx', style: { color: b ? 'var(--red)' : 'var(--ink-3)' }, text: x.index != null ? `Science Slop Index ${x.index}` : '—' }),
           h('span', { class: 'cf-planes' }, PLANES.map(p => h('span', { class: `cf-p cf-${p.key}`, title: p.label, text: `${p.label.slice(0, 3)} ${fmt(x.planes?.[p.key])}` }))))));
