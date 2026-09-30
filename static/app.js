@@ -629,11 +629,12 @@ function flagPanel(key, res) {
     h('button', { type: 'button', class: 'btn small', onclick: () => { F.on = true; state.notes = true; rerender(); } }, 'Flag slop on this paper'),
     h('p', { class: 'muted', text: 'Drag over anything the index missed; dispute anything it got wrong. One click to submit.' }),
     h('div', { class: 'flag-v2' }, h('b', { text: 'Become a co-author of SciSlop v2.' }), ' Mark what the index missed, name patterns it does not know yet. Credited on the site; substantial contributions earn ', h('mark', { class: 'coauthor', text: 'co-author credit on the v2 paper' }), '.'));
-  const nameInp = h('input', { type: 'text', placeholder: 'Your name (for the credit)', value: store.get('ssi-name', ''), maxlength: 80, oninput: e => store.set('ssi-name', e.target.value) });
+  const nameInp = h('input', { type: 'text', required: true, placeholder: 'Your name (required, for the credit)', value: store.get('ssi-name', ''), maxlength: 80, oninput: e => { store.set('ssi-name', e.target.value); const b = $('#flag-submit'); if (b) b.disabled = !(e.target.value.trim() && (F.items.length + F.disputed.size)); } });
   const affInp = h('input', { type: 'text', placeholder: 'Affiliation (optional)', value: store.get('ssi-aff', ''), maxlength: 120, oninput: e => store.set('ssi-aff', e.target.value) });
   const mailInp = h('input', { type: 'email', placeholder: 'Email (optional, never shown; for co-author contact)', value: store.get('ssi-mail', ''), maxlength: 120, oninput: e => store.set('ssi-mail', e.target.value) });
   const v2 = h('div', { class: 'flag-v2' }, h('b', { text: 'Submitting is contributing.' }), ' Your flags, disputes, and any new pattern you name go straight into the SciSlop v2 review. Credited on the site; substantial contributions earn ', h('mark', { class: 'coauthor', text: 'co-author credit on the v2 paper' }), '.');
   const submit = async () => {
+    if (!nameInp.value.trim()) { toast('Add your name: contributions are credited'); nameInp.focus(); return; }
     const btn = $('#flag-submit'); btn.disabled = true;
     try {
       const r = await fetch(`${J(key)}/jobs/${encodeURIComponent(key)}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -646,8 +647,8 @@ function flagPanel(key, res) {
   // pending basket: pieces gathered so far, saved as one slop or as separate slops
   let basket = null;
   if (F.pending.length) {
-    const title = h('input', { type: 'text', class: 'flag-note', placeholder: 'Name it, e.g. Claim stated before its evidence', maxlength: 80, value: F.pendingTitle || '', oninput: e => { F.pendingTitle = e.target.value; } });
-    const note = h('textarea', { class: 'flag-note', rows: 3, placeholder: 'Describe it: what a reader notices, and why it is slop', maxlength: 600, oninput: e => { F.pendingNote = e.target.value; } }, F.pendingNote || '');
+    const title = h('input', { type: 'text', class: 'flag-note', required: true, placeholder: 'Name it, e.g. Claim stated before its evidence (required)', maxlength: 80, value: F.pendingTitle || '', oninput: e => { F.pendingTitle = e.target.value; } });
+    const note = h('textarea', { class: 'flag-note', rows: 3, required: true, placeholder: 'Describe it: what a reader notices, and why it is slop (required)', maxlength: 600, oninput: e => { F.pendingNote = e.target.value; } }, F.pendingNote || '');
     const fields = h('div', { class: 'flag-fields' },
       h('label', {}, h('span', { class: 'mc-l', text: 'Name' }), title),
       h('label', {}, h('span', { class: 'mc-l', text: 'Description' }), note));
@@ -658,6 +659,7 @@ function flagPanel(key, res) {
     kinds.querySelectorAll('.chip-b').forEach(c => { if (c.textContent !== 'New pattern') c.addEventListener('click', () => { newHint.hidden = true; }); });
     const save = separate => { if (!kind) { toast('Pick what kind of slop it is'); return; }
       if (!title.value.trim()) { toast('Give it a name'); title.focus(); return; }
+      if (note.value.trim().length < 10) { toast('Describe it: what a reader notices, and why it is slop'); note.focus(); return; }
       const base = { kind, title: title.value.trim(), note: note.value.trim() };
       const extra = kind === 'other' ? { pattern_name: title.value.trim(), pattern_what: note.value.trim() } : {};
       if (separate) F.pending.forEach(pc => F.items.push({ ...base, pieces: [pc], ...extra })); else F.items.push({ ...base, pieces: F.pending.slice(), ...extra });
@@ -684,7 +686,7 @@ function flagPanel(key, res) {
     list,
     h('div', { class: 'flag-who' }, nameInp, affInp, mailInp),
     h('div', { class: 'flag-actions' },
-      h('button', { type: 'button', class: 'btn small', id: 'flag-submit', disabled: n ? null : true, onclick: submit }, n ? `Submit ${n}` : 'Submit'),
+      h('button', { type: 'button', class: 'btn small', id: 'flag-submit', disabled: (n && store.get('ssi-name', '').trim()) ? null : true, onclick: submit }, n ? `Submit ${n}` : 'Submit'),
       h('button', { type: 'button', class: 'btn ghost small', onclick: () => { F.on = false; F.extend = null; rerender(); } }, 'Done')),
     v2);
 }
