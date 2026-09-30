@@ -63,27 +63,28 @@
         </div>
         <p class="form-error" id="form-error" role="alert"></p>
         <p class="notice">Your report is private: you get a key, nothing is listed unless you tick the box.</p>
-        <a class="hero-call" href="#" data-scroll=".propose-teaser"><b>We are building SciSlop v2 with you.</b> Flag slop on any paper or propose a pattern; contributors are credited and can become co-authors on the v2 paper. <span>How to contribute ↓</span></a>
+        <a class="hero-call" href="#" data-scroll=".call-band"><b>Building SciSlop v2 with you.</b> Flag slop on any paper. Contributors become co-authors. <span>How ↓</span></a>
       </div>
     </div>
 
-    <div class="wrap propose-teaser">
-      <div class="pt-card card">
-        <div class="pt-text">
-          <p class="eyebrow">Contribute · open call</p>
-          <h2 class="sec-h left">Help build SciSlop v2 — and be on the paper.</h2>
-          <p>SciSlop is maintained and growing: more papers, more patterns, a bigger benchmark. <b>Version 2 will be published as a paper</b>, and it is built with the people who contribute. Two ways in, both one click: flag slop the index missed (or dispute what it flagged) on any report, or propose a new pattern. Every contribution is credited here; substantial ones earn <b>contributor or co-author credit on the v2 paper</b>.</p>
-          <div class="pt-ways">
-            <div class="pt-way"><b>On a paper we list</b><span>Open any report below and flag what the index missed, or dispute what it flagged.</span><a href="/r/4jrs-rg3f-g5uq?tab=paper&flag=1" data-link>Try on DetectGPT →</a></div>
-            <div class="pt-way"><b>On your own paper</b><span>Check your draft's slop score, and mark what the index got wrong while you are at it. Reports stay private.</span><a href="#" data-scroll="#ask">Analyze mine →</a></div>
-            <div class="pt-way"><b>On anything you read</b><span>Reviewing, or reading, a paper that felt AI-written? Paste its link or drop the PDF here: it opens in the reader, ready to mark.</span>
-              <form id="ct-ask" class="ct-ask" autocomplete="off"><input id="ct-url" type="text" inputmode="url" placeholder="arXiv / OpenReview / PDF link" aria-label="Paper link"><button class="btn small" type="submit">Open in reader</button></form>
-              <span class="file-btn ct-file"><button class="link-btn" type="button" tabindex="-1">or drop / choose a PDF</button><input id="ct-file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF"></span></div>
-            <div class="pt-way pt-contrib">
-              <div class="pt-contrib-h"><span>Contributors</span><span class="muted" id="pt-count"></span></div>
-              <div id="contributors" class="contrib-box"></div>
-              <a class="btn ghost small" href="/propose" data-link style="justify-self:start;margin-top:auto">Propose a new pattern</a><span class="muted" id="pt-proposals" hidden></span>
-            </div>
+    <div class="dots-band call-band">
+      <div class="wrap propose-teaser">
+        <div class="call-grid">
+          <div class="call-text">
+            <p class="eyebrow">Open call</p>
+            <h2 class="sec-h left">Help build SciSlop v2.</h2>
+            <p class="call-p">Mark slop the index missed. Dispute what it got wrong.<br>Every contribution is credited. Substantial ones make you <b>a co-author on the v2 paper</b>.</p>
+            <form id="ct-ask" class="call-ask" autocomplete="off">
+              <input id="ct-url" type="text" inputmode="url" placeholder="Paste a link to any paper, or drop its PDF here" aria-label="Paper link">
+              <button class="btn" type="submit">Open in reader →</button>
+              <span class="file-btn call-file" title="Choose a PDF"><button class="ib" type="button" tabindex="-1" aria-label="Choose a PDF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></button><input id="ct-file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF"></span>
+            </form>
+            <p class="call-links">Or: <a href="/r/4jrs-rg3f-g5uq?tab=paper&flag=1" data-link>try it on DetectGPT</a> · <a href="#" data-scroll="#ask">check your own draft</a> · <a href="/propose" data-link>propose a new pattern</a></p>
+          </div>
+          <div class="call-contrib">
+            <div class="pt-contrib-h"><span>Contributors</span><span class="muted" id="pt-count"></span></div>
+            <div id="contributors" class="contrib-box"></div>
+            <span class="muted" id="pt-proposals" hidden></span>
           </div>
         </div>
       </div>

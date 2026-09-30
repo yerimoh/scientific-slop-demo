@@ -819,31 +819,22 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 @media (max-width: 860px) { .fig-viz-grid { grid-template-columns: 1fr; } .prev-right .kind-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* ------------------------------------------------------------------ propose */
-.propose-teaser { padding: 8px 24px 0; }
-.propose-teaser + .dive-wrap { padding-top: 28px; }
-.hero-call { display: block; max-width: 720px; margin: 18px auto 0; padding: 10px 16px; border-radius: 12px; background: var(--argument-band); border: 1px solid var(--argument-light); color: var(--ink-2); font-size: 14px; text-decoration: none; line-height: 1.45; }
-.hero-call b { color: var(--ink); } .hero-call span { color: var(--ink); font-weight: 600; white-space: nowrap; }
-.hero-call:hover { border-color: var(--argument-deep); }
-.pt-card { padding: 24px 26px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(240px, 1fr); gap: 28px; align-items: center; background: var(--surface); }
-.pt-text p { color: var(--ink-2); font-size: 15px; margin: 8px 0 16px; }
-.pt-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
-.pt-ways { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.pt-way.pt-contrib { min-height: 0; }
-.pt-contrib .contrib-box { margin-bottom: 8px; }
-.pt-way { display: grid; gap: 6px; align-content: start; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); font-size: 13px; color: var(--ink-2); min-width: 0; overflow: hidden; }
-.pt-way > span { overflow-wrap: anywhere; }
-.pt-way b { color: var(--ink); font-size: 14px; }
-.pt-way a { color: var(--ink); font-weight: 600; text-decoration-color: var(--line-2); text-underline-offset: 3px; }
-.ct-ask { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-top: 2px; }
-.ct-ask .btn { justify-self: start; }
-.ct-ask input { flex: 1; min-width: 0; padding: 7px 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--surface); font-size: 13px; }
-.ct-file { font-size: 12.5px; }
-.pt-text > p { margin-bottom: 14px; }
-@media (max-width: 1000px) { .pt-ways { grid-template-columns: repeat(2, minmax(0, 1fr)); } } @media (max-width: 600px) { .pt-ways { grid-template-columns: 1fr; } }
-.pt-actions .btn { text-decoration: none; }
-.pt-steps { display: grid; gap: 10px; }
-.pt-step { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; font-size: 13.5px; color: var(--ink-2); }
-.pt-step b { width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 12px; }
+.call-band { padding: 40px 0 44px; }
+.propose-teaser { padding: 0 24px; }
+.call-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 36px; align-items: start; }
+.call-text .sec-h { margin: 4px 0 8px; font-size: clamp(26px, 3.4vw, 34px); }
+.call-p { margin: 0 0 18px; color: var(--ink-2); font-size: 16.5px; line-height: 1.6; max-width: 620px; }
+.call-p b { color: var(--ink); }
+.call-ask { display: flex; align-items: center; gap: 8px; max-width: 640px; background: var(--surface); padding: 6px 6px 6px 16px; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+.call-ask:focus-within { border-color: var(--line-2); }
+.call-ask input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; padding: 8px 0; font-size: 15px; }
+.call-ask input::placeholder { color: var(--ink-4); }
+.call-ask .btn { white-space: nowrap; }
+.call-file .ib { width: 38px; height: 38px; border-radius: 10px; }
+.call-links { margin: 12px 0 0; font-size: 13.5px; color: var(--ink-3); }
+.call-links a { color: var(--ink); font-weight: 600; text-decoration-color: var(--line-2); text-underline-offset: 3px; }
+.call-contrib { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px 16px; box-shadow: var(--shadow); min-height: 150px; }
+@media (max-width: 860px) { .call-grid { grid-template-columns: 1fr; } .call-ask { flex-wrap: wrap; padding: 8px; } .call-ask input { flex-basis: 100%; padding: 6px 8px; } .propose-teaser { padding: 0 16px; } }
 .pp-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, 1fr); gap: 22px; align-items: start; }
 .pp-form { padding: 20px 22px 22px; display: grid; gap: 12px; }
 .pp-sec { display: flex; align-items: center; gap: 10px; margin: 8px 0 2px; }
