@@ -1,0 +1,11 @@
+# Keeps the free Render instance awake so visitors do not hit the ~50 s cold start.
+name: keep-alive
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -sS -o /dev/null -w "%{http_code}\n" --max-time 90 https://scientific-slop-demo.onrender.com/api/config

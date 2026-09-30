@@ -599,6 +599,32 @@ def _github_proposals() -> list:
     return items
 
 
+async def _warm_up():
+    """After a (re)start: make sure the featured paper's PDF and first page are on disk, so the home loads fast."""
+    await asyncio.sleep(2)
+    key = os.environ.get("SCISLOP_FEATURED", "4jrs-rg3f-g5uq")
+    job = JOBS.get(key)
+    if not job:
+        return
+    try:
+        if not _find_file(key, "page_0.jpg"):
+            src = await _ensure_pdf(job)
+            if src:
+                img = await asyncio.to_thread(page_image, src, 0)
+                cache = os.path.join(_job_dir(key), "files", "page_0.jpg")
+                os.makedirs(os.path.dirname(cache), exist_ok=True)
+                with open(cache, "wb") as f:
+                    f.write(img)
+        await asyncio.to_thread(_github_proposals)      # fill the proposals cache
+    except Exception as e:  # noqa: BLE001
+        print("warm-up skipped:", e)
+
+
+@app.on_event("startup")
+async def _startup_warm():
+    asyncio.create_task(_warm_up())
+
+
 @app.get("/api/proposals")
 async def proposals():
     gh = await asyncio.to_thread(_github_proposals)
