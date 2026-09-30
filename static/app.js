@@ -196,7 +196,6 @@ async function submit(fd) {
     setError(''); $('#form-error').replaceChildren('New analyses run on the live site. ', h('a', { href: target, target: '_blank', rel: 'noopener', text: 'Open it there →' })); return;
   }
   const btn = $('#go'); btn.disabled = true;
-  if (apiKey()) fd.append('api_key', apiKey());
   try {
     const r = await fetch(API + '/analyze', { method: 'POST', body: fd });
     const d = await r.json().catch(() => ({}));
@@ -204,15 +203,7 @@ async function submit(fd) {
     go('/r/' + d.key);
   } catch (e) { setError(e.message); } finally { btn.disabled = false; }
 }
-function apiKey() { return ($('#api-key')?.value || '').trim(); }
-function initKey() {
-  const inp = $('#api-key'), rem = $('#key-remember');
-  const saved = store.get('ssi-key', '');
-  if (saved) { inp.value = saved; rem.checked = true; }
-  const sync = () => { if (rem.checked && inp.value.trim()) store.set('ssi-key', inp.value.trim()); else store.del('ssi-key'); };
-  inp.addEventListener('input', sync); rem.addEventListener('change', sync);
-  $('#bib-copy').addEventListener('click', () => copy($('#bib').textContent, 'BibTeX copied'));
-}
+function initKey() { $('#bib-copy').addEventListener('click', () => copy($('#bib').textContent, 'BibTeX copied')); }
 function submitFile(file) {
   if (!file) return;
   const maxMb = state.config?.max_upload_mb || 50;
@@ -483,6 +474,7 @@ function paperView(job) {
   }
   if (state.notes == null) state.notes = true;
   if (state.spine == null) state.spine = true;
+  if (!state.flags) state.flags = { on: new URLSearchParams(location.search).get('flag') === '1', items: [], disputed: new Set(), sent: null };
   const byPage = new Map();
   const seen = new Set();
   const counts = {};
@@ -513,6 +505,7 @@ function paperView(job) {
           h('span', { class: 'pv-l' }, h('span', { class: 'pv-name', text: meta.name }), h('span', { class: 'pv-sub', text: c.total ? `${c.found} of ${c.total} placed · graph ↗` : 'nothing flagged' }))),
         h('button', { type: 'button', class: 'pv-eye', 'aria-pressed': String(on), title: on ? 'Hide on the paper' : 'Show on the paper', onclick: toggle }, on ? '●' : '○'));
     }),
+    flagPanel(key, res),
     h('h4', { text: 'Layers', style: { marginTop: '10px' } }),
     h('label', { class: 'pv-layer' }, h('input', { type: 'checkbox', checked: state.notes ? true : null, onchange: e => { state.notes = e.target.checked; rerender(); } }), h('span', {}, h('b', { text: 'Margin notes' }), h('small', { text: 'why each highlight was flagged, beside the page' }))),
     h('label', { class: 'pv-layer' }, h('input', { type: 'checkbox', checked: state.spine ? true : null, onchange: e => { state.spine = e.target.checked; rerender(); } }), h('span', {}, h('b', { text: 'Reference spine' }), h('small', { text: 'sections and the figures, tables, and equations they refer to' }))),
@@ -549,11 +542,23 @@ function paperView(job) {
         const note = h('div', { class: `pv-note ${hl.m.plane}`, 'data-for': id, 'data-y': String(y0 / hgt), tabindex: 0,
           onclick: openFindings, onkeydown: e => { if (e.key === 'Enter') openFindings(); } },
           h('span', { class: 'pv-note-h' }, h('i', { class: `swatch sw-${hl.m.plane}` }), h('b', { text: hl.m.name }), it.section_title ? h('span', { class: 'pv-note-sec', text: it.section_title }) : null),
-          h('span', { class: 'pv-note-b', text: trunc(body, 150) }));
+          h('span', { class: 'pv-note-b', text: trunc(body, 150) }),
+          state.flags.on ? h('button', { type: 'button', class: 'pv-dispute' + (state.flags.disputed.has(id) ? ' on' : ''), title: 'Dispute: this is not slop',
+            onclick: e => { e.stopPropagation(); state.flags.disputed.has(id) ? state.flags.disputed.delete(id) : state.flags.disputed.add(id); rerender(); } }, state.flags.disputed.has(id) ? '✓ disputed' : '✕ not slop') : null);
         note.addEventListener('pointerenter', () => sync(true)); note.addEventListener('pointerleave', () => sync(false));
         notes.append(note);
       }
     }
+    // reader flags already drawn on this page
+    state.flags.items.forEach((fl, fi) => {
+      if (fl.p !== n) return;
+      const [x0, y0, x1, y1] = fl.r;
+      const box = h('div', { class: 'user-flag', style: { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` } },
+        h('span', { class: 'uf-label' }, (MEASURES[fl.kind]?.short || 'Slop'), h('button', { type: 'button', 'aria-label': 'Remove', onclick: e => { e.stopPropagation(); state.flags.items.splice(fi, 1); rerender(); } }, '×')));
+      bindTip(box, `Your flag · ${MEASURES[fl.kind]?.name || 'Other slop'}`, fl.note || 'no note');
+      page.append(box);
+    });
+    if (state.flags.on) enableDragFlag(page, n, w, hgt, rerender);
     pagesHost.append(row);
   });
   const spine = h('div', { class: 'pv-spine', hidden: !state.spine });
@@ -565,6 +570,55 @@ function paperView(job) {
   if (pagesHost._ro) pagesHost._ro.disconnect();
   let lastW = 0; pagesHost._ro = new ResizeObserver(() => { const w = pagesHost.clientWidth; if (Math.abs(w - lastW) > 4) { lastW = w; settle(); } }); pagesHost._ro.observe(pagesHost);
   return layout;
+}
+function flagPanel(key, res) {
+  const F = state.flags; const n = F.items.length + F.disputed.size;
+  const rerender = () => { state.sig = ''; render(state.job); };
+  if (F.sent) return h('div', { class: 'flag-panel sent' }, h('h4', { text: 'Contribute' }), h('p', {}, '✓ Thank you. ', h('b', { text: `${F.sent.flags} flag${F.sent.flags === 1 ? '' : 's'}, ${F.sent.disputed} dispute${F.sent.disputed === 1 ? '' : 's'}` }), ' submitted.', F.sent.name ? ` ${F.sent.name} is now listed among the contributors.` : ''));
+  if (!F.on) return h('div', { class: 'flag-panel' }, h('h4', { text: 'Contribute' }),
+    h('button', { type: 'button', class: 'btn small', onclick: () => { F.on = true; state.notes = true; rerender(); } }, 'Flag slop on this paper'),
+    h('p', { class: 'muted', text: 'Drag over anything the index missed; dispute anything it got wrong. One click to submit.' }));
+  const name = store.get('ssi-name', '');
+  const nameInp = h('input', { type: 'text', placeholder: 'Your name (for the credit, optional)', value: name, maxlength: 80, oninput: e => store.set('ssi-name', e.target.value) });
+  const submit = async () => {
+    const btn = $('#flag-submit'); btn.disabled = true;
+    try {
+      const r = await fetch(`${API}/jobs/${encodeURIComponent(key)}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ annotations: F.items, disputed: [...F.disputed], name: nameInp.value.trim() }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.detail || 'Could not submit.');
+      F.sent = { ...d, name: nameInp.value.trim() }; F.on = false; rerender(); loadContributorsQuiet();
+    } catch (e) { toast(STATIC_MODE ? 'Submitting runs on the live site.' : e.message); btn.disabled = false; if (STATIC_MODE) window.open(`${LIVE}/r/${key}?tab=paper&flag=1`, '_blank'); }
+  };
+  return h('div', { class: 'flag-panel on' }, h('h4', { text: 'Contribute' }),
+    h('p', { class: 'flag-how', text: 'Drag a box on the page over slop the index missed. Use “✕ not slop” on a note to dispute it.' }),
+    h('div', { class: 'flag-count' }, h('b', { text: String(F.items.length) }), ' flagged · ', h('b', { text: String(F.disputed.size) }), ' disputed'),
+    nameInp,
+    h('div', { class: 'flag-actions' },
+      h('button', { type: 'button', class: 'btn small', id: 'flag-submit', disabled: n ? null : true, onclick: submit }, n ? `Submit ${n}` : 'Submit'),
+      h('button', { type: 'button', class: 'btn ghost small', onclick: () => { F.on = false; rerender(); } }, 'Done')));
+}
+async function loadContributorsQuiet() { try { await loadContributors(); } catch (_) { /* home only */ } }
+function enableDragFlag(page, n, w, hgt, rerender) {
+  page.classList.add('flagging');
+  let start = null, box = null;
+  const pos = e => { const r = page.getBoundingClientRect(); return [Math.min(Math.max(0, (e.clientX - r.left) / r.width), 1) * w, Math.min(Math.max(0, (e.clientY - r.top) / r.height), 1) * hgt]; };
+  page.addEventListener('pointerdown', e => { if (e.button !== 0 || e.target.closest('.user-flag, .hl-card, .flag-pop')) return; start = pos(e); box = h('div', { class: 'user-flag drawing' }); page.append(box); page.setPointerCapture(e.pointerId); e.preventDefault(); });
+  page.addEventListener('pointermove', e => { if (!start) return; const [x, y] = pos(e); const x0 = Math.min(start[0], x), y0 = Math.min(start[1], y), x1 = Math.max(start[0], x), y1 = Math.max(start[1], y);
+    Object.assign(box.style, { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` }); });
+  page.addEventListener('pointerup', e => {
+    if (!start) return; const [x, y] = pos(e); const r = [Math.min(start[0], x), Math.min(start[1], y), Math.max(start[0], x), Math.max(start[1], y)]; start = null;
+    if (r[2] - r[0] < 8 || r[3] - r[1] < 6) { box.remove(); return; }
+    // pick what kind of slop this is
+    const pop = h('div', { class: 'flag-pop', onclick: ev => ev.stopPropagation() },
+      h('div', { class: 'flag-pop-h', text: 'What is it?' }),
+      h('div', { class: 'flag-kinds' }, ...ORDER.map(k => h('button', { type: 'button', class: `chip-b ${MEASURES[k].plane}`, text: MEASURES[k].name, onclick: () => add(k) })), h('button', { type: 'button', class: 'chip-b', text: 'Other', onclick: () => add('other') })),
+      h('input', { type: 'text', class: 'flag-note', placeholder: 'One line on why (optional)', maxlength: 300 }),
+      h('button', { type: 'button', class: 'hl-x', 'aria-label': 'Cancel', onclick: () => { box.remove(); pop.remove(); } }, '×'));
+    const add = kind => { state.flags.items.push({ p: n, r: r.map(v => Math.round(v * 10) / 10), kind, note: pop.querySelector('.flag-note').value.trim() }); pop.remove(); rerender(); };
+    pop.style.left = `${Math.min(100 * r[0] / w, 55)}%`; pop.style.top = `calc(${100 * r[3] / hgt}% + 6px)`;
+    page.append(pop); pop.querySelector('.flag-note').focus();
+  });
 }
 function layoutNotes(host) {
   host.querySelectorAll('.pv-row').forEach(row => {
@@ -1034,7 +1088,7 @@ async function switchFigure(index, sel) {
   sel.disabled = true; toast('Reading the figure…');
   try {
     const key = state.job.key || state.job.id;
-    const r = await fetch(`${API}/jobs/${encodeURIComponent(key)}/figure`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index, api_key: store.get('ssi-key', '') || undefined }) });
+    const r = await fetch(`${API}/jobs/${encodeURIComponent(key)}/figure`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index }) });
     const d = await r.json();
     if (!r.ok) throw new Error(d.detail || 'Could not re-score the figure.');
     state.job.result = d; state.sig = ''; render(state.job); remember(d);
@@ -1270,7 +1324,7 @@ function renderLbList(rows, metric) {
         h('span', { class: 'lbl-c rank' }, h('span', { class: 'lbl-rank', text: String(i + 1) })),
         h('span', { class: 'lbl-c paper' },
           h('span', { class: 'lbl-thumb' }, x.thumb ? h('img', { src: `${API}/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : null),
-          h('span', { class: 'lbl-t' }, h('span', { class: 'lbl-title', text: x.title || 'Untitled' }), h('span', { class: 'lbl-meta', text: [x.source, fmtDate(x.created), x.partial ? 'partial' : null].filter(Boolean).join(' · ') }))),
+          h('span', { class: 'lbl-t' }, h('span', { class: 'lbl-title' }, x.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, x.title || 'Untitled'), h('span', { class: 'lbl-meta', text: [x.source, fmtDate(x.created), x.partial ? 'partial' : null].filter(Boolean).join(' · ') }))),
         h('span', { class: 'lbl-c track' }, bar),
         h('span', { class: 'lbl-c idx' }, h('b', { style: { color: b ? b.color : 'inherit' }, text: v == null ? '—' : String(Math.round(v)) + (x.partial && metric.stacked ? '*' : '') }), b && metric.stacked ? h('small', { text: b.label }) : null),
         h('span', { class: 'lbl-c planes' }, PLANES.map(p => h('span', { class: `lbl-p lbl-${p.key}`, title: p.label, text: fmt(x.planes?.[p.key]) }))),
@@ -1520,7 +1574,7 @@ function galleryCard(x, rankNo) {
       h('span', { class: 'g-zoom', 'aria-hidden': 'true', text: 'Preview' })),
     h('a', { class: 'g-body', href: `/r/${x.key}?tab=paper`, 'data-link': '', title: x.title },
       h('div', { class: 'g-rank' }, h('span', { text: rankNo ? `Science Slop Index #${rankNo}` : '—' }), h('span', { class: 'score', text: x.index != null ? `${x.index} / 100${x.partial ? '*' : ''}` : '—' })),
-      h('div', { class: 'g-title', text: x.title })),
+      h('div', { class: 'g-title' }, x.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, x.title)),
     h('div', { class: 'g-planes' }, PLANES.map(p => {
       const v = x.planes?.[p.key];
       const t = h('button', { type: 'button', class: `gp gp-${p.key}`, title: `${p.label}: ${p.q} Click to show only this plane on the page.`,
@@ -1650,7 +1704,7 @@ function proposalCard(pr) {
 }
 function ppRead() {
   const f = $('#pp-form'); const d = Object.fromEntries(new FormData(f).entries());
-  d.credit_site = f.credit_site.checked; d.credit_paper = f.credit_paper.checked; return d;
+  d.credit_site = !!(f.credit_site && f.credit_site.checked); d.credit_paper = !!(f.credit_paper && f.credit_paper.checked); return d;
 }
 let ppInit = false;
 function initPropose() {
@@ -1698,9 +1752,23 @@ async function loadProposals() {
     return row;
   }));
 }
+async function loadContributors() {
+  const host = $('#contributors'); if (!host) return;
+  let d; try { d = await (await fetch(API + '/contributors')).json(); } catch (_) { return; }
+  const items = d.items || [];
+  $('#pt-count').textContent = items.length ? `${items.length} so far` : '';
+  if (!items.length) { host.replaceChildren(h('p', { class: 'muted contrib-empty', text: 'Your name goes here after your first flag or proposal.' })); return; }
+  const KIND = { flags: 'flagged slop', pattern: 'proposed a pattern', code: 'code', data: 'data' };
+  host.replaceChildren(...items.slice(0, 60).map(c => {
+    const el = h(c.url ? 'a' : 'span', { class: 'contrib', href: c.url || null, target: c.url ? '_blank' : null, rel: c.url ? 'noopener' : null },
+      h('i', { text: c.name.split(/[\s-]+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() }), h('b', { text: c.name }), c.n > 1 ? h('small', { text: `×${c.n}` }) : null);
+    bindTip(el, c.name + (c.affiliation ? ' · ' + c.affiliation : ''), (c.kinds || []).map(k => KIND[k] || k).join(', ') || 'contributor');
+    return el;
+  }), items.length > 60 ? h('span', { class: 'muted', text: `+${items.length - 60} more` }) : null);
+}
 async function loadProposalCount() {
   try { const d = await (await fetch(API + '/proposals')).json(); const n = (d.items || []).length; const acc = (d.items || []).filter(x => x.status === 'accepted').length;
-    $('#pt-count').textContent = n ? `${n} proposal${n === 1 ? '' : 's'} so far${acc ? `, ${acc} adopted` : ''}` : ''; } catch (_) { /* optional */ }
+    const el = $('#pt-proposals'); if (el) el.textContent = n ? `${n} proposal${n === 1 ? '' : 's'} so far${acc ? `, ${acc} adopted` : ''}` : ''; } catch (_) { /* optional */ }
 }
 let homeFeatured = null;
 async function loadHome() {
@@ -1709,7 +1777,7 @@ async function loadHome() {
     catch (_) { return; }
   }
   const ranked = [...state.gallery.items].filter(x => x.index != null).sort((a, b) => b.index - a.index);
-  buildCoverflow(ranked); loadTeam(); loadProposalCount();
+  buildCoverflow(ranked); loadTeam(); loadContributors();
   const key = state.config?.featured || ranked[0]?.key;
   if (key && homeFeatured !== key) { homeFeatured = key; renderDeepDive(key, ranked); }
 }
@@ -1723,7 +1791,7 @@ async function renderDeepDive(key, ranked) {
     h('div', { class: 'dive-head' },
       h('div', {},
         h('p', { class: 'eyebrow', text: 'Example · what a report looks like' }),
-        h('h2', { class: 'dive-title', text: doc.title || job.title }),
+        h('h2', { class: 'dive-title' }, x?.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, doc.title || job.title),
         h('p', { class: 'dive-meta', text: [x?.source, rank ? `ranked #${rank} of ${ranked.length} papers on this site` : null].filter(Boolean).join(' · ') })),
       h('div', { class: 'modal-actions' },
         h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('paper') }, 'All pages'),
@@ -1747,7 +1815,7 @@ function buildCoverflow(items) {
         marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null),
       h('div', { class: 'cf-cap' },
         h('button', { type: 'button', class: 'cf-digest', title: 'Quick digest without leaving this page', 'aria-label': 'Digest', onclick: e => { e.stopPropagation(); openPreview(x.key); } }, '◫'),
-        h('div', { class: 'cf-title', text: x.title }),
+        h('div', { class: 'cf-title' }, x.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, x.title),
         h('div', { class: 'cf-sub' }, h('span', { class: 'cf-idx', style: { color: b ? 'var(--red)' : 'var(--ink-3)' }, text: x.index != null ? `Science Slop Index ${x.index}` : '—' }),
           h('span', { class: 'cf-planes' }, PLANES.map(p => h('span', { class: `cf-p cf-${p.key}`, title: p.label, text: `${p.label.slice(0, 3)} ${fmt(x.planes?.[p.key])}` }))))));
     return card;
@@ -1821,7 +1889,7 @@ async function boot() {
   try {
     const r = await fetch(API + '/config'); state.config = await r.json();
     if (state.config.examples?.length) { $('#example').hidden = false; $('#example').title = state.config.examples[0].title; }
-    if (state.config.llm_available) { $('.key-note').textContent = 'This server already has a language model configured; your key is optional and, if given, is used instead.'; }
+
   } catch (_) { /* the page works without config */ }
   route();
 }

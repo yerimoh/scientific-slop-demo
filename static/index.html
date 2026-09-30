@@ -59,19 +59,13 @@
         <div class="under-ask">
           <span class="pill soft"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Reads LaTeX source or PDF · six measures · highlighted on the paper</span>
         </div>
-        <div class="keyrow" id="keyrow">
-          <label class="keyfield"><span class="key-l">Your OpenRouter API key</span><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-…  (optional)" aria-label="OpenRouter API key"></label>
-          <label class="check" title="Kept only in this browser's storage"><input type="checkbox" id="key-remember"> remember on this browser</label>
-          <a class="key-help" href="https://openrouter.ai/keys" target="_blank" rel="noopener">Get a key ↗</a>
-        </div>
-        <p class="notice key-note">The key is sent with your analysis only and is not stored on the server. Without a key, the four counting-rule measures still run and the report is marked partial.</p>
         <div class="alt">
           <span class="file-btn"><button class="link-btn" type="button" tabindex="-1">Upload a PDF or LaTeX .zip</button><input id="file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF or LaTeX archive"></span>
-          <label class="check" title="Papers analyzed from public links are always listed in the gallery"><input type="checkbox" id="to-gallery"> List uploaded paper in the gallery</label>
+          <label class="check" title="Off by default: your report stays private to whoever has its key"><input type="checkbox" id="to-gallery"> List it on the public leaderboard</label>
           <button class="link-btn" type="button" id="example" hidden>Try the example paper</button>
         </div>
         <p class="form-error" id="form-error" role="alert"></p>
-        <p class="notice" id="llm-notice" hidden></p>
+        <p class="notice">Your report is private: you get a key, nothing is listed unless you tick the box. On the report you can flag slop the index missed, or dispute what it flagged, and submit in one click.</p>
       </div>
     </div>
 
@@ -93,15 +87,14 @@
     <div class="wrap propose-teaser">
       <div class="pt-card card">
         <div class="pt-text">
-          <p class="eyebrow">Open call</p>
-          <h2 class="sec-h left">Found a slop pattern we don't measure?</h2>
-          <p>The six measures are a start, not a census. If you have noticed a recurring breakdown in how AI-generated papers reason, describe it in the form of Table 1. We implement it, run it on the 390 paper pairs of SciSlopBench, and adopt it if it separates AI from human papers. Adopted patterns are credited here and, if you wish, as a contribution to the next version of the paper.</p>
-          <div class="pt-actions"><a class="btn" href="/propose" data-link>Propose a pattern →</a><span class="muted" id="pt-count"></span></div>
+          <p class="eyebrow">Contribute</p>
+          <h2 class="sec-h left">SciSlop is maintained, and v2 is coming.</h2>
+          <p>We keep the index running and are scaling it up: more papers, more patterns, and a v2 that will be published as a paper. Two ways in, both one click: flag slop the index missed (or dispute what it flagged) on any report, or propose a new pattern. Contributions are credited here, and substantial ones can earn a contributor or co-author credit on v2.</p>
+          <div class="pt-actions"><a class="btn" href="/r/4jrs-rg3f-g5uq?tab=paper&flag=1" data-link id="pt-flag">Flag slop on a report →</a><a class="btn ghost" href="/propose" data-link>Propose a pattern</a></div>
         </div>
-        <div class="pt-steps">
-          <div class="pt-step"><b>1</b><span>Describe the pattern: what is counted, and what a score of 100 means.</span></div>
-          <div class="pt-step"><b>2</b><span>We implement it and test it on SciSlopBench, 390 AI–human pairs.</span></div>
-          <div class="pt-step"><b>3</b><span>If it separates the pairs above chance, it joins the index with your name.</span></div>
+        <div class="pt-contrib">
+          <div class="pt-contrib-h"><span>Contributors</span><span class="muted" id="pt-count"></span></div>
+          <div id="contributors" class="contrib-box"></div>
         </div>
       </div>
     </div>
@@ -276,13 +269,12 @@
   <section id="page-propose" class="wrap page" hidden>
     <p class="eyebrow">Propose a pattern</p>
     <h1 class="page-title">Propose a scientific slop pattern</h1>
-    <p class="page-lede">A pattern is a recurring breakdown in how a paper's reasoning connects, countable as a share of units. Describe yours the way Table 1 of the paper describes the six we have; the card on the right shows how it will read. We test every proposal on SciSlopBench and adopt the ones that hold up.</p>
+    <p class="page-lede">Seen a recurring way AI-generated papers break as science that the six measures miss? Name it and say what a reader notices. We do the rest: implement it, run it on SciSlopBench, and adopt it if it separates AI from human papers, with your name on it.</p>
 
     <div class="pp-grid">
       <form id="pp-form" class="pp-form card" autocomplete="off">
-        <div class="pp-sec"><span class="pp-n">1</span><h3>The pattern</h3></div>
-        <label class="pp-f"><span>Name</span><input name="name" required maxlength="80" placeholder="e.g. Orphan hyperparameters"></label>
-        <div class="pp-f"><span>Plane</span>
+        <label class="pp-f"><span>Name the pattern</span><input name="name" required maxlength="80" placeholder="e.g. Orphan hyperparameters"></label>
+        <div class="pp-f"><span>Where it lives</span>
           <div class="chips" id="pp-planes">
             <button type="button" class="chip-b structure" data-plane="structure">Structure</button>
             <button type="button" class="chip-b argument" data-plane="argument">Argument</button>
@@ -291,42 +283,33 @@
           </div>
           <input type="hidden" name="plane" value="">
         </div>
-        <label class="pp-f"><span>What it is <small>one sentence, as a reader would notice it</small></span><textarea name="what" required rows="2" maxlength="300" placeholder="e.g. Hyperparameters listed in the setup that no experiment ever varies or refers to."></textarea></label>
-
-        <div class="pp-sec"><span class="pp-n">2</span><h3>How it is counted</h3></div>
-        <label class="pp-f"><span>Unit of analysis <small>what gets counted</small></span><input name="unit" required maxlength="120" placeholder="e.g. Hyperparameters named in the experimental setup"></label>
-        <div class="pp-f"><span>Score = share of units</span>
-          <div class="pp-frac">
-            <input name="numerator" required maxlength="160" placeholder="units that show the pattern, e.g. hyperparameters never referred to again">
-            <span class="pp-line"></span>
-            <input name="denominator" required maxlength="120" placeholder="all units, e.g. all named hyperparameters">
+        <label class="pp-f"><span>What a reader notices <small>one sentence</small></span><textarea name="what" required rows="2" maxlength="300" placeholder="e.g. Hyperparameters listed in the setup that no experiment ever varies or refers to."></textarea></label>
+        <div class="pp-ex">
+          <input name="example_url" type="url" maxlength="300" placeholder="A paper where you saw it (link, optional)">
+          <textarea name="example_quote" rows="2" maxlength="600" placeholder="Where in that paper (optional)"></textarea>
+        </div>
+        <details class="pp-adv">
+          <summary>Optional: how it would be counted</summary>
+          <label class="pp-f"><span>Unit of analysis</span><input name="unit" maxlength="120" placeholder="e.g. Hyperparameters named in the experimental setup"></label>
+          <div class="pp-f"><span>Score = share of units</span>
+            <div class="pp-frac">
+              <input name="numerator" maxlength="160" placeholder="units that show the pattern">
+              <span class="pp-line"></span>
+              <input name="denominator" maxlength="120" placeholder="all units">
+            </div>
           </div>
-        </div>
-        <label class="pp-f"><span>What a score of 100 means</span><input name="one_means" maxlength="160" placeholder="e.g. No listed hyperparameter is ever used or varied."></label>
-        <label class="pp-f"><span>How to detect it <small>optional: counting rule, language model, or unsure</small></span><input name="detect" maxlength="300" placeholder="e.g. Match names in the setup table against the rest of the paper."></label>
-
-        <div class="pp-sec"><span class="pp-n">3</span><h3>Evidence <small>optional but persuasive</small></h3></div>
-        <div class="pp-ex">
-          <input name="example_url" type="url" maxlength="300" placeholder="Paper link (arXiv, OpenReview…)">
-          <textarea name="example_quote" rows="2" maxlength="600" placeholder="Quote or describe where the pattern shows up in that paper."></textarea>
-        </div>
-        <div class="pp-ex">
-          <input name="example2_url" type="url" maxlength="300" placeholder="A second paper (optional)">
-          <textarea name="example2_quote" rows="2" maxlength="600" placeholder="Where it shows up there."></textarea>
-        </div>
-
-        <div class="pp-sec"><span class="pp-n">4</span><h3>You</h3></div>
+          <label class="pp-f"><span>What a score of 100 means</span><input name="one_means" maxlength="160" placeholder="e.g. No listed hyperparameter is ever used or varied."></label>
+          <label class="pp-f"><span>How to detect it</span><input name="detect" maxlength="300" placeholder="counting rule, language model, or unsure"></label>
+          <input name="example2_url" type="hidden"><input name="example2_quote" type="hidden">
+        </details>
         <div class="pp-two">
-          <label class="pp-f"><span>Name</span><input name="author" maxlength="80" placeholder="How you want to be credited"></label>
+          <label class="pp-f"><span>Your name <small>for the credit</small></span><input name="author" maxlength="80" placeholder="optional"></label>
           <label class="pp-f"><span>Affiliation</span><input name="affiliation" maxlength="120" placeholder="optional"></label>
         </div>
-        <label class="pp-f"><span>Email <small>only so we can reach you about the result; never shown</small></span><input name="email" type="email" maxlength="120" placeholder="optional"></label>
-        <label class="check pp-check"><input type="checkbox" name="credit_site" checked> If adopted, list my name on this site</label>
-        <label class="check pp-check"><input type="checkbox" name="credit_paper"> If adopted, consider me as a contributor on the next version of the paper</label>
-
+        <input name="email" type="hidden"><input type="checkbox" name="credit_site" checked hidden><input type="checkbox" name="credit_paper" checked hidden>
         <div class="pp-submit">
-          <button class="btn" type="submit" id="pp-go">Submit proposal</button>
-          <span class="muted" id="pp-hint">Every proposal is public: it is filed as an issue in the project repository so you can follow its review.</span>
+          <button class="btn" type="submit" id="pp-go">Submit</button>
+          <span class="muted" id="pp-hint">Public: it is filed as an issue in the project repository, so you can follow the review.</span>
         </div>
         <p class="form-error" id="pp-error" role="alert"></p>
       </form>

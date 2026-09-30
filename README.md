@@ -72,6 +72,26 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 - **PDF 입력**: 논문의 Agents4Science 처리와 같이 PDF에서 구조를 복원합니다. LaTeX로 만든 PDF는 hyperref 내부 링크로 `\ref`/`\eqref`를 거의 그대로 복원합니다. arXiv 4편(DetectGPT, Self-Refine, Binoculars, Attention)에서 PDF와 LaTeX 결과를 비교해 섹션 구성과 Evidence gap이 일치하고, Cross-section references 차이는 0.02–0.08입니다.
 - **Index 구간**(Low < 20 ≤ Moderate < 40 ≤ High < 60 ≤ Very high)은 서술용 구분이며, 보정된 AI 확률이 아닙니다. 논문의 AI 확률은 FARS 쌍에 대한 logistic fit인데, 그 데이터가 여기 없기 때문입니다.
 
+## 제출 기록 → Google Sheets
+
+분석 요청, 패턴 제안, 리포트 위 슬롭 플래그는 모두 `data/submissions.jsonl`에 남고, `SCISLOP_SHEETS_WEBHOOK`이 설정되면 같은 내용을 Google 스프레드시트에도 한 줄씩 적습니다. 설정 방법:
+
+1. 새 Google 스프레드시트를 만들고 **확장 프로그램 → Apps Script**에 아래 코드를 붙여 넣습니다.
+   ```js
+   function doPost(e) {
+     const ss = SpreadsheetApp.getActiveSpreadsheet();
+     const rec = JSON.parse(e.postData.contents);
+     const sh = ss.getSheetByName(rec.kind) || ss.insertSheet(rec.kind);
+     if (sh.getLastRow() === 0) sh.appendRow(Object.keys(rec));
+     const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+     Object.keys(rec).forEach(k => { if (head.indexOf(k) < 0) { sh.getRange(1, head.length + 1).setValue(k); head.push(k); } });
+     sh.appendRow(head.map(k => rec[k] === undefined ? "" : (typeof rec[k] === "object" ? JSON.stringify(rec[k]) : rec[k])));
+     return ContentService.createTextOutput("ok");
+   }
+   ```
+2. **배포 → 새 배포 → 웹 앱**, 실행 사용자 "나", 액세스 "모든 사용자"로 배포하고 웹 앱 URL을 복사합니다.
+3. Render 서비스 환경 변수에 `SCISLOP_SHEETS_WEBHOOK=<그 URL>`을 넣습니다. 시트에는 `analysis`, `proposal`, `feedback` 탭이 자동으로 생깁니다.
+
 ## 정적 미러 (GitHub Pages)
 
 `build_static.py`가 갤러리의 모든 리포트(JSON, 페이지 이미지, 썸네일, figure, layout, 하이라이트 PDF, CSV)를 `docs/`로 미리 구워 냅니다. `.github/workflows/pages.yml`이 main에 push될 때마다 이를 GitHub Pages(https://yerimoh.github.io/scientific-slop-demo/)에 올립니다. 미러에서는 새 분석과 제안 제출이 라이브 서버로 넘어갑니다.

@@ -316,10 +316,12 @@ async def analyze(request: Request, file: Optional[UploadFile] = File(None), url
                      "fallback_title": os.path.splitext(file.filename)[0]})
         if kind == "pdf":
             meta["view_pdf"] = path
+        await _log_submission("analysis", {"id": job["id"], "input": file.filename, "listed": job["gallery"]})
         asyncio.create_task(_run(job, kind, path, None, meta, api_key))
         return {"id": job["id"], "key": job["id"]}
     if url and url.strip():
-        job = _new_job(url.strip(), gallery=True)       # public links are listed in the gallery
+        job = _new_job(url.strip(), gallery=gallery in ("1", "true", "on"))   # listed only when the submitter opts in
+        await _log_submission("analysis", {"id": job["id"], "input": url.strip(), "listed": job["gallery"]})
         asyncio.create_task(_run(job, None, None, url.strip(), meta, api_key))
         return {"id": job["id"], "key": job["id"]}
     raise HTTPException(400, "Give a link or a file.")
@@ -579,7 +581,8 @@ async def gallery():
             "planes": {k: (v or {}).get("score") for k, v in (idx.get("planes") or {}).items()},
             "route": doc.get("route"), "url": doc.get("url"), "created": job.get("created"),
             "thumb": bool(_find_file(key, "thumb.png")), "seed": bool(job.get("seed")),
-            "source": _source_label(doc), "source_kind": doc.get("source"),
+            "source": job.get("source_label") or _source_label(doc), "source_kind": doc.get("source"),
+            "ai_generated": bool(job.get("ai_generated")), "origin": job.get("origin"),
             "measures": {m["key"]: (m.get("score") if m.get("status") == "done" else None)
                          for m in res.get("measures", [])},
             "page0": ((res.get("pdf") or {}).get("sizes") or [None])[0],
@@ -596,6 +599,103 @@ async def gallery():
     for x in sorted(items, key=lambda x: x.get("created") or 0):
         newest[ident(x)] = x
     return {"items": list(newest.values()), "persistent": PERSISTENT}
+
+
+# ---------------------------------------------------------------- submissions log (Google Sheets webhook)
+SHEETS_WEBHOOK = os.environ.get("SCISLOP_SHEETS_WEBHOOK", "")      # Apps Script web app URL; see README
+SUBMISSIONS_LOG = os.path.join(DATA, "submissions.jsonl")
+CONTRIBUTORS_FILE = os.path.join(DATA, "contributors.json")
+
+
+async def _log_submission(kind: str, row: dict):
+    """Append every submission (analysis, proposal, feedback) to a local log and, when configured, a Google Sheet."""
+    rec = {"kind": kind, "at": time.strftime("%Y-%m-%d %H:%M:%S"), **row}
+    try:
+        os.makedirs(DATA, exist_ok=True)
+        with open(SUBMISSIONS_LOG, "a") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    except Exception as e:  # noqa: BLE001
+        print("submission log failed:", e)
+    if SHEETS_WEBHOOK:
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as c:
+                await c.post(SHEETS_WEBHOOK, json=rec)
+        except Exception as e:  # noqa: BLE001
+            print("sheets webhook failed:", e)
+
+
+def _add_contributor(name: str, kind: str):
+    name = (name or "").strip()[:80]
+    if not name:
+        return
+    try:
+        data = json.load(open(CONTRIBUTORS_FILE)) if os.path.exists(CONTRIBUTORS_FILE) else []
+    except Exception:  # noqa: BLE001
+        data = []
+    hit = next((c for c in data if c["name"].lower() == name.lower()), None)
+    if hit:
+        hit["n"] = hit.get("n", 0) + 1; hit.setdefault("kinds", []); hit["kinds"] = sorted(set(hit["kinds"] + [kind]))
+    else:
+        data.append({"name": name, "n": 1, "kinds": [kind], "since": time.strftime("%Y-%m-%d")})
+    os.makedirs(DATA, exist_ok=True)
+    with open(CONTRIBUTORS_FILE, "w") as f:
+        json.dump(data, f, ensure_ascii=False)
+
+
+@app.get("/api/contributors")
+async def contributors():
+    """Everyone who contributed: curated list shipped with the site, plus people who flagged slop or proposed patterns."""
+    out: dict[str, dict] = {}
+    cur = os.path.join(HERE, "static", "contributors.json")
+    for src in (cur, CONTRIBUTORS_FILE):
+        if os.path.exists(src):
+            try:
+                for c in json.load(open(src)):
+                    k = c["name"].lower()
+                    if k in out:
+                        out[k]["n"] = out[k].get("n", 0) + c.get("n", 1); out[k]["kinds"] = sorted(set(out[k].get("kinds", []) + c.get("kinds", [])))
+                    else:
+                        out[k] = {"name": c["name"], "n": c.get("n", 1), "kinds": c.get("kinds", []), "affiliation": c.get("affiliation", ""), "url": c.get("url", "")}
+            except Exception:  # noqa: BLE001
+                continue
+    for pr in await asyncio.to_thread(_github_proposals):
+        nm = (pr.get("author") or "").split(" (")[0].strip()
+        if nm and nm.lower() != "anonymous":
+            k = nm.lower()
+            if k in out:
+                out[k]["kinds"] = sorted(set(out[k].get("kinds", []) + ["pattern"]))
+            else:
+                out[k] = {"name": nm, "n": 1, "kinds": ["pattern"], "affiliation": "", "url": pr.get("url", "")}
+    items = sorted(out.values(), key=lambda c: (-c.get("n", 0), c["name"].lower()))
+    return {"items": items, "count": len(items)}
+
+
+FEEDBACK_DIR = os.path.join(DATA, "feedback")
+
+
+@app.post("/api/jobs/{key}/feedback")
+async def job_feedback(key: str, request: Request, body: dict):
+    """Reader flags on a report: regions the reader marked as slop, and findings the reader disputes."""
+    _rate_limit(request)
+    job = _get_job(key)
+    ann = [{"p": int(a.get("p", 0)), "r": [round(float(v), 1) for v in (a.get("r") or [0, 0, 0, 0])[:4]], "kind": str(a.get("kind") or "other")[:40], "note": str(a.get("note") or "")[:500]}
+           for a in (body.get("annotations") or [])[:100]]
+    disputed = [str(d)[:60] for d in (body.get("disputed") or [])[:200]]
+    if not ann and not disputed:
+        raise HTTPException(400, "Nothing to submit: mark at least one region or dispute one finding.")
+    fb = {"id": _new_key(), "key": job["id"], "title": (job.get("result") or {}).get("document", {}).get("title") or job.get("title"),
+          "annotations": ann, "disputed": disputed, "name": str(body.get("name") or "")[:80].strip(), "affiliation": str(body.get("affiliation") or "")[:120].strip(),
+          "email": str(body.get("email") or "")[:120].strip(), "created": time.time()}
+    os.makedirs(FEEDBACK_DIR, exist_ok=True)
+    with open(os.path.join(FEEDBACK_DIR, f"{fb['id']}.json"), "w") as f:
+        json.dump(fb, f, ensure_ascii=False)
+    if fb["name"]:
+        _add_contributor(fb["name"], "flags")
+    await _log_submission("feedback", {"id": fb["id"], "report": fb["key"], "title": fb["title"], "flags": len(ann), "disputed": len(disputed),
+                                       "name": fb["name"], "affiliation": fb["affiliation"], "email": fb["email"],
+                                       "annotations": json.dumps(ann, ensure_ascii=False)[:20000], "disputed_ids": " ".join(disputed)})
+    return {"id": fb["id"], "flags": len(ann), "disputed": len(disputed)}
 
 
 # ---------------------------------------------------------------- proposals (new slop patterns)
@@ -715,8 +815,8 @@ async def proposals():
 async def propose(request: Request, body: dict):
     _rate_limit(request)
     pr = {k: (str(body.get(k) or "").strip()[:2000] if not k.startswith("credit_") else bool(body.get(k))) for k in PROPOSAL_FIELDS}
-    if len(pr["name"]) < 3 or len(pr["what"]) < 10 or not pr["numerator"] or not pr["denominator"]:
-        raise HTTPException(400, "Give the pattern a name, a one-sentence definition, and the numerator and denominator of its score.")
+    if len(pr["name"]) < 3 or len(pr["what"]) < 10:
+        raise HTTPException(400, "Give the pattern a short name and one sentence on what a reader would notice.")
     if pr["plane"] not in ("structure", "argument", "artifacts", "other"):
         pr["plane"] = "other"
     pr["id"] = _new_key(); pr["created"] = time.time()
@@ -725,6 +825,9 @@ async def propose(request: Request, body: dict):
     with open(os.path.join(PROPOSALS_DIR, pr["id"] + ".json"), "w") as f:
         json.dump(pr, f)
     _PROPOSAL_CACHE["at"] = 0.0
+    if pr["author"]:
+        _add_contributor(pr["author"], "pattern")
+    await _log_submission("proposal", {"id": pr["id"], **{k: pr[k] for k in PROPOSAL_FIELDS}, "issue_url": pr["issue_url"] or ""})
     fallback = f"https://github.com/{PROPOSALS_REPO}/issues/new?" + __import__("urllib.parse").parse.urlencode({"title": f"Proposal: {pr['name']}", "body": _proposal_markdown(pr), "labels": "proposal,under-review"})
     return {"id": pr["id"], "issue_url": pr["issue_url"], "fallback_issue_url": None if pr["issue_url"] else fallback}
 
