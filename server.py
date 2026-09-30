@@ -341,6 +341,21 @@ async def job_status(key: str):
     return JSONResponse({k: v for k, v in job.items() if not k.startswith("_")})
 
 
+@app.post("/api/jobs/{key}/list")
+async def job_list(key: str, body: dict):
+    """Whoever holds the key decides whether the report is public. Shipped seeds cannot be changed."""
+    job = _get_job(key)
+    if job.get("seed"):
+        raise HTTPException(403, "Bundled reports are always listed.")
+    listed = bool(body.get("listed"))
+    job["gallery"] = listed
+    if job.get("result"):
+        job["result"]["gallery"] = listed
+    _save(job)
+    await _log_submission("listing", {"id": job["id"], "listed": listed, "title": job.get("title") or job.get("label")})
+    return {"id": job["id"], "listed": listed}
+
+
 @app.post("/api/jobs/{key}/figure")
 async def job_figure(key: str, body: dict):
     job = _get_job(key)

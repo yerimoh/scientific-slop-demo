@@ -54,15 +54,11 @@
         <p class="lede">A paper can read well sentence by sentence while its science does not connect. Unlike token-level AI detectors, the Science Slop Index reads the <em class="lede-k">scientific reasoning</em>: whether <span class="lede-structure">sections build on one another</span>, <span class="lede-argument">claims and citations are argued</span>, and <span class="lede-artifacts">the method and evidence can be inspected</span>.</p>
         <form id="ask" class="ask" autocomplete="off">
           <input id="url" type="text" inputmode="url" placeholder="Paste an arXiv, OpenReview, or PDF link" aria-label="Paper link">
+          <span class="file-btn ask-file" title="Upload a PDF or LaTeX .zip"><button class="ib" type="button" tabindex="-1" aria-label="Upload a PDF or LaTeX archive"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></button><input id="file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF or LaTeX archive"></span>
           <button class="go" type="submit" id="go" aria-label="Analyze"><span class="go-t">Analyze</span><span class="go-a" aria-hidden="true">→</span></button>
         </form>
-        <div class="alt">
-          <span class="file-btn"><button class="link-btn" type="button" tabindex="-1">Upload a PDF or LaTeX .zip</button><input id="file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF or LaTeX archive"></span>
-          <label class="check" title="Off by default: your report stays private to whoever has its key"><input type="checkbox" id="to-gallery"> List it on the public leaderboard</label>
-          <button class="link-btn" type="button" id="example" hidden>Try the example paper</button>
-        </div>
         <p class="form-error" id="form-error" role="alert"></p>
-        <p class="notice">Your report is private: you get a key, nothing is listed unless you tick the box.</p>
+        <p class="notice">Paste a link or upload a PDF / LaTeX .zip. Your report is private: you get a key, and you decide on the report whether to list it.</p>
         <a class="hero-call" href="#" data-scroll=".call-band"><b>SciSlop v2 is being written with the community.</b> Flag slop on any paper and become a <mark class="coauthor">co-author</mark>. <span>How ↓</span></a>
       </div>
     </div>
@@ -90,7 +86,7 @@
             <h2 class="sec-h left">Become a co-author of SciSlop v2.</h2>
             <p class="call-p">The next version is built from what the community finds. Mark slop the index missed, dispute what it got wrong, name patterns it does not know yet.<br>Every contribution is credited. Substantial ones earn <mark class="coauthor">co-authorship on the v2 paper</mark>.</p>
             <form id="ct-ask" class="call-ask" autocomplete="off">
-              <input id="ct-url" type="text" inputmode="url" placeholder="Paste a link to any paper, or drop its PDF here" aria-label="Paper link">
+              <input id="ct-url" type="text" inputmode="url" placeholder="Paste a link to any paper, or upload its PDF" aria-label="Paper link">
               <button class="btn" type="submit">Open in reader →</button>
               <span class="file-btn call-file" title="Choose a PDF"><button class="ib" type="button" tabindex="-1" aria-label="Choose a PDF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></button><input id="ct-file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF"></span>
             </form>

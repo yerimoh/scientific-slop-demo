@@ -117,6 +117,7 @@ h1.hero em { font-style: italic; color: var(--red); font-weight: 600; }
 .ask:focus-within { border-color: var(--line-2); }
 .ask input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; padding: 10px 0; font-size: 16.5px; }
 .ask input::placeholder { color: var(--ink-4); }
+.ask .ask-file .ib { width: 40px; height: 40px; border-radius: 11px; }
 .ask .go { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 12px; background: var(--ink); color: var(--bg); padding: 0 6px 0 16px; height: 44px; font-weight: 600; cursor: pointer; }
 .ask .go:hover { opacity: .9; } .ask .go[disabled] { opacity: .5; cursor: progress; }
 .ask .go-a { width: 32px; height: 32px; border-radius: 9px; background: rgba(255,255,255,.14); display: grid; place-items: center; font-size: 16px; }
@@ -232,6 +233,8 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .meta-grid .mv { font-size: 14px; color: var(--ink); font-weight: 500; text-decoration: none; }
 .meta-grid a.mv:hover { text-decoration: underline; }
 .keybar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; border-radius: 12px; background: var(--surface-2); margin: 14px 0 16px; font-size: 13.5px; color: var(--ink-2); }
+.keybar .list-toggle { margin-left: auto; font-size: 13px; }
+.keybar .list-toggle input { accent-color: var(--ink); }
 .keybar .key { font-family: var(--mono); font-size: 14.5px; color: var(--ink); font-weight: 600; letter-spacing: .04em; background: var(--surface); padding: 2px 10px; border-radius: 7px; border: 1px solid var(--line); }
 .progress { margin: 0 0 16px; }
 .progress .p-top { display: flex; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--ink-2); margin-bottom: 7px; }
@@ -822,6 +825,9 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .call-band { padding: 40px 0 44px; margin-top: 8px; }
 .call-band + .team { padding-top: 40px; }
 .propose-teaser { padding: 0 24px; }
+.hero-call { display: block; max-width: 720px; margin: 16px auto 0; padding: 10px 16px; border-radius: 12px; background: var(--argument-band); border: 1px solid var(--argument-light); color: var(--ink-2); font-size: 14px; text-decoration: none; line-height: 1.45; }
+.hero-call b { color: var(--ink); } .hero-call span { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.hero-call:hover { border-color: var(--argument-deep); }
 .call-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 36px; align-items: start; }
 .call-text .sec-h { margin: 4px 0 8px; font-size: clamp(26px, 3.4vw, 34px); }
 .call-p { margin: 0 0 18px; color: var(--ink-2); font-size: 16.5px; line-height: 1.6; max-width: 620px; }
@@ -892,7 +898,7 @@ a.pp-row:hover { border-color: var(--line-2); }
 .pp-row-name { font-weight: 700; font-size: 15px; }
 .pp-row-what { font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pp-row-by { font-size: 13px; color: var(--ink-3); text-align: right; }
-@media (max-width: 860px) { .pt-card, .pp-grid, .pp-two { grid-template-columns: 1fr; } .pp-side { position: static; } .pp-row { grid-template-columns: 1fr; gap: 6px; } .pp-row-by { text-align: left; } .propose-teaser { padding: 32px 16px 0; } }
+@media (max-width: 860px) { .pt-card, .pp-grid, .pp-two { grid-template-columns: 1fr; } .pp-side { position: static; } .pp-row { grid-template-columns: 1fr; gap: 6px; } .pp-row-by { text-align: left; } }
 
 /* contribute: flags on the paper, contributor box, AI badge */
 .ai-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--red); border-radius: 5px; padding: 1px 6px; margin-right: 6px; vertical-align: 2px; }

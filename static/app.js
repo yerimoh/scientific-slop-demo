@@ -210,7 +210,6 @@ function submitFile(file) {
   const maxMb = state.config?.max_upload_mb || 50;
   if (file.size > maxMb * 1024 * 1024) { setError(`That file is larger than ${maxMb} MB.`); return; }
   const fd = new FormData(); fd.append('file', file);
-  if ($('#to-gallery').checked) fd.append('gallery', '1');
   submit(fd);
 }
 function initContribute() {
@@ -228,10 +227,6 @@ function initInputs() {
     const fd = new FormData(); fd.append('url', v); submit(fd);
   });
   $('#file').addEventListener('change', e => { submitFile(e.target.files[0]); e.target.value = ''; });
-  $('#example').addEventListener('click', () => {
-    const ex = state.config?.examples?.[0]; if (!ex) return;
-    const fd = new FormData(); fd.append('example', ex.id); submit(fd);
-  });
   let depth = 0; const drop = $('#drop');
   const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
   addEventListener('dragenter', e => { if (!hasFiles(e) || $('#page-home').hidden) return; e.preventDefault(); depth++; drop.hidden = false; });
@@ -390,9 +385,17 @@ function keyBar(job) {
   if (job.local === 'cache') return h('div', { class: 'keybar' }, 'The server no longer has this report (it restarts from time to time), so this is the copy saved in your browser. The paper view is unavailable.');
   const key = job.key || job.id;
   const persistent = state.config?.persistent;
+  const listed = !!job.gallery;
+  const toggle = job.seed ? null : h('label', { class: 'check list-toggle', title: 'Listed reports appear on the public leaderboard and gallery' },
+    h('input', { type: 'checkbox', checked: listed ? true : null, onchange: async e => { e.target.disabled = true;
+      try { const r = await fetch(`${J(key)}/jobs/${encodeURIComponent(key)}/list`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ listed: e.target.checked }) });
+        if (!r.ok) throw new Error('Could not change the listing.'); job.gallery = e.target.checked; state.gallery = null; toast(e.target.checked ? 'Listed on the public leaderboard' : 'Removed from the leaderboard'); }
+      catch (err) { e.target.checked = !e.target.checked; toast(err.message); } finally { e.target.disabled = false; } } }),
+    listed ? 'Listed on the public leaderboard' : 'List on the public leaderboard');
   return h('div', { class: 'keybar' },
     h('span', {}, 'Report key'), h('span', { class: 'key', text: key }),
     h('button', { class: 'btn ghost small', type: 'button', onclick: () => copy(key, 'Key copied') }, 'Copy key'),
+    toggle,
     h('span', { class: 'muted', text: persistent ? 'Open it later from View report.' : 'Open it later from View report. This server keeps reports until it restarts, so download the report to keep it for good.' }));
 }
 
@@ -2037,7 +2040,6 @@ async function boot() {
   $('#g-sort').addEventListener('change', renderGallery);
   try {
     const r = await fetch(API + '/config'); state.config = await r.json();
-    if (state.config.examples?.length) { $('#example').hidden = false; $('#example').title = state.config.examples[0].title; }
 
   } catch (_) { /* the page works without config */ }
   route();
