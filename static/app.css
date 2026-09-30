@@ -819,7 +819,8 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 @media (max-width: 860px) { .fig-viz-grid { grid-template-columns: 1fr; } .prev-right .kind-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* ------------------------------------------------------------------ propose */
-.call-band { padding: 40px 0 44px; }
+.call-band { padding: 40px 0 44px; margin-top: 8px; }
+.call-band + .team { padding-top: 40px; }
 .propose-teaser { padding: 0 24px; }
 .call-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 36px; align-items: start; }
 .call-text .sec-h { margin: 4px 0 8px; font-size: clamp(26px, 3.4vw, 34px); }
