@@ -333,7 +333,7 @@ function render(job) {
   }
   frag.push(keyBar(job));
   if (!running) frag.push(h('div', { class: 'v2-strip' }, h('b', { text: 'Help build SciSlop v2. ' }), 'Flag slop the index missed or dispute what it flagged, right on the paper. Contributors are credited; substantial contributions earn contributor or co-author credit on the v2 paper. ',
-    h('button', { type: 'button', class: 'link-btn', onclick: () => { state.tab = 'paper'; if (state.flags) state.flags.on = true; else state.flags = { on: true, items: [], pending: [], extend: null, disputed: new Map(), sent: null, mode: store.get('ssi-flagmode', 'auto') }; state.notes = true; state.sig = ''; render(state.job); } }, 'Start flagging →'), ' · ', h('a', { href: BASE + '/propose', 'data-link': '', text: 'Propose a pattern' })));
+    h('button', { type: 'button', class: 'link-btn', onclick: () => { state.tab = 'paper'; if (state.flags) state.flags.on = true; else state.flags = { on: true, items: [], pending: [], extend: null, disputed: new Map(), sent: null, mode: store.get('ssi-flagmode', 'auto') }; state.notes = true; state.sig = ''; render(state.job); } }, 'Start flagging →')));
   if (running) frag.push(progressBlock(job));
   frag.push(scoreCard(idx, ms, running));
 
@@ -572,7 +572,7 @@ function paperView(job) {
     };
     state.flags.items.forEach((fl, fi) => {
       fl.pieces.forEach((pc, pi) => { if (pc.p !== n) return;
-        const label = h('span', {}, `${fi + 1} · ${MEASURES[fl.kind]?.short || 'Slop'}`, fl.pieces.length > 1 ? h('small', { text: ` ${pi + 1}/${fl.pieces.length}` }) : null,
+        const label = h('span', {}, `${fi + 1} · ${MEASURES[fl.kind]?.short || (fl.pattern_name ? trunc(fl.pattern_name, 18) : 'Slop')}`, fl.pieces.length > 1 ? h('small', { text: ` ${pi + 1}/${fl.pieces.length}` }) : null,
           state.flags.on ? h('button', { type: 'button', class: 'uf-add' + (state.flags.extend === fi ? ' on' : ''), title: 'Add more pieces to this slop', onclick: e => { e.stopPropagation(); state.flags.extend = state.flags.extend === fi ? null : fi; rerender(); } }, '+') : null);
         drawPiece(pc, 'user-flag' + (state.flags.extend === fi ? ' extending' : ''), label, () => { fl.pieces.splice(pi, 1); if (!fl.pieces.length) state.flags.items.splice(fi, 1); if (state.flags.extend === fi) state.flags.extend = null; rerender(); });
       });
@@ -621,15 +621,16 @@ function flagPanel(key, res) {
   const rerender = () => { state.sig = ''; render(state.job); };
   const modeSwitch = h('div', { class: 'seg seg-sm', role: 'group', 'aria-label': 'How to mark' }, ...[['auto', 'Auto', 'Text where there are words, a box elsewhere'], ['text', 'Text', 'Always snap to words'], ['box', 'Box', 'Always draw a box']].map(([m, l, t]) =>
     h('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(F.mode === m), title: t, onclick: () => { F.mode = m; store.set('ssi-flagmode', m); rerender(); } }, l)));
-  if (F.sent) return h('div', { class: 'flag-panel sent' }, h('h4', { text: 'Contribute' }), h('p', {}, '✓ Thank you. ', h('b', { text: `${F.sent.flags} slop${F.sent.flags === 1 ? '' : 's'}, ${F.sent.disputed} dispute${F.sent.disputed === 1 ? '' : 's'}` }), ' submitted.', F.sent.name ? ` ${F.sent.name} is now listed among the contributors.` : ''));
+  if (F.sent) return h('div', { class: 'flag-panel sent' }, h('h4', { text: 'Contribute' }), h('p', {}, '✓ Thank you. ', h('b', { text: `${F.sent.flags} slop${F.sent.flags === 1 ? '' : 's'}, ${F.sent.disputed} dispute${F.sent.disputed === 1 ? '' : 's'}` }), F.sent.proposals ? `, ${F.sent.proposals} new pattern${F.sent.proposals === 1 ? '' : 's'} proposed` : '', ' submitted.', F.sent.name ? ` ${F.sent.name} is now listed among the contributors.` : ''),
+    (F.sent.proposal_urls || []).length ? h('p', { class: 'muted' }, 'Follow the review: ', ...F.sent.proposal_urls.map((u, i) => h('a', { href: u, target: '_blank', rel: 'noopener', text: `pattern ${i + 1}` }))) : null);
   if (!F.on) return h('div', { class: 'flag-panel' }, h('h4', { text: 'Contribute' }),
     h('button', { type: 'button', class: 'btn small', onclick: () => { F.on = true; state.notes = true; rerender(); } }, 'Flag slop on this paper'),
     h('p', { class: 'muted', text: 'Drag over anything the index missed; dispute anything it got wrong. One click to submit.' }),
-    h('div', { class: 'flag-v2' }, h('b', { text: 'Help build SciSlop v2.' }), ' We are scaling the index up and will publish v2 as a paper. Contributors are credited on the site; substantial contributions earn ', h('b', { text: 'contributor or co-author credit' }), '. ', h('a', { href: BASE + '/propose', 'data-link': '', text: 'Propose a new pattern →' })));
+    h('div', { class: 'flag-v2' }, h('b', { text: 'Help build SciSlop v2.' }), ' Mark what the index missed, name patterns it does not know yet. Credited on the site; substantial contributions earn ', h('b', { text: 'co-author credit on the v2 paper' }), '.'));
   const nameInp = h('input', { type: 'text', placeholder: 'Your name (for the credit)', value: store.get('ssi-name', ''), maxlength: 80, oninput: e => store.set('ssi-name', e.target.value) });
   const affInp = h('input', { type: 'text', placeholder: 'Affiliation (optional)', value: store.get('ssi-aff', ''), maxlength: 120, oninput: e => store.set('ssi-aff', e.target.value) });
   const mailInp = h('input', { type: 'email', placeholder: 'Email (optional, never shown; for co-author contact)', value: store.get('ssi-mail', ''), maxlength: 120, oninput: e => store.set('ssi-mail', e.target.value) });
-  const v2 = h('div', { class: 'flag-v2' }, h('b', { text: 'You are helping build SciSlop v2.' }), ' We maintain the index, are scaling it up, and will publish v2 as a paper. Every contribution is credited on the site; substantial ones earn ', h('b', { text: 'contributor or co-author credit on the v2 paper' }), '. Have a new pattern in mind? ', h('a', { href: BASE + '/propose', 'data-link': '', text: 'Propose it →' }));
+  const v2 = h('div', { class: 'flag-v2' }, h('b', { text: 'Submitting is contributing.' }), ' Your flags, disputes, and any new pattern you name go straight into the SciSlop v2 review. Credited on the site; substantial contributions earn ', h('b', { text: 'co-author credit on the v2 paper' }), '.');
   const submit = async () => {
     const btn = $('#flag-submit'); btn.disabled = true;
     try {
@@ -644,24 +645,30 @@ function flagPanel(key, res) {
   let basket = null;
   if (F.pending.length) {
     const note = h('input', { type: 'text', class: 'flag-note', placeholder: 'One line on why (optional)', maxlength: 300 });
+    const pname = h('input', { type: 'text', class: 'flag-note', placeholder: 'Name this new pattern, e.g. Orphan hyperparameters', maxlength: 80 });
+    const pwhat = h('input', { type: 'text', class: 'flag-note', placeholder: 'What a reader notices (one sentence)', maxlength: 300 });
+    const newPat = h('div', { class: 'flag-newpat', hidden: (F.pendingKind || null) !== 'other' }, h('span', { class: 'mc-l', text: 'New pattern · not one of the six' }), pname, pwhat);
     let kind = F.pendingKind || null;
     const kinds = h('div', { class: 'flag-kinds' }, ...ORDER.map(k => h('button', { type: 'button', class: `chip-b ${MEASURES[k].plane}` + (kind === k ? ' on' : ''), text: MEASURES[k].short, title: MEASURES[k].name, onclick: e => { kind = k; F.pendingKind = k; kinds.querySelectorAll('.chip-b').forEach(c => c.classList.toggle('on', c === e.currentTarget)); } })),
-      h('button', { type: 'button', class: 'chip-b' + (kind === 'other' ? ' on' : ''), text: 'Other', onclick: e => { kind = 'other'; F.pendingKind = 'other'; kinds.querySelectorAll('.chip-b').forEach(c => c.classList.toggle('on', c === e.currentTarget)); } }));
+      h('button', { type: 'button', class: 'chip-b' + (kind === 'other' ? ' on' : ''), text: 'New pattern', onclick: e => { kind = 'other'; F.pendingKind = 'other'; kinds.querySelectorAll('.chip-b').forEach(c => c.classList.toggle('on', c === e.currentTarget)); newPat.hidden = false; pname.focus(); } }));
+    kinds.querySelectorAll('.chip-b').forEach(c => { if (c.textContent !== 'New pattern') c.addEventListener('click', () => { newPat.hidden = true; }); });
     const save = separate => { if (!kind) { toast('Pick what kind of slop it is'); return; }
-      if (separate) F.pending.forEach(pc => F.items.push({ kind, note: note.value.trim(), pieces: [pc] })); else F.items.push({ kind, note: note.value.trim(), pieces: F.pending.slice() });
+      if (kind === 'other' && !pname.value.trim()) { toast('Give the new pattern a name'); pname.focus(); return; }
+      const extra = kind === 'other' ? { pattern_name: pname.value.trim(), pattern_what: pwhat.value.trim() } : {};
+      if (separate) F.pending.forEach(pc => F.items.push({ kind, note: note.value.trim(), pieces: [pc], ...extra })); else F.items.push({ kind, note: note.value.trim(), pieces: F.pending.slice(), ...extra });
       F.pending = []; F.pendingKind = null; rerender(); };
     const pages = [...new Set(F.pending.map(pc => pc.p + 1))].sort((a, b) => a - b);
     basket = h('div', { class: 'flag-basket' },
       h('div', { class: 'fb-h' }, h('b', { text: `${F.pending.length} piece${F.pending.length === 1 ? '' : 's'} selected` }), h('span', { class: 'muted', text: ` · p. ${pages.join(', ')}` })),
       h('p', { class: 'muted fb-hint', text: 'Keep dragging to add pieces (any page), then save.' }),
-      kinds, note,
+      kinds, newPat, note,
       h('div', { class: 'flag-actions' },
         h('button', { type: 'button', class: 'btn small', onclick: () => save(false) }, F.pending.length > 1 ? 'Save as one slop' : 'Save'),
         F.pending.length > 1 ? h('button', { type: 'button', class: 'btn ghost small', onclick: () => save(true) }, `Save as ${F.pending.length} separate`) : null,
         h('button', { type: 'button', class: 'link-btn', onclick: () => { F.pending = []; rerender(); } }, 'Clear')));
   }
   const list = F.items.length ? h('ol', { class: 'flag-list' }, ...F.items.map((fl, fi) => h('li', { class: F.extend === fi ? 'on' : '' },
-    h('span', { class: `swatch sw-${MEASURES[fl.kind]?.plane || 'structure'}` }), h('b', { text: MEASURES[fl.kind]?.short || 'Other' }), h('span', { class: 'muted', text: ` · ${fl.pieces.length} piece${fl.pieces.length === 1 ? '' : 's'}, p. ${[...new Set(fl.pieces.map(pc => pc.p + 1))].join(', ')}` }),
+    h('span', { class: `swatch sw-${MEASURES[fl.kind]?.plane || 'structure'}` }), h('b', { text: MEASURES[fl.kind]?.short || (fl.pattern_name ? 'New: ' + fl.pattern_name : 'Other') }), h('span', { class: 'muted', text: ` · ${fl.pieces.length} piece${fl.pieces.length === 1 ? '' : 's'}, p. ${[...new Set(fl.pieces.map(pc => pc.p + 1))].join(', ')}` }),
     h('button', { type: 'button', class: 'uf-add' + (F.extend === fi ? ' on' : ''), title: 'Add more pieces to this slop', onclick: () => { F.extend = F.extend === fi ? null : fi; rerender(); } }, F.extend === fi ? 'adding…' : '+'),
     h('button', { type: 'button', class: 'link-btn', onclick: () => { F.items.splice(fi, 1); if (F.extend === fi) F.extend = null; rerender(); } }, 'remove')))) : null;
   return h('div', { class: 'flag-panel on' }, h('h4', { text: 'Contribute' }),

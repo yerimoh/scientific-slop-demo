@@ -729,6 +729,7 @@ async def job_feedback(key: str, request: Request, body: dict):
                 "rects": [[round(float(v), 1) for v in rr[:4]] for rr in (pc.get("rects") or [])[:60]], "mode": str(pc.get("mode") or "box")[:8],
                 "text": str(pc.get("text") or "")[:1000]}
     ann = [{"kind": str(a.get("kind") or "other")[:40], "note": str(a.get("note") or "")[:500],
+            "pattern_name": str(a.get("pattern_name") or "")[:80].strip(), "pattern_what": str(a.get("pattern_what") or "")[:300].strip(),
             "pieces": [_piece(pc) for pc in (a.get("pieces") or ([a] if a.get("r") else []))[:40]]}
            for a in (body.get("annotations") or [])[:100]]
     ann = [a for a in ann if a["pieces"]]
@@ -744,10 +745,30 @@ async def job_feedback(key: str, request: Request, body: dict):
         json.dump(fb, f, ensure_ascii=False)
     if fb["name"]:
         _add_contributor(fb["name"], "flags")
+    # flags of a kind the index does not know yet are proposals: file each named pattern for review
+    proposal_urls = []
+    paper_url = ((job.get("result") or {}).get("document") or {}).get("url") or ""
+    for a in ann:
+        if a["kind"] != "other" or not a["pattern_name"]:
+            continue
+        quote = " / ".join(pc["text"] for pc in a["pieces"] if pc.get("text"))[:600] or f"{len(a['pieces'])} region(s) marked on the paper"
+        pr = {k: "" for k in PROPOSAL_FIELDS}
+        pr.update({"name": a["pattern_name"], "plane": "other", "what": a["pattern_what"] or a["note"] or a["pattern_name"], "example_url": paper_url or f"report {job['id']}",
+                   "example_quote": (a["note"] + " — " if a["note"] and a["pattern_what"] else "") + quote, "author": fb["name"], "affiliation": fb["affiliation"], "email": fb["email"],
+                   "credit_site": True, "credit_paper": True, "id": _new_key(), "created": time.time(), "from_feedback": fb["id"]})
+        os.makedirs(PROPOSALS_DIR, exist_ok=True)
+        pr["issue_url"] = await asyncio.to_thread(_github_issue, pr)
+        with open(os.path.join(PROPOSALS_DIR, pr["id"] + ".json"), "w") as f:
+            json.dump(pr, f)
+        _PROPOSAL_CACHE["at"] = 0.0
+        if fb["name"]:
+            _add_contributor(fb["name"], "pattern")
+        await _log_submission("proposal", {"id": pr["id"], **{k: pr[k] for k in PROPOSAL_FIELDS}, "issue_url": pr["issue_url"] or "", "from_feedback": fb["id"]})
+        proposal_urls.append(pr["issue_url"] or "")
     await _log_submission("feedback", {"id": fb["id"], "report": fb["key"], "title": fb["title"], "flags": len(ann), "disputed": len(disputed),
                                        "name": fb["name"], "affiliation": fb["affiliation"], "email": fb["email"],
                                        "annotations": json.dumps(ann, ensure_ascii=False)[:20000], "disputed_ids": json.dumps(disputed, ensure_ascii=False)[:5000]})
-    return {"id": fb["id"], "flags": len(ann), "disputed": len(disputed)}
+    return {"id": fb["id"], "flags": len(ann), "disputed": len(disputed), "proposals": len(proposal_urls), "proposal_urls": [u for u in proposal_urls if u]}
 
 
 # ---------------------------------------------------------------- proposals (new slop patterns)
