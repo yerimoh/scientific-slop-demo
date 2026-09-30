@@ -728,7 +728,7 @@ async def job_feedback(key: str, request: Request, body: dict):
         return {"p": int(pc.get("p", 0)), "r": [round(float(v), 1) for v in (pc.get("r") or [0, 0, 0, 0])[:4]],
                 "rects": [[round(float(v), 1) for v in rr[:4]] for rr in (pc.get("rects") or [])[:60]], "mode": str(pc.get("mode") or "box")[:8],
                 "text": str(pc.get("text") or "")[:1000]}
-    ann = [{"kind": str(a.get("kind") or "other")[:40], "note": str(a.get("note") or "")[:500],
+    ann = [{"kind": str(a.get("kind") or "other")[:40], "title": str(a.get("title") or "")[:80].strip(), "note": str(a.get("note") or "")[:600],
             "pattern_name": str(a.get("pattern_name") or "")[:80].strip(), "pattern_what": str(a.get("pattern_what") or "")[:300].strip(),
             "pieces": [_piece(pc) for pc in (a.get("pieces") or ([a] if a.get("r") else []))[:40]]}
            for a in (body.get("annotations") or [])[:100]]

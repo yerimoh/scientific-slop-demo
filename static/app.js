@@ -567,12 +567,14 @@ function paperView(job) {
       rects.forEach(([x0, y0, x1, y1], ri) => {
         const box = h('div', { class: cls + (pc.mode === 'text' ? ' text' : ''), style: { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` } },
           ri === 0 && label ? h('span', { class: 'uf-label' }, label, h('button', { type: 'button', 'aria-label': 'Remove', onclick: e => { e.stopPropagation(); onRemove(); } }, '×')) : null);
+        if (pc._tip) bindTip(box, pc._tip[0], pc._tip[1]);
         page.append(box); return box;
       });
     };
     state.flags.items.forEach((fl, fi) => {
       fl.pieces.forEach((pc, pi) => { if (pc.p !== n) return;
-        const label = h('span', {}, `${fi + 1} · ${MEASURES[fl.kind]?.short || (fl.pattern_name ? trunc(fl.pattern_name, 18) : 'Slop')}`, fl.pieces.length > 1 ? h('small', { text: ` ${pi + 1}/${fl.pieces.length}` }) : null,
+        pc._tip = [`${fl.title || 'Your flag'} · ${MEASURES[fl.kind]?.name || 'New pattern'}`, (pc.text ? '“' + trunc(pc.text, 120) + '” ' : '') + (fl.note || '')];
+        const label = h('span', {}, `${fi + 1} · ${trunc(fl.title || MEASURES[fl.kind]?.short || 'Slop', 22)}`, fl.pieces.length > 1 ? h('small', { text: ` ${pi + 1}/${fl.pieces.length}` }) : null,
           state.flags.on ? h('button', { type: 'button', class: 'uf-add' + (state.flags.extend === fi ? ' on' : ''), title: 'Add more pieces to this slop', onclick: e => { e.stopPropagation(); state.flags.extend = state.flags.extend === fi ? null : fi; rerender(); } }, '+') : null);
         drawPiece(pc, 'user-flag' + (state.flags.extend === fi ? ' extending' : ''), label, () => { fl.pieces.splice(pi, 1); if (!fl.pieces.length) state.flags.items.splice(fi, 1); if (state.flags.extend === fi) state.flags.extend = null; rerender(); });
       });
@@ -644,31 +646,34 @@ function flagPanel(key, res) {
   // pending basket: pieces gathered so far, saved as one slop or as separate slops
   let basket = null;
   if (F.pending.length) {
-    const note = h('input', { type: 'text', class: 'flag-note', placeholder: 'One line on why (optional)', maxlength: 300 });
-    const pname = h('input', { type: 'text', class: 'flag-note', placeholder: 'Name this new pattern, e.g. Orphan hyperparameters', maxlength: 80 });
-    const pwhat = h('input', { type: 'text', class: 'flag-note', placeholder: 'What a reader notices (one sentence)', maxlength: 300 });
-    const newPat = h('div', { class: 'flag-newpat', hidden: (F.pendingKind || null) !== 'other' }, h('span', { class: 'mc-l', text: 'New pattern · not one of the six' }), pname, pwhat);
+    const title = h('input', { type: 'text', class: 'flag-note', placeholder: 'Name it, e.g. Claim stated before its evidence', maxlength: 80, value: F.pendingTitle || '', oninput: e => { F.pendingTitle = e.target.value; } });
+    const note = h('textarea', { class: 'flag-note', rows: 3, placeholder: 'Describe it: what a reader notices, and why it is slop', maxlength: 600, oninput: e => { F.pendingNote = e.target.value; } }, F.pendingNote || '');
+    const fields = h('div', { class: 'flag-fields' },
+      h('label', {}, h('span', { class: 'mc-l', text: 'Name' }), title),
+      h('label', {}, h('span', { class: 'mc-l', text: 'Description' }), note));
+    const newHint = h('p', { class: 'muted fb-hint', hidden: (F.pendingKind || null) !== 'other', text: 'New pattern: the name and description above are filed as a proposal for the v2 index, with this paper as the example.' });
     let kind = F.pendingKind || null;
     const kinds = h('div', { class: 'flag-kinds' }, ...ORDER.map(k => h('button', { type: 'button', class: `chip-b ${MEASURES[k].plane}` + (kind === k ? ' on' : ''), text: MEASURES[k].short, title: MEASURES[k].name, onclick: e => { kind = k; F.pendingKind = k; kinds.querySelectorAll('.chip-b').forEach(c => c.classList.toggle('on', c === e.currentTarget)); } })),
-      h('button', { type: 'button', class: 'chip-b' + (kind === 'other' ? ' on' : ''), text: 'New pattern', onclick: e => { kind = 'other'; F.pendingKind = 'other'; kinds.querySelectorAll('.chip-b').forEach(c => c.classList.toggle('on', c === e.currentTarget)); newPat.hidden = false; pname.focus(); } }));
-    kinds.querySelectorAll('.chip-b').forEach(c => { if (c.textContent !== 'New pattern') c.addEventListener('click', () => { newPat.hidden = true; }); });
+      h('button', { type: 'button', class: 'chip-b' + (kind === 'other' ? ' on' : ''), text: 'New pattern', onclick: e => { kind = 'other'; F.pendingKind = 'other'; kinds.querySelectorAll('.chip-b').forEach(c => c.classList.toggle('on', c === e.currentTarget)); newHint.hidden = false; title.focus(); } }));
+    kinds.querySelectorAll('.chip-b').forEach(c => { if (c.textContent !== 'New pattern') c.addEventListener('click', () => { newHint.hidden = true; }); });
     const save = separate => { if (!kind) { toast('Pick what kind of slop it is'); return; }
-      if (kind === 'other' && !pname.value.trim()) { toast('Give the new pattern a name'); pname.focus(); return; }
-      const extra = kind === 'other' ? { pattern_name: pname.value.trim(), pattern_what: pwhat.value.trim() } : {};
-      if (separate) F.pending.forEach(pc => F.items.push({ kind, note: note.value.trim(), pieces: [pc], ...extra })); else F.items.push({ kind, note: note.value.trim(), pieces: F.pending.slice(), ...extra });
-      F.pending = []; F.pendingKind = null; rerender(); };
+      if (!title.value.trim()) { toast('Give it a name'); title.focus(); return; }
+      const base = { kind, title: title.value.trim(), note: note.value.trim() };
+      const extra = kind === 'other' ? { pattern_name: title.value.trim(), pattern_what: note.value.trim() } : {};
+      if (separate) F.pending.forEach(pc => F.items.push({ ...base, pieces: [pc], ...extra })); else F.items.push({ ...base, pieces: F.pending.slice(), ...extra });
+      F.pending = []; F.pendingKind = null; F.pendingTitle = ''; F.pendingNote = ''; rerender(); };
     const pages = [...new Set(F.pending.map(pc => pc.p + 1))].sort((a, b) => a - b);
     basket = h('div', { class: 'flag-basket' },
       h('div', { class: 'fb-h' }, h('b', { text: `${F.pending.length} piece${F.pending.length === 1 ? '' : 's'} selected` }), h('span', { class: 'muted', text: ` · p. ${pages.join(', ')}` })),
       h('p', { class: 'muted fb-hint', text: 'Keep dragging to add pieces (any page), then save.' }),
-      kinds, newPat, note,
+      h('span', { class: 'mc-l', text: 'Kind' }), kinds, newHint, fields,
       h('div', { class: 'flag-actions' },
         h('button', { type: 'button', class: 'btn small', onclick: () => save(false) }, F.pending.length > 1 ? 'Save as one slop' : 'Save'),
         F.pending.length > 1 ? h('button', { type: 'button', class: 'btn ghost small', onclick: () => save(true) }, `Save as ${F.pending.length} separate`) : null,
         h('button', { type: 'button', class: 'link-btn', onclick: () => { F.pending = []; rerender(); } }, 'Clear')));
   }
   const list = F.items.length ? h('ol', { class: 'flag-list' }, ...F.items.map((fl, fi) => h('li', { class: F.extend === fi ? 'on' : '' },
-    h('span', { class: `swatch sw-${MEASURES[fl.kind]?.plane || 'structure'}` }), h('b', { text: MEASURES[fl.kind]?.short || (fl.pattern_name ? 'New: ' + fl.pattern_name : 'Other') }), h('span', { class: 'muted', text: ` · ${fl.pieces.length} piece${fl.pieces.length === 1 ? '' : 's'}, p. ${[...new Set(fl.pieces.map(pc => pc.p + 1))].join(', ')}` }),
+    h('span', { class: `swatch sw-${MEASURES[fl.kind]?.plane || 'structure'}` }), h('b', { text: fl.title || MEASURES[fl.kind]?.short || 'Slop' }), h('span', { class: 'muted', text: fl.kind === 'other' ? ' · new pattern' : ` · ${MEASURES[fl.kind]?.short || ''}` }), h('span', { class: 'muted', text: ` · ${fl.pieces.length} piece${fl.pieces.length === 1 ? '' : 's'}, p. ${[...new Set(fl.pieces.map(pc => pc.p + 1))].join(', ')}` }),
     h('button', { type: 'button', class: 'uf-add' + (F.extend === fi ? ' on' : ''), title: 'Add more pieces to this slop', onclick: () => { F.extend = F.extend === fi ? null : fi; rerender(); } }, F.extend === fi ? 'adding…' : '+'),
     h('button', { type: 'button', class: 'link-btn', onclick: () => { F.items.splice(fi, 1); if (F.extend === fi) F.extend = null; rerender(); } }, 'remove')))) : null;
   return h('div', { class: 'flag-panel on' }, h('h4', { text: 'Contribute' }),
