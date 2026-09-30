@@ -719,6 +719,52 @@ async def contributors():
 FEEDBACK_DIR = os.path.join(DATA, "feedback")
 
 
+def _crop_pieces(pdf_path: str, ann: list, out_dir: str) -> list:
+    """Snapshot every marked piece: the region plus a little context, rendered from the PDF at 2x. Returns file names."""
+    import base64
+    import pymupdf
+    os.makedirs(out_dir, exist_ok=True)
+    names = []
+    with pymupdf.open(pdf_path) as pdf:
+        for i, a in enumerate(ann):
+            for j, pc in enumerate(a["pieces"]):
+                try:
+                    page = pdf[pc["p"]]
+                    x0, y0, x1, y1 = pc["r"]
+                    pad = 10 if pc.get("mode") == "text" else 6
+                    clip = pymupdf.Rect(max(0, x0 - pad), max(0, y0 - pad), min(page.rect.width, x1 + pad), min(page.rect.height, y1 + pad)) & page.rect
+                    if clip.is_empty:
+                        continue
+                    z = min(2.0, 1400 / max(clip.width, 1))
+                    # tint the marked rects so the snapshot shows exactly what was flagged
+                    annots = []
+                    for rr in (pc.get("rects") or [pc["r"]]):
+                        an = page.add_rect_annot(pymupdf.Rect(*rr)); an.set_colors(stroke=(0.66, 0.2, 0.24), fill=(0.66, 0.2, 0.24)); an.set_border(width=0.6); an.set_opacity(0.22); an.update()
+                        annots.append(an)
+                    pix = page.get_pixmap(matrix=pymupdf.Matrix(z, z), clip=clip, alpha=False)
+                    for an in annots:
+                        page.delete_annot(an)
+                    name = f"s{i + 1}_p{j + 1}.jpg"
+                    data = pix.tobytes("jpeg", jpg_quality=80)
+                    with open(os.path.join(out_dir, name), "wb") as f:
+                        f.write(data)
+                    pc["image"] = name
+                    names.append((name, data))
+                except Exception as e:  # noqa: BLE001
+                    print("crop failed:", e)
+    return names
+
+
+@app.get("/api/feedback/{fid}/{name}")
+async def feedback_image(fid: str, name: str):
+    if not _KEY_RE.match(fid) or not re.match(r"^s\d+_p\d+\.jpg$", name):
+        raise HTTPException(404)
+    p = os.path.join(FEEDBACK_DIR, fid, name)
+    if not os.path.exists(p):
+        raise HTTPException(404, "Snapshot not on this server any more.")
+    return FileResponse(p, media_type="image/jpeg")
+
+
 @app.post("/api/jobs/{key}/feedback")
 async def job_feedback(key: str, request: Request, body: dict):
     """Reader flags on a report: regions the reader marked as slop, and findings the reader disputes."""
@@ -747,6 +793,10 @@ async def job_feedback(key: str, request: Request, body: dict):
           "annotations": ann, "disputed": disputed, "name": str(body.get("name") or "")[:80].strip(), "affiliation": str(body.get("affiliation") or "")[:120].strip(),
           "email": str(body.get("email") or "")[:120].strip(), "created": time.time()}
     os.makedirs(FEEDBACK_DIR, exist_ok=True)
+    images = []
+    src = await _ensure_pdf(job)
+    if src and ann:
+        images = await asyncio.to_thread(_crop_pieces, src, ann, os.path.join(FEEDBACK_DIR, fb["id"]))
     with open(os.path.join(FEEDBACK_DIR, f"{fb['id']}.json"), "w") as f:
         json.dump(fb, f, ensure_ascii=False)
     if fb["name"]:
@@ -771,9 +821,16 @@ async def job_feedback(key: str, request: Request, body: dict):
             _add_contributor(fb["name"], "pattern")
         await _log_submission("proposal", {"id": pr["id"], **{k: pr[k] for k in PROPOSAL_FIELDS}, "issue_url": pr["issue_url"] or "", "from_feedback": fb["id"]})
         proposal_urls.append(pr["issue_url"] or "")
+    import base64
+    base = str(request.base_url).rstrip("/")
     await _log_submission("feedback", {"id": fb["id"], "report": fb["key"], "title": fb["title"], "flags": len(ann), "disputed": len(disputed),
                                        "name": fb["name"], "affiliation": fb["affiliation"], "email": fb["email"],
-                                       "annotations": json.dumps(ann, ensure_ascii=False)[:20000], "disputed_ids": json.dumps(disputed, ensure_ascii=False)[:5000]})
+                                       "slops": " | ".join(f"{a['title']} [{a['kind']}]: {a['note']}" for a in ann)[:5000],
+                                       "quotes": " | ".join(pc["text"] for a in ann for pc in a["pieces"] if pc.get("text"))[:5000],
+                                       "annotations": json.dumps(ann, ensure_ascii=False)[:20000], "disputed_ids": json.dumps(disputed, ensure_ascii=False)[:5000],
+                                       "snapshot_urls": " ".join(f"{base}/api/feedback/{fb['id']}/{n}" for n, _ in images)})
+    if images and SHEETS_WEBHOOK:
+        asyncio.create_task(_log_submission("snapshot", {"feedback_id": fb["id"], "images": [{"name": f"{fb['id']}_{n}", "b64": base64.b64encode(d).decode()} for n, d in images][:40]}))
     return {"id": fb["id"], "flags": len(ann), "disputed": len(disputed), "proposals": len(proposal_urls), "proposal_urls": [u for u in proposal_urls if u]}
 
 

@@ -78,14 +78,37 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 
 1. 새 Google 스프레드시트를 만들고 **확장 프로그램 → Apps Script**에 아래 코드를 붙여 넣습니다.
    ```js
+   const SHEET_ID = "여기에 시트 ID";
    function doPost(e) {
-     const ss = SpreadsheetApp.getActiveSpreadsheet();
+     const ss = SpreadsheetApp.openById(SHEET_ID);
      const rec = JSON.parse(e.postData.contents);
+     if (rec.kind === "snapshot") return saveSnapshots(ss, rec);
      const sh = ss.getSheetByName(rec.kind) || ss.insertSheet(rec.kind);
      if (sh.getLastRow() === 0) sh.appendRow(Object.keys(rec));
      const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
      Object.keys(rec).forEach(k => { if (head.indexOf(k) < 0) { sh.getRange(1, head.length + 1).setValue(k); head.push(k); } });
      sh.appendRow(head.map(k => rec[k] === undefined ? "" : (typeof rec[k] === "object" ? JSON.stringify(rec[k]) : rec[k])));
+     return ContentService.createTextOutput("ok");
+   }
+   // Snapshots of flagged regions: saved to a Drive folder, linked from the feedback row, first one previewed in the row.
+   function saveSnapshots(ss, rec) {
+     const folders = DriveApp.getFoldersByName("SciSlop submissions");
+     const folder = folders.hasNext() ? folders.next() : DriveApp.createFolder("SciSlop submissions");
+     const urls = rec.images.map(im => {
+       const file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(im.b64), "image/jpeg", im.name + ".jpg"));
+       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+       return "https://drive.google.com/uc?export=view&id=" + file.getId();
+     });
+     const sh = ss.getSheetByName("feedback"); if (!sh) return ContentService.createTextOutput("no feedback sheet");
+     const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+     ["snapshots", "preview"].forEach(k => { if (head.indexOf(k) < 0) { sh.getRange(1, head.length + 1).setValue(k); head.push(k); } });
+     const ids = sh.getRange(2, head.indexOf("id") + 1, Math.max(1, sh.getLastRow() - 1), 1).getValues().map(r => r[0]);
+     const row = ids.indexOf(rec.feedback_id) + 2;
+     if (row >= 2) {
+       sh.getRange(row, head.indexOf("snapshots") + 1).setValue(urls.join(" "));
+       sh.getRange(row, head.indexOf("preview") + 1).setFormula('=IMAGE("' + urls[0] + '")');
+       sh.setRowHeight(row, 120);
+     }
      return ContentService.createTextOutput("ok");
    }
    ```
