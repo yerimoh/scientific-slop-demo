@@ -56,16 +56,36 @@
           <input id="url" type="text" inputmode="url" placeholder="Paste an arXiv, OpenReview, or PDF link" aria-label="Paper link">
           <button class="go" type="submit" id="go" aria-label="Analyze"><span class="go-t">Analyze</span><span class="go-a" aria-hidden="true">→</span></button>
         </form>
-        <div class="under-ask">
-          <span class="pill soft"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Reads LaTeX source or PDF · six measures · highlighted on the paper</span>
-        </div>
         <div class="alt">
           <span class="file-btn"><button class="link-btn" type="button" tabindex="-1">Upload a PDF or LaTeX .zip</button><input id="file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF or LaTeX archive"></span>
           <label class="check" title="Off by default: your report stays private to whoever has its key"><input type="checkbox" id="to-gallery"> List it on the public leaderboard</label>
           <button class="link-btn" type="button" id="example" hidden>Try the example paper</button>
         </div>
         <p class="form-error" id="form-error" role="alert"></p>
-        <p class="notice">Your report is private: you get a key, nothing is listed unless you tick the box. On the report you can flag slop the index missed, or dispute what it flagged, and submit in one click.</p>
+        <p class="notice">Your report is private: you get a key, nothing is listed unless you tick the box.</p>
+        <a class="hero-call" href="#" data-scroll=".propose-teaser"><b>We are building SciSlop v2 with you.</b> Flag slop on any paper or propose a pattern; contributors are credited and can become co-authors on the v2 paper. <span>How to contribute ↓</span></a>
+      </div>
+    </div>
+
+    <div class="wrap propose-teaser">
+      <div class="pt-card card">
+        <div class="pt-text">
+          <p class="eyebrow">Contribute · open call</p>
+          <h2 class="sec-h left">Help build SciSlop v2 — and be on the paper.</h2>
+          <p>SciSlop is maintained and growing: more papers, more patterns, a bigger benchmark. <b>Version 2 will be published as a paper</b>, and it is built with the people who contribute. Two ways in, both one click: flag slop the index missed (or dispute what it flagged) on any report, or propose a new pattern. Every contribution is credited here; substantial ones earn <b>contributor or co-author credit on the v2 paper</b>.</p>
+          <div class="pt-ways">
+            <div class="pt-way"><b>On a paper we list</b><span>Open any report below and flag what the index missed, or dispute what it flagged.</span><a href="/r/4jrs-rg3f-g5uq?tab=paper&flag=1" data-link>Try on DetectGPT →</a></div>
+            <div class="pt-way"><b>On your own paper</b><span>Check your draft's slop score, and mark what the index got wrong while you are at it. Reports stay private.</span><a href="#" data-scroll="#ask">Analyze mine →</a></div>
+            <div class="pt-way"><b>On anything you read</b><span>Reviewing, or reading, a paper that felt AI-written? Paste its link or drop the PDF here: it opens in the reader, ready to mark.</span>
+              <form id="ct-ask" class="ct-ask" autocomplete="off"><input id="ct-url" type="text" inputmode="url" placeholder="arXiv / OpenReview / PDF link" aria-label="Paper link"><button class="btn small" type="submit">Open in reader</button></form>
+              <span class="file-btn ct-file"><button class="link-btn" type="button" tabindex="-1">or drop / choose a PDF</button><input id="ct-file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF"></span></div>
+            <div class="pt-way pt-contrib">
+              <div class="pt-contrib-h"><span>Contributors</span><span class="muted" id="pt-count"></span></div>
+              <div id="contributors" class="contrib-box"></div>
+              <a class="btn ghost small" href="/propose" data-link style="justify-self:start;margin-top:auto">Propose a new pattern</a><span class="muted" id="pt-proposals" hidden></span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -81,21 +101,6 @@
           <button class="cf-nav cf-next" id="cf-next" type="button" aria-label="Next paper">›</button>
         </div>
         <div id="cf-dots" class="cf-dots"></div>
-      </div>
-    </div>
-
-    <div class="wrap propose-teaser">
-      <div class="pt-card card">
-        <div class="pt-text">
-          <p class="eyebrow">Contribute</p>
-          <h2 class="sec-h left">SciSlop is maintained, and v2 is coming.</h2>
-          <p>We keep the index running and are scaling it up: more papers, more patterns, and a v2 that will be published as a paper. Two ways in, both one click: flag slop the index missed (or dispute what it flagged) on any report, or propose a new pattern. Contributions are credited here, and substantial ones can earn a contributor or co-author credit on v2.</p>
-          <div class="pt-actions"><a class="btn" href="/r/4jrs-rg3f-g5uq?tab=paper&flag=1" data-link id="pt-flag">Flag slop on a report →</a><a class="btn ghost" href="/propose" data-link>Propose a pattern</a></div>
-        </div>
-        <div class="pt-contrib">
-          <div class="pt-contrib-h"><span>Contributors</span><span class="muted" id="pt-count"></span></div>
-          <div id="contributors" class="contrib-box"></div>
-        </div>
       </div>
     </div>
 

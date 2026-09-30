@@ -101,7 +101,7 @@ function fmt(x) { if (x == null) return '—'; const v = 100 * x; if (v > 0 && v
 function fmtNum(n) { return Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10); }
 function trunc(t, n) { t = t || ''; return t.length > n ? t.slice(0, n - 1) + '…' : t; }
 function toast(msg) { const t = h('div', { class: 'toast', text: msg, role: 'status' }); document.body.append(t); setTimeout(() => t.remove(), 2400); }
-function setError(msg) { $('#form-error').textContent = msg || ''; }
+function setError(msg) { $('#form-error').textContent = msg || ''; if (msg && state.autoFlag) toast(msg); }
 function download(name, text, type) {
   const a = h('a', { href: URL.createObjectURL(new Blob([text], { type })), download: name });
   document.body.append(a); a.click(); a.remove();
@@ -213,6 +213,12 @@ function submitFile(file) {
   if ($('#to-gallery').checked) fd.append('gallery', '1');
   submit(fd);
 }
+function initContribute() {
+  const f = $('#ct-ask'); if (!f) return;
+  f.addEventListener('submit', e => { e.preventDefault(); const v = $('#ct-url').value.trim(); if (!v) { $('#ct-url').focus(); return; } state.autoFlag = true; const fd = new FormData(); fd.append('url', v); submit(fd); });
+  $('#ct-file').addEventListener('change', e => { state.autoFlag = true; submitFile(e.target.files[0]); e.target.value = ''; });
+  document.querySelectorAll('[data-scroll]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); const t = $(a.dataset.scroll); if (t) { t.scrollIntoView({ behavior: 'smooth', block: 'center' }); t.querySelector('input')?.focus(); } }));
+}
 function initInputs() {
   const pre = new URLSearchParams(location.search).get('url'); if (pre) { $('#url').value = pre; }
   $('#ask').addEventListener('submit', e => {
@@ -231,7 +237,7 @@ function initInputs() {
   addEventListener('dragenter', e => { if (!hasFiles(e) || $('#page-home').hidden) return; e.preventDefault(); depth++; drop.hidden = false; });
   addEventListener('dragover', e => { if (hasFiles(e)) e.preventDefault(); });
   addEventListener('dragleave', e => { if (!hasFiles(e)) return; depth = Math.max(0, depth - 1); if (!depth) drop.hidden = true; });
-  addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); depth = 0; drop.hidden = true; if (!$('#page-home').hidden) submitFile(e.dataTransfer.files[0]); });
+  addEventListener('drop', e => { if (!hasFiles(e)) return; e.preventDefault(); depth = 0; drop.hidden = true; if (!$('#page-home').hidden) { if (e.target.closest && e.target.closest('.propose-teaser')) state.autoFlag = true; submitFile(e.dataTransfer.files[0]); } });
   $('#view-form').addEventListener('submit', e => {
     e.preventDefault();
     let k = $('#view-key').value.trim().toLowerCase().replace(/\s+/g, '');
@@ -275,7 +281,7 @@ async function poll(key, fails) {
     const job = await r.json();
     state.job = job; render(job);
     if (job.status === 'running') state.timer = setTimeout(() => poll(key, 0), 700);
-    else if (job.status === 'done') { remember(job.result); if (state.autoReader === key && job.result?.pdf?.available) { state.autoReader = null; state.tab = 'paper'; state.sig = ''; render(job); } }
+    else if (job.status === 'done') { remember(job.result); if (state.autoReader === key && job.result?.pdf?.available) { state.autoReader = null; state.tab = 'paper'; if (state.autoFlag) { state.autoFlag = false; state.flags = { on: true, items: [], pending: [], extend: null, disputed: new Map(), sent: null, mode: store.get('ssi-flagmode', 'auto') }; state.notes = true; } state.sig = ''; render(job); } }
   } catch (e) {
     if (fails < 8) state.timer = setTimeout(() => poll(key, fails + 1), 1200 * (fails + 1));
     else renderError('Lost the connection to the server.');
@@ -326,6 +332,8 @@ function render(job) {
     frag.push(h('div', { class: 'paper-head' }, h('p', { class: 'eyebrow', text: 'Analyzing' }), h('h2', { text: trunc(job.label || 'Your paper', 120) })));
   }
   frag.push(keyBar(job));
+  if (!running) frag.push(h('div', { class: 'v2-strip' }, h('b', { text: 'Help build SciSlop v2. ' }), 'Flag slop the index missed or dispute what it flagged, right on the paper. Contributors are credited; substantial contributions earn contributor or co-author credit on the v2 paper. ',
+    h('button', { type: 'button', class: 'link-btn', onclick: () => { state.tab = 'paper'; if (state.flags) state.flags.on = true; else state.flags = { on: true, items: [], pending: [], extend: null, disputed: new Map(), sent: null, mode: store.get('ssi-flagmode', 'auto') }; state.notes = true; state.sig = ''; render(state.job); } }, 'Start flagging →'), ' · ', h('a', { href: BASE + '/propose', 'data-link': '', text: 'Propose a pattern' })));
   if (running) frag.push(progressBlock(job));
   frag.push(scoreCard(idx, ms, running));
 
@@ -616,14 +624,17 @@ function flagPanel(key, res) {
   if (F.sent) return h('div', { class: 'flag-panel sent' }, h('h4', { text: 'Contribute' }), h('p', {}, '✓ Thank you. ', h('b', { text: `${F.sent.flags} slop${F.sent.flags === 1 ? '' : 's'}, ${F.sent.disputed} dispute${F.sent.disputed === 1 ? '' : 's'}` }), ' submitted.', F.sent.name ? ` ${F.sent.name} is now listed among the contributors.` : ''));
   if (!F.on) return h('div', { class: 'flag-panel' }, h('h4', { text: 'Contribute' }),
     h('button', { type: 'button', class: 'btn small', onclick: () => { F.on = true; state.notes = true; rerender(); } }, 'Flag slop on this paper'),
-    h('p', { class: 'muted', text: 'Drag over anything the index missed; dispute anything it got wrong. One click to submit.' }));
-  const name = store.get('ssi-name', '');
-  const nameInp = h('input', { type: 'text', placeholder: 'Your name (for the credit, optional)', value: name, maxlength: 80, oninput: e => store.set('ssi-name', e.target.value) });
+    h('p', { class: 'muted', text: 'Drag over anything the index missed; dispute anything it got wrong. One click to submit.' }),
+    h('div', { class: 'flag-v2' }, h('b', { text: 'Help build SciSlop v2.' }), ' We are scaling the index up and will publish v2 as a paper. Contributors are credited on the site; substantial contributions earn ', h('b', { text: 'contributor or co-author credit' }), '. ', h('a', { href: BASE + '/propose', 'data-link': '', text: 'Propose a new pattern →' })));
+  const nameInp = h('input', { type: 'text', placeholder: 'Your name (for the credit)', value: store.get('ssi-name', ''), maxlength: 80, oninput: e => store.set('ssi-name', e.target.value) });
+  const affInp = h('input', { type: 'text', placeholder: 'Affiliation (optional)', value: store.get('ssi-aff', ''), maxlength: 120, oninput: e => store.set('ssi-aff', e.target.value) });
+  const mailInp = h('input', { type: 'email', placeholder: 'Email (optional, never shown; for co-author contact)', value: store.get('ssi-mail', ''), maxlength: 120, oninput: e => store.set('ssi-mail', e.target.value) });
+  const v2 = h('div', { class: 'flag-v2' }, h('b', { text: 'You are helping build SciSlop v2.' }), ' We maintain the index, are scaling it up, and will publish v2 as a paper. Every contribution is credited on the site; substantial ones earn ', h('b', { text: 'contributor or co-author credit on the v2 paper' }), '. Have a new pattern in mind? ', h('a', { href: BASE + '/propose', 'data-link': '', text: 'Propose it →' }));
   const submit = async () => {
     const btn = $('#flag-submit'); btn.disabled = true;
     try {
       const r = await fetch(`${J(key)}/jobs/${encodeURIComponent(key)}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ annotations: F.items, disputed: [...F.disputed].map(([id, kind]) => ({ id, kind })), name: nameInp.value.trim() }) });
+        body: JSON.stringify({ annotations: F.items, disputed: [...F.disputed].map(([id, kind]) => ({ id, kind })), name: nameInp.value.trim(), affiliation: affInp.value.trim(), email: mailInp.value.trim() }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.detail || 'Could not submit.');
       F.sent = { ...d, name: nameInp.value.trim() }; F.on = false; rerender(); loadContributorsQuiet();
@@ -659,10 +670,11 @@ function flagPanel(key, res) {
     basket,
     h('div', { class: 'flag-count' }, h('b', { text: String(F.items.length) }), ' slop', F.items.length === 1 ? '' : 's', ' · ', h('b', { text: String(F.disputed.size) }), ' disputed'),
     list,
-    nameInp,
+    h('div', { class: 'flag-who' }, nameInp, affInp, mailInp),
     h('div', { class: 'flag-actions' },
       h('button', { type: 'button', class: 'btn small', id: 'flag-submit', disabled: n ? null : true, onclick: submit }, n ? `Submit ${n}` : 'Submit'),
-      h('button', { type: 'button', class: 'btn ghost small', onclick: () => { F.on = false; F.extend = null; rerender(); } }, 'Done')));
+      h('button', { type: 'button', class: 'btn ghost small', onclick: () => { F.on = false; F.extend = null; rerender(); } }, 'Done')),
+    v2);
 }
 async function loadContributorsQuiet() { try { await loadContributors(); } catch (_) { /* home only */ } }
 const WORDS_CACHE = {};
@@ -2002,7 +2014,7 @@ function renderRecent() {
 
 // ------------------------------------------------------------------ boot
 async function boot() {
-  initTheme(); initInputs(); initKey(); initLeaderboard();
+  initTheme(); initInputs(); initContribute(); initKey(); initLeaderboard();
   $('#g-q').addEventListener('input', renderGallery);
   $('#g-sort').addEventListener('change', renderGallery);
   try {
