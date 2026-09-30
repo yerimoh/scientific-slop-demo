@@ -411,6 +411,9 @@ async def job_page(key: str, n: int):
     pages = (res.get("pdf") or {}).get("pages", 0)
     if not (0 <= n < pages):
         raise HTTPException(404)
+    shipped = _find_file(job["id"], f"page_{n}.jpg")          # seeds ship their first page
+    if shipped:
+        return FileResponse(shipped, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
     cache = os.path.join(_job_dir(job["id"]), "files", f"page_{n}.jpg")
     if not os.path.exists(cache):
         src = await _ensure_pdf(job)
