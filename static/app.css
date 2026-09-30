@@ -885,6 +885,12 @@ a.pp-row:hover { border-color: var(--line-2); }
 .pv-page.flagging img { pointer-events: none; }
 .user-flag { position: absolute; border: 2px dashed var(--red); background: rgba(168, 50, 62, .08); border-radius: 3px; z-index: 4; }
 .user-flag.drawing { pointer-events: none; }
+.user-flag.text { border: 0; background: rgba(168, 50, 62, .28); border-bottom: 2px solid var(--red); border-radius: 2px; mix-blend-mode: multiply; }
+.seg.seg-sm { height: 28px; border-radius: 8px; } .seg-sm .seg-b { padding: 0 10px; font-size: 12px; }
+.pv-dispute-row { display: flex; gap: 5px; align-items: center; margin-top: 5px; flex-wrap: wrap; }
+.pv-dispute-row .pv-dispute { margin-top: 0; }
+.pv-rekind { font-size: 11px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--surface); color: var(--ink-2); padding: 1px 4px; max-width: 140px; }
+.pv-rekind.on { border-color: var(--structure); color: var(--structure-deep); font-weight: 700; }
 .uf-label { position: absolute; left: -2px; top: -20px; font-size: 10.5px; font-weight: 700; color: #fff; background: var(--red); border-radius: 4px 4px 0 0; padding: 1px 6px; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; }
 .uf-label button { border: 0; background: none; color: #fff; font-size: 13px; line-height: 1; cursor: pointer; padding: 0; }
 .flag-pop { position: absolute; z-index: 6; width: min(360px, 60%); background: var(--surface); border: 1px solid var(--red); border-radius: 12px; box-shadow: 0 8px 30px rgba(31,41,55,.2); padding: 10px 12px; display: grid; gap: 8px; cursor: default; }

@@ -492,6 +492,37 @@ async def job_layout(key: str):
     return JSONResponse(out)
 
 
+def _page_words(pdf_path: str, n: int) -> dict:
+    """Word boxes of one page in reading order, for text-snapped flags."""
+    import pymupdf
+    with pymupdf.open(pdf_path) as pdf:
+        page = pdf[n]
+        ws = [[round(x0, 1), round(y0, 1), round(x1, 1), round(y1, 1), w, b, ln] for x0, y0, x1, y1, w, b, ln, _ in page.get_text("words")]
+    ws.sort(key=lambda w: (w[5], w[6], w[0]))
+    return {"p": n, "w": [w[:5] for w in ws]}
+
+
+@app.get("/api/jobs/{key}/words/{n}")
+async def job_words(key: str, n: int):
+    job = _get_job(key)
+    res = job.get("result") or {}
+    pages = (res.get("pdf") or {}).get("pages", 0)
+    if not (0 <= n < pages):
+        raise HTTPException(404)
+    shipped = _find_file(job["id"], f"words_{n}.json")
+    if shipped:
+        return FileResponse(shipped, media_type="application/json")
+    src = await _ensure_pdf(job)
+    if not src:
+        raise HTTPException(404, "The paper's PDF is no longer available.")
+    out = await asyncio.to_thread(_page_words, src, n)
+    cache = os.path.join(_job_dir(job["id"]), "files", f"words_{n}.json")
+    os.makedirs(os.path.dirname(cache), exist_ok=True)
+    with open(cache, "w") as f:
+        json.dump(out, f)
+    return JSONResponse(out)
+
+
 @app.get("/api/jobs/{key}/thumb.png")
 async def job_thumb(key: str):
     job = _get_job(key)
@@ -680,9 +711,12 @@ async def job_feedback(key: str, request: Request, body: dict):
     """Reader flags on a report: regions the reader marked as slop, and findings the reader disputes."""
     _rate_limit(request)
     job = _get_job(key)
-    ann = [{"p": int(a.get("p", 0)), "r": [round(float(v), 1) for v in (a.get("r") or [0, 0, 0, 0])[:4]], "kind": str(a.get("kind") or "other")[:40], "note": str(a.get("note") or "")[:500]}
+    ann = [{"p": int(a.get("p", 0)), "r": [round(float(v), 1) for v in (a.get("r") or [0, 0, 0, 0])[:4]],
+            "rects": [[round(float(v), 1) for v in rr[:4]] for rr in (a.get("rects") or [])[:60]], "mode": str(a.get("mode") or "box")[:8],
+            "text": str(a.get("text") or "")[:1000], "kind": str(a.get("kind") or "other")[:40], "note": str(a.get("note") or "")[:500]}
            for a in (body.get("annotations") or [])[:100]]
-    disputed = [str(d)[:60] for d in (body.get("disputed") or [])[:200]]
+    disputed = [({"id": str(d.get("id"))[:60], "kind": str(d.get("kind") or "")[:40]} if isinstance(d, dict) else {"id": str(d)[:60], "kind": ""})
+                for d in (body.get("disputed") or [])[:200]]
     if not ann and not disputed:
         raise HTTPException(400, "Nothing to submit: mark at least one region or dispute one finding.")
     fb = {"id": _new_key(), "key": job["id"], "title": (job.get("result") or {}).get("document", {}).get("title") or job.get("title"),
@@ -695,7 +729,7 @@ async def job_feedback(key: str, request: Request, body: dict):
         _add_contributor(fb["name"], "flags")
     await _log_submission("feedback", {"id": fb["id"], "report": fb["key"], "title": fb["title"], "flags": len(ann), "disputed": len(disputed),
                                        "name": fb["name"], "affiliation": fb["affiliation"], "email": fb["email"],
-                                       "annotations": json.dumps(ann, ensure_ascii=False)[:20000], "disputed_ids": " ".join(disputed)})
+                                       "annotations": json.dumps(ann, ensure_ascii=False)[:20000], "disputed_ids": json.dumps(disputed, ensure_ascii=False)[:5000]})
     return {"id": fb["id"], "flags": len(ann), "disputed": len(disputed)}
 
 

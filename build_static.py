@@ -56,6 +56,9 @@ async def main():
                         page = doc_[n]; z = 1000 / page.rect.width
                         with open(os.path.join(jd, "pages", f"{n}.jpg"), "wb") as f:
                             f.write(page.get_pixmap(matrix=pymupdf.Matrix(z, z), alpha=False).tobytes("jpeg", jpg_quality=70))
+                os.makedirs(os.path.join(jd, "words"), exist_ok=True)
+                for n in range(min(pdf.get("pages", 0), args.max_pages)):
+                    dump(f"api/jobs/{key}/words/{n}.json", server._page_words(src, n))
                 with open(os.path.join(jd, "pdf"), "wb") as f:
                     f.write(annotated_pdf(src, res))
                 if not os.path.exists(os.path.join(jd, "layout.json")):
