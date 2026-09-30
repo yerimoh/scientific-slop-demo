@@ -78,8 +78,8 @@ async def main():
     shutil.copytree(os.path.join(HERE, "static"), os.path.join(OUT, "static"))
     html = open(os.path.join(HERE, "static", "index.html")).read()
     html = html.replace('href="/static/', f'href="{args.base}/static/').replace('src="/static/', f'src="{args.base}/static/')
-    html = html.replace("<head>", f"<head>\n<script>window.SCISLOP_STATIC = {{ base: '{args.base}', live: '{args.live}', repo: '{args.repo}' }};</script>", 1)
-    html = html.replace("</header>", f"</header>\n<div class=\"static-bar\">Static mirror · reports are pre-rendered here; to analyze a new paper or propose a pattern, use the <a href=\"{args.live}/\">live site</a>.</div>", 1)
+    keys = json.dumps([it["key"] for it in gal["items"]])
+    html = html.replace("<head>", f"<head>\n<script>window.SCISLOP_STATIC = {{ base: '{args.base}', live: '{args.live}', repo: '{args.repo}', keys: {keys} }};</script>", 1)
     for name in ("index.html", "404.html"):
         with open(os.path.join(OUT, name), "w") as f:
             f.write(html)

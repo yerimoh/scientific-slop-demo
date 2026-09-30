@@ -30,6 +30,7 @@ from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 
@@ -846,6 +847,9 @@ async def config():
                          if os.path.isdir(v["path"])]}
 
 
+app.add_middleware(CORSMiddleware,
+                   allow_origins=[o.strip() for o in os.environ.get("SCISLOP_CORS_ORIGINS", "https://yerimoh.github.io,http://localhost:8822").split(",") if o.strip()],
+                   allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
 app.mount("/static", StaticFiles(directory=os.path.join(HERE, "static")), name="static")
 
 

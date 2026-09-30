@@ -94,7 +94,7 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 
 ## 정적 미러 (GitHub Pages)
 
-`build_static.py`가 갤러리의 모든 리포트(JSON, 페이지 이미지, 썸네일, figure, layout, 하이라이트 PDF, CSV)를 `docs/`로 미리 구워 냅니다. `.github/workflows/pages.yml`이 main에 push될 때마다 이를 GitHub Pages(https://yerimoh.github.io/scientific-slop-demo/)에 올립니다. 미러에서는 새 분석과 제안 제출이 라이브 서버로 넘어갑니다.
+`build_static.py`가 갤러리의 모든 리포트(JSON, 페이지 이미지, 썸네일, figure, layout, 하이라이트 PDF, CSV)를 `docs/`로 미리 구워 냅니다. `.github/workflows/pages.yml`이 main에 push될 때마다 이를 GitHub Pages(https://yerimoh.github.io/scientific-slop-demo/)에 올립니다. 미러 페이지 안에서 새 분석·제안·플래그를 그대로 할 수 있습니다: 그 요청만 Render 백엔드 API로 보내고(CORS 허용, `SCISLOP_CORS_ORIGINS`), 결과는 같은 페이지에서 보여 줍니다. 미러에 미리 구워진 리포트는 즉시 뜨고, 그 뒤 분석된 리포트는 백엔드에서 읽어 옵니다.
 
 ## 배포 (Render)
 
