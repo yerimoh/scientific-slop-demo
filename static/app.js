@@ -520,8 +520,9 @@ function paperView(job) {
       h('span', { class: 'pl', text: `Loading page ${n + 1}…` }),
       h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${n}.jpg`, alt: `Page ${n + 1}`, loading: n < 3 ? 'eager' : 'lazy', width: 1100, height: Math.round(1100 * hgt / w) }),
       h('span', { class: 'pno', text: `${n + 1}` }));
-    const notes = h('div', { class: 'pv-notes' });
-    const row = h('div', { class: 'pv-row' }, h('div', { class: 'pv-gutter-l' }), page, notes);
+    const notesL = h('div', { class: 'pv-notes pv-notes-l' }); const notesR = h('div', { class: 'pv-notes pv-notes-r' });
+    const notes = notesR;   // default side; a note moves to the left gutter when its highlight sits in the left column
+    const row = h('div', { class: 'pv-row', 'data-page': n }, notesL, h('div', { class: 'pv-gutter-l' }), page, notesR);
     pageEls.push({ page, w, hgt, row });
     for (const hl of byPage.get(n) || []) {
       if (state.hidden.has(hl.m.key)) continue;
@@ -533,7 +534,7 @@ function paperView(job) {
       const open = e => { if (e && e.stopPropagation) e.stopPropagation(); hideTip(); hlCard(page, hl, { x0, y0, x1, y1 }, w, hgt, openFindings); };
       d.addEventListener('click', open);
       d.addEventListener('keydown', e => { if (e.key === 'Enter') open(e); });
-      const sync = on => { d.classList.toggle('lit', on); notes.querySelectorAll(`[data-for="${id}"]`).forEach(x => x.classList.toggle('lit', on)); };
+      const sync = on => { d.classList.toggle('lit', on); row.querySelectorAll(`[data-for="${id}"]`).forEach(x => x.classList.toggle('lit', on)); };
       d.addEventListener('pointerenter', () => sync(true)); d.addEventListener('pointerleave', () => sync(false));
       page.append(d);
       // margin note, once per finding, at the highlight's height
@@ -546,7 +547,7 @@ function paperView(job) {
           state.flags.on ? h('button', { type: 'button', class: 'pv-dispute' + (state.flags.disputed.has(id) ? ' on' : ''), title: 'Dispute: this is not slop',
             onclick: e => { e.stopPropagation(); state.flags.disputed.has(id) ? state.flags.disputed.delete(id) : state.flags.disputed.add(id); rerender(); } }, state.flags.disputed.has(id) ? '✓ disputed' : '✕ not slop') : null);
         note.addEventListener('pointerenter', () => sync(true)); note.addEventListener('pointerleave', () => sync(false));
-        notes.append(note);
+        ((x0 + x1) / 2 < w / 2 && state.notesBoth !== false ? notesL : notesR).append(note);
       }
     }
     // reader flags already drawn on this page
@@ -563,7 +564,29 @@ function paperView(job) {
   });
   const spine = h('div', { class: 'pv-spine', hidden: !state.spine });
   pagesHost.prepend(spine);
-  const layout = h('div', { class: 'pv-layout' + (state.notes || state.spine ? ' wide' : '') }, side, pagesHost);
+  if (state.zoom == null) state.zoom = 100;
+  const nPages = (pdf.sizes || []).length;
+  const pageNo = h('span', { class: 'rd-page', text: `1 / ${nPages}` });
+  const zoomLbl = h('span', { class: 'rd-zoom-v', text: `${state.zoom}%` });
+  const setZoom = z => { state.zoom = Math.max(60, Math.min(160, z)); pagesHost.style.setProperty('--zoom', state.zoom / 100); zoomLbl.textContent = `${state.zoom}%`; setTimeout(() => { layoutNotes(pagesHost); if (state.spine) drawSpine(spine, pagesHost, pageEls, res, key); }, 60); };
+  const F = state.flags; const nF = F.items.length + F.disputed.size;
+  const toolbar = h('div', { class: 'rd-bar' },
+    h('span', { class: 'rd-title', text: trunc((res.document || {}).title || '', 70) }),
+    h('span', { class: 'rd-idx' }, h('b', { text: res.index?.index != null ? String(res.index.index) : '—' }), ' / 100'),
+    h('span', { class: 'rd-sp' }),
+    h('button', { type: 'button', class: 'ib small', title: 'Previous page (k)', onclick: () => rdGo(-1) }, '‹'), pageNo, h('button', { type: 'button', class: 'ib small', title: 'Next page (j)', onclick: () => rdGo(1) }, '›'),
+    h('span', { class: 'rd-sep' }),
+    h('button', { type: 'button', class: 'ib small', title: 'Zoom out', onclick: () => setZoom(state.zoom - 10) }, '−'), zoomLbl, h('button', { type: 'button', class: 'ib small', title: 'Zoom in', onclick: () => setZoom(state.zoom + 10) }, '+'),
+    h('span', { class: 'rd-sep' }),
+    h('button', { type: 'button', class: 'btn small' + (F.on ? '' : ' ghost'), onclick: () => { F.on = !F.on; if (F.on) state.notes = true; rerender(); } }, F.on ? `Flagging · ${nF}` : 'Flag slop'),
+    F.on && nF ? h('button', { type: 'button', class: 'btn small', onclick: () => $('#flag-submit')?.click() }, `Submit ${nF}`) : null,
+    h('button', { type: 'button', class: 'btn ghost small', onclick: () => { state.tab = 'findings'; state.sig = ''; render(state.job); } }, 'Findings'));
+  const rdGo = dir => { const rows = [...pagesHost.querySelectorAll('.pv-row[data-page]')]; const tops = rows.map(r => r.getBoundingClientRect().top + window.scrollY); const y = window.scrollY + 90; let cur = tops.findIndex((t, i) => t + rows[i].offsetHeight > y + 4); if (cur < 0) cur = rows.length - 1; const to = Math.max(0, Math.min(rows.length - 1, cur + dir)); window.scrollTo({ top: tops[to] - 80, behavior: 'smooth' }); };
+  const io = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) pageNo.textContent = `${+e.target.dataset.page + 1} / ${nPages}`; }, { rootMargin: '-45% 0px -45% 0px' });
+  pageEls.forEach(pe => io.observe(pe.row));
+  if (!state._rdKeys) { state._rdKeys = true; document.addEventListener('keydown', e => { if (state.tab !== 'paper' || $('#page-report').hidden || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; if (e.key === 'j') rdGo(1); if (e.key === 'k') rdGo(-1); if (e.key === 'f') { state.flags.on = !state.flags.on; state.sig = ''; render(state.job); } }); }
+  pagesHost.style.setProperty('--zoom', state.zoom / 100);
+  const layout = h('div', { class: 'pv-layout' + (state.notes || state.spine ? ' wide' : '') }, side, h('div', { class: 'rd-main' }, toolbar, pagesHost));
   // after the DOM is in place: stack the notes without overlap, draw the spine, redo both on resize
   const settle = () => { layoutNotes(pagesHost); if (state.spine) drawSpine(spine, pagesHost, pageEls, res, key); };
   requestAnimationFrame(() => requestAnimationFrame(settle));
