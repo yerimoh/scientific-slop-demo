@@ -332,7 +332,7 @@ function render(job) {
     frag.push(h('div', { class: 'paper-head' }, h('p', { class: 'eyebrow', text: 'Analyzing' }), h('h2', { text: trunc(job.label || 'Your paper', 120) })));
   }
   frag.push(keyBar(job));
-  if (!running) frag.push(h('div', { class: 'v2-strip' }, h('b', { text: 'Help build SciSlop v2. ' }), 'Flag slop the index missed or dispute what it flagged, right on the paper. Contributors are credited; substantial contributions earn contributor or co-author credit on the v2 paper. ',
+  if (!running) frag.push(h('div', { class: 'v2-strip' }, h('b', { text: 'Become a co-author of SciSlop v2. ' }), 'Flag slop the index missed or dispute what it flagged, right on the paper. Contributors are credited; substantial contributions earn ', h('mark', { class: 'coauthor', text: 'co-author credit on the v2 paper' }), '. ',
     h('button', { type: 'button', class: 'link-btn', onclick: () => { state.tab = 'paper'; if (state.flags) state.flags.on = true; else state.flags = { on: true, items: [], pending: [], extend: null, disputed: new Map(), sent: null, mode: store.get('ssi-flagmode', 'auto') }; state.notes = true; state.sig = ''; render(state.job); } }, 'Start flagging →')));
   if (running) frag.push(progressBlock(job));
   frag.push(scoreCard(idx, ms, running));
@@ -626,11 +626,11 @@ function flagPanel(key, res) {
   if (!F.on) return h('div', { class: 'flag-panel' }, h('h4', { text: 'Contribute' }),
     h('button', { type: 'button', class: 'btn small', onclick: () => { F.on = true; state.notes = true; rerender(); } }, 'Flag slop on this paper'),
     h('p', { class: 'muted', text: 'Drag over anything the index missed; dispute anything it got wrong. One click to submit.' }),
-    h('div', { class: 'flag-v2' }, h('b', { text: 'Help build SciSlop v2.' }), ' Mark what the index missed, name patterns it does not know yet. Credited on the site; substantial contributions earn ', h('b', { text: 'co-author credit on the v2 paper' }), '.'));
+    h('div', { class: 'flag-v2' }, h('b', { text: 'Become a co-author of SciSlop v2.' }), ' Mark what the index missed, name patterns it does not know yet. Credited on the site; substantial contributions earn ', h('mark', { class: 'coauthor', text: 'co-author credit on the v2 paper' }), '.'));
   const nameInp = h('input', { type: 'text', placeholder: 'Your name (for the credit)', value: store.get('ssi-name', ''), maxlength: 80, oninput: e => store.set('ssi-name', e.target.value) });
   const affInp = h('input', { type: 'text', placeholder: 'Affiliation (optional)', value: store.get('ssi-aff', ''), maxlength: 120, oninput: e => store.set('ssi-aff', e.target.value) });
   const mailInp = h('input', { type: 'email', placeholder: 'Email (optional, never shown; for co-author contact)', value: store.get('ssi-mail', ''), maxlength: 120, oninput: e => store.set('ssi-mail', e.target.value) });
-  const v2 = h('div', { class: 'flag-v2' }, h('b', { text: 'Submitting is contributing.' }), ' Your flags, disputes, and any new pattern you name go straight into the SciSlop v2 review. Credited on the site; substantial contributions earn ', h('b', { text: 'co-author credit on the v2 paper' }), '.');
+  const v2 = h('div', { class: 'flag-v2' }, h('b', { text: 'Submitting is contributing.' }), ' Your flags, disputes, and any new pattern you name go straight into the SciSlop v2 review. Credited on the site; substantial contributions earn ', h('mark', { class: 'coauthor', text: 'co-author credit on the v2 paper' }), '.');
   const submit = async () => {
     const btn = $('#flag-submit'); btn.disabled = true;
     try {
@@ -1880,7 +1880,7 @@ async function loadContributors() {
   let d; try { d = await (await fetch(API + '/contributors')).json(); } catch (_) { return; }
   const items = d.items || [];
   $('#pt-count').textContent = items.length ? `${items.length} so far` : '';
-  if (!items.length) { host.replaceChildren(h('p', { class: 'muted contrib-empty', text: 'Your name goes here after your first flag or proposal.' })); return; }
+  if (!items.length) { host.replaceChildren(h('div', { class: 'contrib-empty' }, h('span', { class: 'contrib ghost' }, h('i', { text: '?' }), h('b', { text: 'Your name' })), h('span', { class: 'contrib ghost' }, h('i', { text: '?' }), h('b', { text: 'and yours' })), h('p', { text: 'The list starts with the first flag or proposal.' }))); return; }
   const KIND = { flags: 'flagged slop', pattern: 'proposed a pattern', code: 'code', data: 'data' };
   host.replaceChildren(...items.slice(0, 60).map(c => {
     const el = h(c.url ? 'a' : 'span', { class: 'contrib', href: c.url || null, target: c.url ? '_blank' : null, rel: c.url ? 'noopener' : null },
