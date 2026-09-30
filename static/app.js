@@ -629,12 +629,16 @@ function flagPanel(key, res) {
     h('button', { type: 'button', class: 'btn small', onclick: () => { F.on = true; state.notes = true; rerender(); } }, 'Flag slop on this paper'),
     h('p', { class: 'muted', text: 'Drag over anything the index missed; dispute anything it got wrong. One click to submit.' }),
     h('div', { class: 'flag-v2' }, h('b', { text: 'Become a co-author of SciSlop v2.' }), ' Mark what the index missed, name patterns it does not know yet. Credited on the site; substantial contributions earn ', h('mark', { class: 'coauthor', text: 'co-author credit on the v2 paper' }), '.'));
-  const nameInp = h('input', { type: 'text', required: true, placeholder: 'Your name (required, for the credit)', value: store.get('ssi-name', ''), maxlength: 80, oninput: e => { store.set('ssi-name', e.target.value); const b = $('#flag-submit'); if (b) b.disabled = !(e.target.value.trim() && (F.items.length + F.disputed.size)); } });
-  const affInp = h('input', { type: 'text', placeholder: 'Affiliation (optional)', value: store.get('ssi-aff', ''), maxlength: 120, oninput: e => store.set('ssi-aff', e.target.value) });
-  const mailInp = h('input', { type: 'email', placeholder: 'Email (optional, never shown; for co-author contact)', value: store.get('ssi-mail', ''), maxlength: 120, oninput: e => store.set('ssi-mail', e.target.value) });
+  const whoOk = () => !!(nameInp.value.trim() && affInp.value.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailInp.value.trim()));
+  const syncBtn = () => { const b = $('#flag-submit'); if (b) b.disabled = !(whoOk() && (F.items.length + F.disputed.size)); };
+  const nameInp = h('input', { type: 'text', required: true, placeholder: 'Your name (required)', value: store.get('ssi-name', ''), maxlength: 80, oninput: e => { store.set('ssi-name', e.target.value); syncBtn(); } });
+  const affInp = h('input', { type: 'text', required: true, placeholder: 'Affiliation (required)', value: store.get('ssi-aff', ''), maxlength: 120, oninput: e => { store.set('ssi-aff', e.target.value); syncBtn(); } });
+  const mailInp = h('input', { type: 'email', required: true, placeholder: 'Email (required; never shown, for co-author contact)', value: store.get('ssi-mail', ''), maxlength: 120, oninput: e => { store.set('ssi-mail', e.target.value); syncBtn(); } });
   const v2 = h('div', { class: 'flag-v2' }, h('b', { text: 'Submitting is contributing.' }), ' Your flags, disputes, and any new pattern you name go straight into the SciSlop v2 review. Credited on the site; substantial contributions earn ', h('mark', { class: 'coauthor', text: 'co-author credit on the v2 paper' }), '.');
   const submit = async () => {
     if (!nameInp.value.trim()) { toast('Add your name: contributions are credited'); nameInp.focus(); return; }
+    if (!affInp.value.trim()) { toast('Add your affiliation'); affInp.focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mailInp.value.trim())) { toast('Add a valid email so we can reach you about co-authorship'); mailInp.focus(); return; }
     const btn = $('#flag-submit'); btn.disabled = true;
     try {
       const r = await fetch(`${J(key)}/jobs/${encodeURIComponent(key)}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -684,9 +688,9 @@ function flagPanel(key, res) {
     basket,
     h('div', { class: 'flag-count' }, h('b', { text: String(F.items.length) }), ' slop', F.items.length === 1 ? '' : 's', ' · ', h('b', { text: String(F.disputed.size) }), ' disputed'),
     list,
-    h('div', { class: 'flag-who' }, nameInp, affInp, mailInp),
+    h('div', { class: 'flag-who' }, h('span', { class: 'mc-l', text: 'You · required, credited on the site' }), nameInp, affInp, mailInp),
     h('div', { class: 'flag-actions' },
-      h('button', { type: 'button', class: 'btn small', id: 'flag-submit', disabled: (n && store.get('ssi-name', '').trim()) ? null : true, onclick: submit }, n ? `Submit ${n}` : 'Submit'),
+      h('button', { type: 'button', class: 'btn small', id: 'flag-submit', disabled: (n && whoOk()) ? null : true, onclick: submit }, n ? `Submit ${n}` : 'Submit'),
       h('button', { type: 'button', class: 'btn ghost small', onclick: () => { F.on = false; F.extend = null; rerender(); } }, 'Done')),
     v2);
 }

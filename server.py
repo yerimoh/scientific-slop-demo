@@ -735,8 +735,10 @@ async def job_feedback(key: str, request: Request, body: dict):
     ann = [a for a in ann if a["pieces"]]
     if any(not a["title"] or len(a["note"]) < 10 for a in ann):
         raise HTTPException(400, "Every slop needs a name and a description.")
-    if not str(body.get("name") or "").strip():
-        raise HTTPException(400, "Add your name: contributions are credited.")
+    if not str(body.get("name") or "").strip() or not str(body.get("affiliation") or "").strip():
+        raise HTTPException(400, "Add your name and affiliation: contributions are credited.")
+    if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", str(body.get("email") or "").strip()):
+        raise HTTPException(400, "Add a valid email so we can reach you about co-authorship.")
     disputed = [({"id": str(d.get("id"))[:60], "kind": str(d.get("kind") or "")[:40]} if isinstance(d, dict) else {"id": str(d)[:60], "kind": ""})
                 for d in (body.get("disputed") or [])[:200]]
     if not ann and not disputed:
