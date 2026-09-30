@@ -363,7 +363,16 @@ async def _ensure_pdf(job: dict) -> Optional[str]:
     key = job["id"]
     have = _find_file(key, "paper.pdf")
     if have:
-        return have
+        try:
+            with open(have, "rb") as f:
+                if f.read(4) == b"%PDF":
+                    return have
+        except OSError:
+            pass
+        try:
+            os.remove(have)          # empty or corrupt copy (interrupted download): fetch again
+        except OSError:
+            pass
     own = os.path.join(_job_dir(key), "files", "paper.pdf")
     src = (job.get("result") or {}).get("pdf_source") or ((job.get("result") or {}).get("document") or {}).get("url")
     if not src:
@@ -515,7 +524,11 @@ async def job_words(key: str, n: int):
     src = await _ensure_pdf(job)
     if not src:
         raise HTTPException(404, "The paper's PDF is no longer available.")
-    out = await asyncio.to_thread(_page_words, src, n)
+    try:
+        out = await asyncio.to_thread(_page_words, src, n)
+    except Exception as e:  # noqa: BLE001  (a bad PDF should not break flagging: the reader falls back to boxes)
+        print("page words failed:", e)
+        return JSONResponse({"p": n, "w": []})
     cache = os.path.join(_job_dir(job["id"]), "files", f"words_{n}.json")
     os.makedirs(os.path.dirname(cache), exist_ok=True)
     with open(cache, "w") as f:

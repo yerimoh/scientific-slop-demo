@@ -506,7 +506,6 @@ function paperView(job) {
           h('span', { class: 'pv-l' }, h('span', { class: 'pv-name', text: meta.name }), h('span', { class: 'pv-sub', text: c.total ? `${c.found} of ${c.total} placed · graph ↗` : 'nothing flagged' }))),
         h('button', { type: 'button', class: 'pv-eye', 'aria-pressed': String(on), title: on ? 'Hide on the paper' : 'Show on the paper', onclick: toggle }, on ? '●' : '○'));
     }),
-    flagPanel(key, res),
     h('h4', { text: 'Layers', style: { marginTop: '10px' } }),
     h('label', { class: 'pv-layer' }, h('input', { type: 'checkbox', checked: state.notes ? true : null, onchange: e => { state.notes = e.target.checked; rerender(); } }), h('span', {}, h('b', { text: 'Margin notes' }), h('small', { text: 'why each highlight was flagged, beside the page' }))),
     h('label', { class: 'pv-layer' }, h('input', { type: 'checkbox', checked: state.spine ? true : null, onchange: e => { state.spine = e.target.checked; rerender(); } }), h('span', {}, h('b', { text: 'Reference spine' }), h('small', { text: 'sections and the figures, tables, and equations they refer to' }))),
@@ -521,9 +520,8 @@ function paperView(job) {
       h('span', { class: 'pl', text: `Loading page ${n + 1}…` }),
       h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${n}.jpg`, alt: `Page ${n + 1}`, loading: n < 3 ? 'eager' : 'lazy', width: 1100, height: Math.round(1100 * hgt / w) }),
       h('span', { class: 'pno', text: `${n + 1}` }));
-    const notesL = h('div', { class: 'pv-notes pv-notes-l' }); const notesR = h('div', { class: 'pv-notes pv-notes-r' });
-    const notes = notesR;   // default side; a note moves to the left gutter when its highlight sits in the left column
-    const row = h('div', { class: 'pv-row', 'data-page': n }, notesL, h('div', { class: 'pv-gutter-l' }), page, notesR);
+    const notesL = h('div', { class: 'pv-notes pv-notes-l' });
+    const row = h('div', { class: 'pv-row', 'data-page': n }, notesL, h('div', { class: 'pv-gutter-l' }), page);
     pageEls.push({ page, w, hgt, row });
     for (const hl of byPage.get(n) || []) {
       if (state.hidden.has(hl.m.key)) continue;
@@ -552,7 +550,7 @@ function paperView(job) {
               h('option', { value: '', text: state.flags.disputed.get(id) ? 'kind: ' + (MEASURES[state.flags.disputed.get(id)]?.short || 'other') : 'wrong kind?' }),
               ...ORDER.filter(k => k !== hl.m.key).map(k => h('option', { value: k, text: MEASURES[k].name, selected: state.flags.disputed.get(id) === k ? true : null })), h('option', { value: 'other', text: 'Other' }))) : null);
         note.addEventListener('pointerenter', () => sync(true)); note.addEventListener('pointerleave', () => sync(false));
-        ((x0 + x1) / 2 < w / 2 && state.notesBoth !== false ? notesL : notesR).append(note);
+        notesL.append(note);
       }
     }
     // reader flags already drawn on this page
@@ -594,7 +592,6 @@ function paperView(job) {
     h('button', { type: 'button', class: 'ib small', title: 'Zoom out', onclick: () => setZoom(state.zoom - 10) }, '−'), zoomLbl, h('button', { type: 'button', class: 'ib small', title: 'Zoom in', onclick: () => setZoom(state.zoom + 10) }, '+'),
     h('span', { class: 'rd-sep' }),
     h('button', { type: 'button', class: 'btn small' + (F.on ? '' : ' ghost'), onclick: () => { F.on = !F.on; if (F.on) state.notes = true; rerender(); } }, F.on ? `Flagging · ${nF}` : 'Flag slop'),
-    F.on ? h('div', { class: 'seg seg-sm' }, ...[['auto', 'Auto'], ['text', 'Text'], ['box', 'Box']].map(([m, l]) => h('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(F.mode === m), onclick: () => { F.mode = m; store.set('ssi-flagmode', m); rerender(); } }, l))) : null,
     F.on && F.pending.length ? h('span', { class: 'rd-pending', text: `${F.pending.length} piece${F.pending.length === 1 ? '' : 's'} pending` }) : null,
     F.on && nF ? h('button', { type: 'button', class: 'btn small', onclick: () => $('#flag-submit')?.click() }, `Submit ${nF}`) : null,
     h('button', { type: 'button', class: 'btn ghost small', onclick: () => { state.tab = 'findings'; state.sig = ''; render(state.job); } }, 'Findings'));
@@ -603,7 +600,7 @@ function paperView(job) {
   pageEls.forEach(pe => io.observe(pe.row));
   if (!state._rdKeys) { state._rdKeys = true; document.addEventListener('keydown', e => { if (state.tab !== 'paper' || $('#page-report').hidden || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; if (e.key === 'j') rdGo(1); if (e.key === 'k') rdGo(-1); if (e.key === 'f') { state.flags.on = !state.flags.on; state.sig = ''; render(state.job); } }); }
   pagesHost.style.setProperty('--zoom', state.zoom / 100);
-  const layout = h('div', { class: 'pv-layout' + (state.notes || state.spine ? ' wide' : '') }, side, h('div', { class: 'rd-main' }, toolbar, pagesHost));
+  const layout = h('div', { class: 'pv-layout wide' }, side, h('div', { class: 'rd-main' }, toolbar, pagesHost), h('div', { class: 'pv-contrib' }, flagPanel(key, res)));
   // after the DOM is in place: stack the notes without overlap, draw the spine, redo both on resize
   const settle = () => { layoutNotes(pagesHost); if (state.spine) drawSpine(spine, pagesHost, pageEls, res, key); };
   requestAnimationFrame(() => requestAnimationFrame(settle));
