@@ -72,6 +72,10 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 - **PDF 입력**: 논문의 Agents4Science 처리와 같이 PDF에서 구조를 복원합니다. LaTeX로 만든 PDF는 hyperref 내부 링크로 `\ref`/`\eqref`를 거의 그대로 복원합니다. arXiv 4편(DetectGPT, Self-Refine, Binoculars, Attention)에서 PDF와 LaTeX 결과를 비교해 섹션 구성과 Evidence gap이 일치하고, Cross-section references 차이는 0.02–0.08입니다.
 - **Index 구간**(Low < 20 ≤ Moderate < 40 ≤ High < 60 ≤ Very high)은 서술용 구분이며, 보정된 AI 확률이 아닙니다. 논문의 AI 확률은 FARS 쌍에 대한 logistic fit인데, 그 데이터가 여기 없기 때문입니다.
 
+## 정적 미러 (GitHub Pages)
+
+`build_static.py`가 갤러리의 모든 리포트(JSON, 페이지 이미지, 썸네일, figure, layout, 하이라이트 PDF, CSV)를 `docs/`로 미리 구워 냅니다. `.github/workflows/pages.yml`이 main에 push될 때마다 이를 GitHub Pages(https://yerimoh.github.io/scientific-slop-demo/)에 올립니다. 미러에서는 새 분석과 제안 제출이 라이브 서버로 넘어갑니다.
+
 ## 배포 (Render)
 
 현재 배포: https://scientific-slop-demo.onrender.com (Render 서비스 `scientific-slop-demo`, 저장소 `yerimoh/scientific-slop-demo`의 main을 자동 배포).

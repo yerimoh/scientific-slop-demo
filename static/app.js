@@ -1,3 +1,35 @@
+// Static mirror (GitHub Pages) support: window.SCISLOP_STATIC = { base, live } makes every API read a pre-built file.
+const STATIC_MODE = window.SCISLOP_STATIC || null;
+const BASE = STATIC_MODE ? STATIC_MODE.base.replace(/\/$/, '') : '';
+const API = BASE + '/api';
+const STATIC = BASE + '/static';
+const LIVE = STATIC_MODE ? STATIC_MODE.live.replace(/\/$/, '') : '';
+if (STATIC_MODE) {
+  const realFetch = window.fetch.bind(window);
+  window.fetch = (url, opts) => {
+    if (typeof url === 'string' && url.startsWith(API + '/')) {
+      if (opts && opts.method && opts.method !== 'GET') return Promise.resolve(new Response(JSON.stringify({ detail: 'This is the static mirror. Analyses and proposals run on the live site.' }), { status: 405, headers: { 'Content-Type': 'application/json' } }));
+      const rest = url.slice(API.length + 1).split('?')[0];
+      if (rest === 'proposals') return fetchProposalsFromGitHub();
+      if (!/\.(jpg|png|json|csv|pdf)$/.test(rest) && !/\/files\//.test(rest) && !/\/pdf$/.test(rest)) url = API + '/' + rest + '.json';
+    }
+    return realFetch(url, opts);
+  };
+}
+async function fetchProposalsFromGitHub() {
+  const repo = STATIC_MODE.repo || 'yerimoh/scientific-slop-demo';
+  const STATUS = { accepted: 'Accepted', 'not-adopted': 'Not adopted', testing: 'Testing on SciSlopBench', 'under-review': 'Under review' };
+  let items = [];
+  try {
+    const r = await fetch(`https://api.github.com/repos/${repo}/issues?labels=proposal&state=all&per_page=100`, { headers: { Accept: 'application/vnd.github+json' } });
+    for (const it of await r.json()) {
+      const labels = (it.labels || []).map(l => l.name); const status = ['accepted', 'not-adopted', 'testing', 'under-review'].find(k => labels.includes(k)) || 'under-review';
+      const body = it.body || ''; const plane = (body.match(/\*\*Plane:\*\* (\w+)/) || [])[1]; const what = (body.match(/\*\*What it is:\*\* (.+)/) || [])[1]; const by = (body.match(/Proposed by (.+?)\./) || [])[1];
+      items.push({ id: 'gh-' + it.number, name: it.title.replace(/^Proposal:\s*/, ''), plane: plane ? plane.toLowerCase() : null, what: (what || '').trim(), author: by || 'Anonymous', status, status_label: STATUS[status], url: it.html_url, created: it.created_at });
+    }
+  } catch (_) { /* offline */ }
+  return new Response(JSON.stringify({ items, github: false, repo, static: true }), { headers: { 'Content-Type': 'application/json' } });
+}
 // Science Slop Index — front end. Plain DOM, no build step. Paper text is untrusted: it is always
 // inserted with textContent, never innerHTML.
 
@@ -135,10 +167,10 @@ function showPage(name) {
   hideTip();
   if (name !== 'report') document.title = { home: 'Science Slop Index', leaderboard: 'Leaderboard · Science Slop Index', how: 'How it works · Science Slop Index', gallery: 'Gallery · Science Slop Index', view: 'View report · Science Slop Index', propose: 'Propose a pattern · Science Slop Index' }[name];
 }
-function go(path) { history.pushState({}, '', path); route(); scrollTo({ top: 0 }); }
+function go(path) { history.pushState({}, '', BASE + path); route(); scrollTo({ top: 0 }); }
 function route() {
   clearTimeout(state.timer);
-  const p = location.pathname;
+  let p = location.pathname; if (BASE && p.startsWith(BASE)) p = p.slice(BASE.length) || '/';
   const m = p.match(/^\/r\/([A-Za-z0-9_-]+)/);
   if (m) { showPage('report'); openReport(m[1], new URLSearchParams(location.search).get('tab')); return; }
   state.key = null; state.job = null; state.sig = '';
@@ -159,10 +191,14 @@ addEventListener('popstate', route);
 // ------------------------------------------------------------------ submit
 async function submit(fd) {
   setError('');
+  if (STATIC_MODE) {
+    const url = fd.get('url'); const target = LIVE + '/' + (url ? '?url=' + encodeURIComponent(url) : '');
+    setError(''); $('#form-error').replaceChildren('New analyses run on the live site. ', h('a', { href: target, target: '_blank', rel: 'noopener', text: 'Open it there →' })); return;
+  }
   const btn = $('#go'); btn.disabled = true;
   if (apiKey()) fd.append('api_key', apiKey());
   try {
-    const r = await fetch('/api/analyze', { method: 'POST', body: fd });
+    const r = await fetch(API + '/analyze', { method: 'POST', body: fd });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.detail || 'Something went wrong. Try again.');
     go('/r/' + d.key);
@@ -186,6 +222,7 @@ function submitFile(file) {
   submit(fd);
 }
 function initInputs() {
+  const pre = new URLSearchParams(location.search).get('url'); if (pre && !STATIC_MODE) { $('#url').value = pre; }
   $('#ask').addEventListener('submit', e => {
     e.preventDefault();
     const v = $('#url').value.trim();
@@ -236,7 +273,7 @@ function openReport(key, tab) {
 async function poll(key, fails) {
   if (state.key !== key) return;
   try {
-    const r = await fetch('/api/jobs/' + encodeURIComponent(key));
+    const r = await fetch(API + '/jobs/' + encodeURIComponent(key));
     if (r.status === 404) {
       const cached = store.get('ssi-r-' + key, null);
       if (cached) { state.job = { id: key, key, status: 'done', result: cached, local: 'cache' }; render(state.job); }
@@ -426,7 +463,7 @@ function exportMenu(job) {
   const name = safeName(res.document?.title);
   const pdfOk = res.pdf?.available && !job.local;
   const menu = h('div', { class: 'menu', hidden: !state.menu, role: 'menu' },
-    h('a', { href: pdfOk ? `/api/jobs/${encodeURIComponent(key)}/pdf` : '#', class: pdfOk ? '' : 'disabled', download: '', role: 'menuitem' },
+    h('a', { href: pdfOk ? `${API}/jobs/${encodeURIComponent(key)}/pdf` : '#', class: pdfOk ? '' : 'disabled', download: '', role: 'menuitem' },
       'Highlighted PDF', h('span', { text: pdfOk ? 'The paper with every finding highlighted, plus a summary page' : 'No PDF of this paper is available' })),
     h('button', { type: 'button', role: 'menuitem', onclick: () => download(`${name}.slop-report.json`, JSON.stringify(res, null, 2), 'application/json') },
       'Report (JSON)', h('span', { text: 'Every score and finding; open it again from View report' })),
@@ -479,13 +516,16 @@ function paperView(job) {
     h('h4', { text: 'Layers', style: { marginTop: '10px' } }),
     h('label', { class: 'pv-layer' }, h('input', { type: 'checkbox', checked: state.notes ? true : null, onchange: e => { state.notes = e.target.checked; rerender(); } }), h('span', {}, h('b', { text: 'Margin notes' }), h('small', { text: 'why each highlight was flagged, beside the page' }))),
     h('label', { class: 'pv-layer' }, h('input', { type: 'checkbox', checked: state.spine ? true : null, onchange: e => { state.spine = e.target.checked; rerender(); } }), h('span', {}, h('b', { text: 'Reference spine' }), h('small', { text: 'sections and the figures, tables, and equations they refer to' }))),
-    h('a', { class: 'btn ghost small', href: `/api/jobs/${encodeURIComponent(key)}/pdf`, download: '', style: { textAlign: 'center', textDecoration: 'none', marginTop: '8px' } }, 'Download highlighted PDF'));
+    h('a', { class: 'btn ghost small', href: `${API}/jobs/${encodeURIComponent(key)}/pdf`, download: '', style: { textAlign: 'center', textDecoration: 'none', marginTop: '8px' } }, 'Download highlighted PDF'));
   const pagesHost = h('div', { class: 'pv-pages' + (state.notes ? ' with-notes' : '') + (state.spine ? ' with-spine' : '') });
   const pageEls = [];
+  const maxPages = STATIC_MODE ? (state.config?.max_pages || 40) : Infinity;
   (pdf.sizes || []).forEach(([w, hgt], n) => {
+    if (n === maxPages) { pagesHost.append(h('div', { class: 'pv-row' }, h('div', { class: 'pv-gutter-l' }), h('div', { class: 'card pv-empty' }, `Pages ${n + 1}–${pdf.sizes.length} are on the live site. `, h('a', { href: `${LIVE}/r/${key}?tab=paper`, target: '_blank', rel: 'noopener', text: 'Open there →' })), h('div', {}))); }
+    if (n >= maxPages) return;
     const page = h('div', { class: 'pv-page', style: { aspectRatio: `${w} / ${hgt}` } },
       h('span', { class: 'pl', text: `Loading page ${n + 1}…` }),
-      h('img', { src: `/api/jobs/${encodeURIComponent(key)}/pages/${n}.jpg`, alt: `Page ${n + 1}`, loading: n < 3 ? 'eager' : 'lazy', width: 1100, height: Math.round(1100 * hgt / w) }),
+      h('img', { src: `${API}/jobs/${encodeURIComponent(key)}/pages/${n}.jpg`, alt: `Page ${n + 1}`, loading: n < 3 ? 'eager' : 'lazy', width: 1100, height: Math.round(1100 * hgt / w) }),
       h('span', { class: 'pno', text: `${n + 1}` }));
     const notes = h('div', { class: 'pv-notes' });
     const row = h('div', { class: 'pv-row' }, h('div', { class: 'pv-gutter-l' }), page, notes);
@@ -540,7 +580,7 @@ function layoutNotes(host) {
 const SPINE_CACHE = {};
 async function drawSpine(host, pagesHost, pageEls, res, key) {
   let data = SPINE_CACHE[key];
-  if (!data) { try { data = await (await fetch(`/api/jobs/${encodeURIComponent(key)}/layout`)).json(); } catch (_) { return; } SPINE_CACHE[key] = data; }
+  if (!data) { try { data = await (await fetch(`${API}/jobs/${encodeURIComponent(key)}/layout`)).json(); } catch (_) { return; } SPINE_CACHE[key] = data; }
   if (!host.isConnected) return;
   const nodes = (data.nodes || []).filter(n => pageEls[n.p]); if (!nodes.length) { host.replaceChildren(); return; }
   const hostTop = pagesHost.getBoundingClientRect().top;
@@ -714,7 +754,7 @@ function detail(m, pdfOk) {
   const meta = MEASURES[m.key];
   const d = h('div', { class: 'detail', id: 'd-' + m.key });
   d.append(h('div', { class: 'd-lead' },
-    h('img', { src: `/static/img/${m.key}.svg`, alt: '', class: `band-${meta.plane}` }),
+    h('img', { src: `${STATIC}/img/${m.key}.svg`, alt: '', class: `band-${meta.plane}` }),
     h('div', {}, m.what || '', ' ', h('b', { text: 'A score of 100 means: ' }), m.one_means || meta.one)));
   const R = RENDERERS[m.key];
   if (m.status === 'done' && R) d.append(...R(m, pdfOk));
@@ -789,7 +829,7 @@ const RENDERERS = {
     const key = state.job?.key || state.job?.id;
     const viz = measureViz(m, state.job?.result?.document || state.job?.document);
     if (viz) { out.push(viz); return out; }
-    const imgs = (fig.images || []).map(n => h('div', { class: 'fig-img' }, h('img', { src: `/api/jobs/${encodeURIComponent(key)}/files/${n}`, alt: `Figure ${fig.number || ''}`, loading: 'lazy' })));
+    const imgs = (fig.images || []).map(n => h('div', { class: 'fig-img' }, h('img', { src: `${API}/jobs/${encodeURIComponent(key)}/files/${n}`, alt: `Figure ${fig.number || ''}`, loading: 'lazy' })));
     const kinds = h('div', { class: 'kinds' }, (det.kinds || []).map(k => h('div', { class: 'kind' + (k.present ? ' on' : '') },
       h('span', { class: 'k-ico', text: k.present ? '✕' : '' }),
       h('div', {}, h('div', { text: k.label + (k.present ? '' : ' · not found') }), k.present && k.examples.length ? h('div', { class: 'k-ex', text: k.examples.slice(0, 3).map(e => `“${trunc(e, 50)}”`).join('  ') }) : null))));
@@ -902,7 +942,7 @@ function measureViz(m, doc) {
   if (m.key === 'figure_exposition') {
     const fig = det.figure || {}; const kinds = det.kinds || []; if (!kinds.length) return null;
     const key = state.job?.key || state.job?.id || opts_key.current;
-    const imgs = (fig.images || []).map(n => h('div', { class: 'fig-img' }, h('img', { src: `/api/jobs/${encodeURIComponent(key)}/files/${n}`, alt: `Figure ${fig.number || ''}`, loading: 'lazy' })));
+    const imgs = (fig.images || []).map(n => h('div', { class: 'fig-img' }, h('img', { src: `${API}/jobs/${encodeURIComponent(key)}/files/${n}`, alt: `Figure ${fig.number || ''}`, loading: 'lazy' })));
     const present = kinds.filter(k => k.present).length;
     return h('div', { class: 'viz fig-viz' },
       h('div', { class: 'fig-viz-grid' },
@@ -994,7 +1034,7 @@ async function switchFigure(index, sel) {
   sel.disabled = true; toast('Reading the figure…');
   try {
     const key = state.job.key || state.job.id;
-    const r = await fetch(`/api/jobs/${encodeURIComponent(key)}/figure`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index, api_key: store.get('ssi-key', '') || undefined }) });
+    const r = await fetch(`${API}/jobs/${encodeURIComponent(key)}/figure`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index, api_key: store.get('ssi-key', '') || undefined }) });
     const d = await r.json();
     if (!r.ok) throw new Error(d.detail || 'Could not re-score the figure.');
     state.job.result = d; state.sig = ''; render(state.job); remember(d);
@@ -1035,13 +1075,13 @@ async function loadPlaneExplainer() {
   const host = $('#plane-explainer'); if (!host || host.dataset.built) return; host.dataset.built = '1';
   host.replaceChildren(h('p', { class: 'muted', text: 'Loading examples from the analyzed papers…' }));
   let items = [];
-  try { if (!state.gallery) { const r = await fetch('/api/gallery'); state.gallery = await r.json(); } items = state.gallery.items.filter(x => x.index != null).slice(0, 8); } catch (_) { host.replaceChildren(); return; }
+  try { if (!state.gallery) { const r = await fetch(API + '/gallery'); state.gallery = await r.json(); } items = state.gallery.items.filter(x => x.index != null).slice(0, 8); } catch (_) { host.replaceChildren(); return; }
   const jobs = (await Promise.all(items.map(x => fetchReport(x.key).catch(() => null)))).filter(Boolean);
   const pool = {}; for (const k of ORDER) pool[k] = [];
   for (const job of jobs) for (const m of job.result.measures) {
     if (m.status !== 'done') continue;
     const title = job.result.document?.title || job.title;
-    const fig = m.details?.figure; const img = fig?.images?.length ? `/api/jobs/${job.key || job.id}/files/${fig.images[0]}` : null;
+    const fig = m.details?.figure; const img = fig?.images?.length ? `${API}/jobs/${job.key || job.id}/files/${fig.images[0]}` : null;
     for (const it of (m.instances || []).slice(0, 2)) pool[m.key].push({ key: m.key, job: job.key || job.id, title, it, img });
   }
   // interleave papers so the first examples are not all from one paper
@@ -1055,7 +1095,7 @@ async function loadPlaneExplainer() {
         const draw = () => { if (!exs.length) { stage.replaceChildren(h('div', { class: 'ex-empty', text: 'None of the papers on this site is flagged by this measure.' })); counter.textContent = ''; return; } stage.replaceChildren(exampleNode(exs[i])); counter.textContent = `${i + 1} / ${exs.length}`; };
         draw();
         return h('div', { class: 'pb-measure' },
-          h('div', { class: 'pb-pic' }, h('img', { src: `/static/img/${k}.svg`, alt: `Illustration of ${m.name}` })),
+          h('div', { class: 'pb-pic' }, h('img', { src: `${STATIC}/img/${k}.svg`, alt: `Illustration of ${m.name}` })),
           h('h4', { text: m.name }), h('p', { class: 'pb-what', text: m.what }),
           h('div', { class: 'ex-nav' }, h('span', { class: 'ex-l', text: 'Real findings' }), counter,
             h('button', { type: 'button', class: 'ib small', 'aria-label': 'Previous example', onclick: () => { if (exs.length) { i = (i - 1 + exs.length) % exs.length; draw(); } } }, '‹'),
@@ -1076,7 +1116,7 @@ function buildHow() {
     for (const k of p.measures) {
       const m = MEASURES[k]; const pa = m.pairacc;
       row.append(h('div', { class: 'mcard' },
-        h('div', { class: `mc-pic band-${p.key}` }, h('img', { src: `/static/img/${k}.svg`, alt: `Illustration of ${m.name}` })),
+        h('div', { class: `mc-pic band-${p.key}` }, h('img', { src: `${STATIC}/img/${k}.svg`, alt: `Illustration of ${m.name}` })),
         h('div', { class: 'mc-head' }, h('h3', { text: m.name }), h('span', { class: 'method', text: m.method === 'LLM' ? 'Language model' : 'Counting rule', title: m.method === 'LLM' ? 'Asks a language model' : 'Exact counting rule' })),
         h('p', { class: 'mc-what', text: m.what }),
         h('div', { class: 'mc-score' },
@@ -1154,12 +1194,12 @@ function lbUrl() {
   if (lb.view !== 'list') q.set('view', lb.view);
   if (lb.q) q.set('q', lb.q);
   const s = q.toString();
-  return location.origin + '/leaderboard' + (s ? '?' + s : '');
+  return location.origin + BASE + '/leaderboard' + (s ? '?' + s : '');
 }
 async function loadLeaderboard() {
   lbReadParams();
   $('#lb-list').replaceChildren(h('div', { class: 'lb-empty', text: 'Loading…' }));
-  try { const r = await fetch('/api/gallery'); lb.data = await r.json(); state.gallery = lb.data; }
+  try { const r = await fetch(API + '/gallery'); lb.data = await r.json(); state.gallery = lb.data; }
   catch (_) { $('#lb-list').replaceChildren(h('div', { class: 'lb-empty', text: 'Could not load the leaderboard.' })); return; }
   renderLeaderboard();
 }
@@ -1229,7 +1269,7 @@ function renderLbList(rows, metric) {
         onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } } },
         h('span', { class: 'lbl-c rank' }, h('span', { class: 'lbl-rank', text: String(i + 1) })),
         h('span', { class: 'lbl-c paper' },
-          h('span', { class: 'lbl-thumb' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : null),
+          h('span', { class: 'lbl-thumb' }, x.thumb ? h('img', { src: `${API}/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : null),
           h('span', { class: 'lbl-t' }, h('span', { class: 'lbl-title', text: x.title || 'Untitled' }), h('span', { class: 'lbl-meta', text: [x.source, fmtDate(x.created), x.partial ? 'partial' : null].filter(Boolean).join(' · ') }))),
         h('span', { class: 'lbl-c track' }, bar),
         h('span', { class: 'lbl-c idx' }, h('b', { style: { color: b ? b.color : 'inherit' }, text: v == null ? '—' : String(Math.round(v)) + (x.partial && metric.stacked ? '*' : '') }), b && metric.stacked ? h('small', { text: b.label }) : null),
@@ -1473,7 +1513,7 @@ function galleryCard(x, rankNo) {
     bindTip(el, k.name || k.m, k.t || '');
     return el;
   });
-  const page = h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title }), ...marks);
+  const page = h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `${API}/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title }), ...marks);
   const card = h('div', { class: 'g-card' },
     h('button', { type: 'button', class: 'g-thumb', style: { borderBottomColor: b ? b.color : 'var(--line-2)' }, title: 'Preview: findings on the paper, map, and charts', onclick: () => openPreview(x.key) }, page,
       marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null,
@@ -1508,7 +1548,7 @@ function measureBars(ms, onPick) {
   return h('div', { class: 'mbars' }, rows);
 }
 async function fetchReport(key) {
-  const r = await fetch('/api/jobs/' + encodeURIComponent(key)); const job = await r.json();
+  const r = await fetch(API + '/jobs/' + encodeURIComponent(key)); const job = await r.json();
   if (!r.ok || !job.result) throw new Error('no report');
   return job;
 }
@@ -1518,7 +1558,7 @@ function previewBody(key, job, openReportAt, opts = {}) {
   const pdf = res.pdf || {}; const [pw, ph] = (pdf.sizes || [])[0] || [612, 792];
   const marks = [];
   for (const m of res.measures) (m.instances || []).forEach((it, i) => (it.pdf || []).forEach(loc => { if (loc.p !== 0) return; for (const r of loc.r) marks.push({ m, it, i, r, box: !!loc.box }); }));
-  const page = h('div', { class: 'pv-page prev-page' }, pdf.available ? h('img', { src: `/api/jobs/${encodeURIComponent(key)}/pages/0.jpg`, alt: 'Page 1', width: 1100, height: Math.round(1100 * ph / pw) }) : h('div', { class: 'pv-empty', text: 'No PDF available.' }));
+  const page = h('div', { class: 'pv-page prev-page' }, pdf.available ? h('img', { src: `${API}/jobs/${encodeURIComponent(key)}/pages/0.jpg`, alt: 'Page 1', width: 1100, height: Math.round(1100 * ph / pw) }) : h('div', { class: 'pv-empty', text: 'No PDF available.' }));
   for (const hl of marks) {
     const [x0, y0, x1, y1] = hl.r;
     const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, tabindex: 0, style: { left: `${100 * x0 / pw}%`, top: `${100 * y0 / ph}%`, width: `${100 * (x1 - x0) / pw}%`, height: `${100 * (y1 - y0) / ph}%` } });
@@ -1581,11 +1621,11 @@ async function openPreview(key) {
 
 async function loadTeam() {
   const host = $('#team'); if (!host || host.dataset.built) return; host.dataset.built = '1';
-  let team = []; try { team = await (await fetch('/static/team.json')).json(); } catch (_) { return; }
+  let team = []; try { team = await (await fetch(STATIC + '/team.json')).json(); } catch (_) { return; }
   host.replaceChildren(...team.map(m => {
     const initials = m.name.split(/[\s-]+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const avatar = h('div', { class: 'tm-avatar' }, h('span', { text: initials }));
-    if (m.photo) { const img = h('img', { src: `/static/img/team/${m.photo}`, alt: m.name, loading: 'lazy' }); img.addEventListener('error', () => img.remove()); avatar.append(img); }
+    if (m.photo) { const img = h('img', { src: `${STATIC}/img/team/${m.photo}`, alt: m.name, loading: 'lazy' }); img.addEventListener('error', () => img.remove()); avatar.append(img); }
     const name = h('span', { class: 'tm-name', text: m.name });
     const kids = [avatar, name, m.affiliation ? h('span', { class: 'tm-aff', text: m.affiliation }) : null, m.role ? h('span', { class: 'tm-role', text: m.role }) : null];
     return m.url ? h('a', { class: 'tm', href: m.url, target: '_blank', rel: 'noopener', title: m.name + ' ↗' }, ...kids) : h('div', { class: 'tm' }, ...kids);
@@ -1628,7 +1668,7 @@ function initPropose() {
     if (!d.plane) { err.textContent = 'Pick a plane, or "Something else".'; return; }
     const btn = $('#pp-go'); btn.disabled = true;
     try {
-      const r = await fetch('/api/proposals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
+      const r = await fetch(API + '/proposals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
       const res = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(res.detail || 'Could not submit. Try again.');
       const done = h('div', { class: 'pp-done card' },
@@ -1644,7 +1684,7 @@ function initPropose() {
 }
 async function loadProposals() {
   const host = $('#pp-list'); host.replaceChildren(h('p', { class: 'muted', text: 'Loading…' }));
-  let d; try { d = await (await fetch('/api/proposals')).json(); } catch (_) { host.replaceChildren(); return; }
+  let d; try { d = await (await fetch(API + '/proposals')).json(); } catch (_) { host.replaceChildren(); return; }
   const items = d.items || [];
   $('#pp-list-note').replaceChildren(items.length ? h('span', {}, `${items.length} proposal${items.length === 1 ? '' : 's'} · reviewed in the open at `, h('a', { href: `https://github.com/${d.repo}/issues?q=label%3Aproposal`, target: '_blank', rel: 'noopener', text: d.repo })) : h('span', { text: 'None yet. Yours could be the first.' }));
   const order = { accepted: 0, testing: 1, 'under-review': 2, 'not-adopted': 3 };
@@ -1659,13 +1699,13 @@ async function loadProposals() {
   }));
 }
 async function loadProposalCount() {
-  try { const d = await (await fetch('/api/proposals')).json(); const n = (d.items || []).length; const acc = (d.items || []).filter(x => x.status === 'accepted').length;
+  try { const d = await (await fetch(API + '/proposals')).json(); const n = (d.items || []).length; const acc = (d.items || []).filter(x => x.status === 'accepted').length;
     $('#pt-count').textContent = n ? `${n} proposal${n === 1 ? '' : 's'} so far${acc ? `, ${acc} adopted` : ''}` : ''; } catch (_) { /* optional */ }
 }
 let homeFeatured = null;
 async function loadHome() {
   if (!state.gallery) {
-    try { const r = await fetch('/api/gallery'); state.gallery = await r.json(); }
+    try { const r = await fetch(API + '/gallery'); state.gallery = await r.json(); }
     catch (_) { return; }
   }
   const ranked = [...state.gallery.items].filter(x => x.index != null).sort((a, b) => b.index - a.index);
@@ -1703,7 +1743,7 @@ function buildCoverflow(items) {
     const card = h('div', { class: 'cf-card', 'data-i': i, role: 'button', tabindex: 0, 'aria-label': x.title,
       onclick: () => { if (cf.i === i) openPreview(x.key); else cfGo(i); },
       onkeydown: e => { if (e.key === 'Enter') { cf.i === i ? openPreview(x.key) : cfGo(i); } } },
-      h('div', { class: 'cf-thumb' }, h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `/api/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy', draggable: false }) : h('div', { class: 'ph', text: x.title }), ...marks),
+      h('div', { class: 'cf-thumb' }, h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `${API}/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy', draggable: false }) : h('div', { class: 'ph', text: x.title }), ...marks),
         marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null),
       h('div', { class: 'cf-cap' },
         h('div', { class: 'cf-title', text: x.title }),
@@ -1746,7 +1786,7 @@ function cfLayout() {
 async function loadGallery() {
   const grid = $('#g-grid');
   if (!state.gallery) grid.replaceChildren(h('p', { class: 'muted', text: 'Loading…' }));
-  try { const r = await fetch('/api/gallery'); state.gallery = await r.json(); }
+  try { const r = await fetch(API + '/gallery'); state.gallery = await r.json(); }
   catch (_) { grid.replaceChildren(h('p', { class: 'g-empty', text: 'Could not load the gallery.' })); return; }
   renderGallery();
 }
@@ -1778,7 +1818,7 @@ async function boot() {
   $('#g-q').addEventListener('input', renderGallery);
   $('#g-sort').addEventListener('change', renderGallery);
   try {
-    const r = await fetch('/api/config'); state.config = await r.json();
+    const r = await fetch(API + '/config'); state.config = await r.json();
     if (state.config.examples?.length) { $('#example').hidden = false; $('#example').title = state.config.examples[0].title; }
     if (state.config.llm_available) { $('.key-note').textContent = 'This server already has a language model configured; your key is optional and, if given, is used instead.'; }
   } catch (_) { /* the page works without config */ }
