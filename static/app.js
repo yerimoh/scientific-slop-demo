@@ -475,7 +475,7 @@ function paperView(job) {
   }
   if (state.notes == null) state.notes = true;
   if (state.spine == null) state.spine = true;
-  if (!state.flags) state.flags = { on: new URLSearchParams(location.search).get('flag') === '1', items: [], disputed: new Map(), sent: null, mode: store.get('ssi-flagmode', 'text') };
+  if (!state.flags) state.flags = { on: new URLSearchParams(location.search).get('flag') === '1', items: [], pending: [], extend: null, disputed: new Map(), sent: null, mode: store.get('ssi-flagmode', 'auto') };
   const byPage = new Map();
   const seen = new Set();
   const counts = {};
@@ -556,15 +556,23 @@ function paperView(job) {
       }
     }
     // reader flags already drawn on this page
-    state.flags.items.forEach((fl, fi) => {
-      if (fl.p !== n) return;
-      const rects = fl.rects && fl.rects.length ? fl.rects : [fl.r];
+    const drawPiece = (pc, cls, label, onRemove) => {
+      const rects = pc.rects && pc.rects.length ? pc.rects : [pc.r];
       rects.forEach(([x0, y0, x1, y1], ri) => {
-        const box = h('div', { class: 'user-flag' + (fl.mode === 'text' ? ' text' : ''), style: { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` } },
-          ri === 0 ? h('span', { class: 'uf-label' }, (MEASURES[fl.kind]?.short || 'Slop'), h('button', { type: 'button', 'aria-label': 'Remove', onclick: e => { e.stopPropagation(); state.flags.items.splice(fi, 1); rerender(); } }, '×')) : null);
-        bindTip(box, `Your flag · ${MEASURES[fl.kind]?.name || 'Other slop'}`, (fl.text ? '“' + trunc(fl.text, 120) + '” ' : '') + (fl.note || ''));
-        page.append(box);
+        const box = h('div', { class: cls + (pc.mode === 'text' ? ' text' : ''), style: { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` } },
+          ri === 0 && label ? h('span', { class: 'uf-label' }, label, h('button', { type: 'button', 'aria-label': 'Remove', onclick: e => { e.stopPropagation(); onRemove(); } }, '×')) : null);
+        page.append(box); return box;
       });
+    };
+    state.flags.items.forEach((fl, fi) => {
+      fl.pieces.forEach((pc, pi) => { if (pc.p !== n) return;
+        const label = h('span', {}, `${fi + 1} · ${MEASURES[fl.kind]?.short || 'Slop'}`, fl.pieces.length > 1 ? h('small', { text: ` ${pi + 1}/${fl.pieces.length}` }) : null,
+          state.flags.on ? h('button', { type: 'button', class: 'uf-add' + (state.flags.extend === fi ? ' on' : ''), title: 'Add more pieces to this slop', onclick: e => { e.stopPropagation(); state.flags.extend = state.flags.extend === fi ? null : fi; rerender(); } }, '+') : null);
+        drawPiece(pc, 'user-flag' + (state.flags.extend === fi ? ' extending' : ''), label, () => { fl.pieces.splice(pi, 1); if (!fl.pieces.length) state.flags.items.splice(fi, 1); if (state.flags.extend === fi) state.flags.extend = null; rerender(); });
+      });
+    });
+    state.flags.pending.forEach((pc, pi) => { if (pc.p !== n) return;
+      drawPiece(pc, 'user-flag pending', h('span', { text: `piece ${pi + 1}` }), () => { state.flags.pending.splice(pi, 1); rerender(); });
     });
     if (state.flags.on) enableDragFlag(page, n, w, hgt, rerender, key);
     pagesHost.append(row);
@@ -586,7 +594,8 @@ function paperView(job) {
     h('button', { type: 'button', class: 'ib small', title: 'Zoom out', onclick: () => setZoom(state.zoom - 10) }, '−'), zoomLbl, h('button', { type: 'button', class: 'ib small', title: 'Zoom in', onclick: () => setZoom(state.zoom + 10) }, '+'),
     h('span', { class: 'rd-sep' }),
     h('button', { type: 'button', class: 'btn small' + (F.on ? '' : ' ghost'), onclick: () => { F.on = !F.on; if (F.on) state.notes = true; rerender(); } }, F.on ? `Flagging · ${nF}` : 'Flag slop'),
-    F.on ? h('div', { class: 'seg seg-sm' }, h('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(F.mode === 'text'), onclick: () => { F.mode = 'text'; store.set('ssi-flagmode', 'text'); rerender(); } }, 'Text'), h('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(F.mode === 'box'), onclick: () => { F.mode = 'box'; store.set('ssi-flagmode', 'box'); rerender(); } }, 'Box')) : null,
+    F.on ? h('div', { class: 'seg seg-sm' }, ...[['auto', 'Auto'], ['text', 'Text'], ['box', 'Box']].map(([m, l]) => h('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(F.mode === m), onclick: () => { F.mode = m; store.set('ssi-flagmode', m); rerender(); } }, l))) : null,
+    F.on && F.pending.length ? h('span', { class: 'rd-pending', text: `${F.pending.length} piece${F.pending.length === 1 ? '' : 's'} pending` }) : null,
     F.on && nF ? h('button', { type: 'button', class: 'btn small', onclick: () => $('#flag-submit')?.click() }, `Submit ${nF}`) : null,
     h('button', { type: 'button', class: 'btn ghost small', onclick: () => { state.tab = 'findings'; state.sig = ''; render(state.job); } }, 'Findings'));
   const rdGo = dir => { const rows = [...pagesHost.querySelectorAll('.pv-row[data-page]')]; const tops = rows.map(r => r.getBoundingClientRect().top + window.scrollY); const y = window.scrollY + 90; let cur = tops.findIndex((t, i) => t + rows[i].offsetHeight > y + 4); if (cur < 0) cur = rows.length - 1; const to = Math.max(0, Math.min(rows.length - 1, cur + dir)); window.scrollTo({ top: tops[to] - 80, behavior: 'smooth' }); };
@@ -605,10 +614,9 @@ function paperView(job) {
 function flagPanel(key, res) {
   const F = state.flags; const n = F.items.length + F.disputed.size;
   const rerender = () => { state.sig = ''; render(state.job); };
-  const modeSwitch = h('div', { class: 'seg seg-sm', role: 'group', 'aria-label': 'How to mark' },
-    h('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(F.mode === 'text'), title: 'Drag over words: snaps to the text', onclick: () => { F.mode = 'text'; store.set('ssi-flagmode', 'text'); rerender(); } }, 'Text'),
-    h('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(F.mode === 'box'), title: 'Draw a box: figures, tables, equations, any region', onclick: () => { F.mode = 'box'; store.set('ssi-flagmode', 'box'); rerender(); } }, 'Box'));
-  if (F.sent) return h('div', { class: 'flag-panel sent' }, h('h4', { text: 'Contribute' }), h('p', {}, '✓ Thank you. ', h('b', { text: `${F.sent.flags} flag${F.sent.flags === 1 ? '' : 's'}, ${F.sent.disputed} dispute${F.sent.disputed === 1 ? '' : 's'}` }), ' submitted.', F.sent.name ? ` ${F.sent.name} is now listed among the contributors.` : ''));
+  const modeSwitch = h('div', { class: 'seg seg-sm', role: 'group', 'aria-label': 'How to mark' }, ...[['auto', 'Auto', 'Text where there are words, a box elsewhere'], ['text', 'Text', 'Always snap to words'], ['box', 'Box', 'Always draw a box']].map(([m, l, t]) =>
+    h('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(F.mode === m), title: t, onclick: () => { F.mode = m; store.set('ssi-flagmode', m); rerender(); } }, l)));
+  if (F.sent) return h('div', { class: 'flag-panel sent' }, h('h4', { text: 'Contribute' }), h('p', {}, '✓ Thank you. ', h('b', { text: `${F.sent.flags} slop${F.sent.flags === 1 ? '' : 's'}, ${F.sent.disputed} dispute${F.sent.disputed === 1 ? '' : 's'}` }), ' submitted.', F.sent.name ? ` ${F.sent.name} is now listed among the contributors.` : ''));
   if (!F.on) return h('div', { class: 'flag-panel' }, h('h4', { text: 'Contribute' }),
     h('button', { type: 'button', class: 'btn small', onclick: () => { F.on = true; state.notes = true; rerender(); } }, 'Flag slop on this paper'),
     h('p', { class: 'muted', text: 'Drag over anything the index missed; dispute anything it got wrong. One click to submit.' }));
@@ -624,14 +632,40 @@ function flagPanel(key, res) {
       F.sent = { ...d, name: nameInp.value.trim() }; F.on = false; rerender(); loadContributorsQuiet();
     } catch (e) { toast(e.message); btn.disabled = false; }
   };
+  // pending basket: pieces gathered so far, saved as one slop or as separate slops
+  let basket = null;
+  if (F.pending.length) {
+    const note = h('input', { type: 'text', class: 'flag-note', placeholder: 'One line on why (optional)', maxlength: 300 });
+    let kind = F.pendingKind || null;
+    const kinds = h('div', { class: 'flag-kinds' }, ...ORDER.map(k => h('button', { type: 'button', class: `chip-b ${MEASURES[k].plane}` + (kind === k ? ' on' : ''), text: MEASURES[k].short, title: MEASURES[k].name, onclick: e => { kind = k; F.pendingKind = k; kinds.querySelectorAll('.chip-b').forEach(c => c.classList.toggle('on', c === e.currentTarget)); } })),
+      h('button', { type: 'button', class: 'chip-b' + (kind === 'other' ? ' on' : ''), text: 'Other', onclick: e => { kind = 'other'; F.pendingKind = 'other'; kinds.querySelectorAll('.chip-b').forEach(c => c.classList.toggle('on', c === e.currentTarget)); } }));
+    const save = separate => { if (!kind) { toast('Pick what kind of slop it is'); return; }
+      if (separate) F.pending.forEach(pc => F.items.push({ kind, note: note.value.trim(), pieces: [pc] })); else F.items.push({ kind, note: note.value.trim(), pieces: F.pending.slice() });
+      F.pending = []; F.pendingKind = null; rerender(); };
+    const pages = [...new Set(F.pending.map(pc => pc.p + 1))].sort((a, b) => a - b);
+    basket = h('div', { class: 'flag-basket' },
+      h('div', { class: 'fb-h' }, h('b', { text: `${F.pending.length} piece${F.pending.length === 1 ? '' : 's'} selected` }), h('span', { class: 'muted', text: ` · p. ${pages.join(', ')}` })),
+      h('p', { class: 'muted fb-hint', text: 'Keep dragging to add pieces (any page), then save.' }),
+      kinds, note,
+      h('div', { class: 'flag-actions' },
+        h('button', { type: 'button', class: 'btn small', onclick: () => save(false) }, F.pending.length > 1 ? 'Save as one slop' : 'Save'),
+        F.pending.length > 1 ? h('button', { type: 'button', class: 'btn ghost small', onclick: () => save(true) }, `Save as ${F.pending.length} separate`) : null,
+        h('button', { type: 'button', class: 'link-btn', onclick: () => { F.pending = []; rerender(); } }, 'Clear')));
+  }
+  const list = F.items.length ? h('ol', { class: 'flag-list' }, ...F.items.map((fl, fi) => h('li', { class: F.extend === fi ? 'on' : '' },
+    h('span', { class: `swatch sw-${MEASURES[fl.kind]?.plane || 'structure'}` }), h('b', { text: MEASURES[fl.kind]?.short || 'Other' }), h('span', { class: 'muted', text: ` · ${fl.pieces.length} piece${fl.pieces.length === 1 ? '' : 's'}, p. ${[...new Set(fl.pieces.map(pc => pc.p + 1))].join(', ')}` }),
+    h('button', { type: 'button', class: 'uf-add' + (F.extend === fi ? ' on' : ''), title: 'Add more pieces to this slop', onclick: () => { F.extend = F.extend === fi ? null : fi; rerender(); } }, F.extend === fi ? 'adding…' : '+'),
+    h('button', { type: 'button', class: 'link-btn', onclick: () => { F.items.splice(fi, 1); if (F.extend === fi) F.extend = null; rerender(); } }, 'remove')))) : null;
   return h('div', { class: 'flag-panel on' }, h('h4', { text: 'Contribute' }),
     modeSwitch,
-    h('p', { class: 'flag-how', text: F.mode === 'text' ? 'Drag across the words the index missed; the mark snaps to the text. On a note: “✕ not slop”, or pick the kind it should be.' : 'Draw a box over a figure, table, equation, or any region the index missed. On a note: “✕ not slop”, or pick the kind it should be.' }),
-    h('div', { class: 'flag-count' }, h('b', { text: String(F.items.length) }), ' flagged · ', h('b', { text: String(F.disputed.size) }), ' disputed'),
+    h('p', { class: 'flag-how', text: F.extend != null ? `Adding pieces to slop ${F.extend + 1}. Drag on any page; click + again to stop.` : 'Drag on the page: over words it snaps to the text, elsewhere it draws a box. Several drags can form one slop. On a note: “✕ not slop”, or pick the kind it should be.' }),
+    basket,
+    h('div', { class: 'flag-count' }, h('b', { text: String(F.items.length) }), ' slop', F.items.length === 1 ? '' : 's', ' · ', h('b', { text: String(F.disputed.size) }), ' disputed'),
+    list,
     nameInp,
     h('div', { class: 'flag-actions' },
       h('button', { type: 'button', class: 'btn small', id: 'flag-submit', disabled: n ? null : true, onclick: submit }, n ? `Submit ${n}` : 'Submit'),
-      h('button', { type: 'button', class: 'btn ghost small', onclick: () => { F.on = false; rerender(); } }, 'Done')));
+      h('button', { type: 'button', class: 'btn ghost small', onclick: () => { F.on = false; F.extend = null; rerender(); } }, 'Done')));
 }
 async function loadContributorsQuiet() { try { await loadContributors(); } catch (_) { /* home only */ } }
 const WORDS_CACHE = {};
@@ -651,48 +685,46 @@ function lineRects(words) {
 }
 function enableDragFlag(page, n, w, hgt, rerender, key) {
   page.classList.add('flagging');
-  const F = state.flags; const textMode = F.mode === 'text';
-  if (textMode) pageWords(key, n);      // warm the cache for this page
-  let start = null, box = null, words = null, startIdx = -1, curIdx = -1, sel = [];
+  const F = state.flags; pageWords(key, n);
+  let start = null, box = null, words = null, textMode = false, startIdx = -1, curIdx = -1, sel = [];
   const pos = e => { const r = page.getBoundingClientRect(); return [Math.min(Math.max(0, (e.clientX - r.left) / r.width), 1) * w, Math.min(Math.max(0, (e.clientY - r.top) / r.height), 1) * hgt]; };
-  const nearest = (x, y) => { let best = -1, bd = 1e9; words.forEach((wd, i) => { const [x0, y0, x1, y1] = wd; const dx = x < x0 ? x0 - x : x > x1 ? x - x1 : 0; const dy = y < y0 ? y0 - y : y > y1 ? y - y1 : 0; const d = dx * dx + dy * dy * 4; if (d < bd) { bd = d; best = i; } }); return bd < 40 * 40 ? best : -1; };
+  const nearest = (x, y, maxD) => { let best = -1, bd = 1e9; words.forEach((wd, i) => { const [x0, y0, x1, y1] = wd; const dx = x < x0 ? x0 - x : x > x1 ? x - x1 : 0; const dy = y < y0 ? y0 - y : y > y1 ? y - y1 : 0; const d = dx * dx + dy * dy * 4; if (d < bd) { bd = d; best = i; } }); return bd < maxD * maxD ? best : -1; };
   const drawSel = () => { sel.forEach(e => e.remove()); sel = []; if (startIdx < 0 || curIdx < 0) return; const a = Math.min(startIdx, curIdx), b = Math.max(startIdx, curIdx);
-    for (const [x0, y0, x1, y1] of lineRects(words.slice(a, b + 1))) { const d = h('div', { class: 'user-flag text drawing', style: { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` } }); page.append(d); sel.push(d); } };
+    for (const [x0, y0, x1, y1] of lineRects(words.slice(a, b + 1))) { const d = h('div', { class: 'user-flag pending text drawing', style: { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` } }); page.append(d); sel.push(d); } };
   page.addEventListener('pointerdown', async e => {
-    if (e.button !== 0 || e.target.closest('.user-flag:not(.drawing), .hl-card, .flag-pop')) return;
+    if (e.button !== 0 || e.target.closest('.user-flag:not(.drawing), .hl-card, .flag-pop, .uf-label')) return;
     start = pos(e); e.preventDefault(); page.setPointerCapture(e.pointerId);
-    if (textMode) { words = await pageWords(key, n); startIdx = nearest(...start); curIdx = startIdx; drawSel(); }
-    else { box = h('div', { class: 'user-flag drawing' }); page.append(box); }
+    words = await pageWords(key, n);
+    const onWord = words.length ? nearest(start[0], start[1], 6) : -1;      // started on (or right next to) a word?
+    textMode = F.mode === 'text' ? words.length > 0 : F.mode === 'box' ? false : onWord >= 0;
+    if (e.shiftKey) textMode = false;
+    if (textMode) { startIdx = onWord >= 0 ? onWord : nearest(start[0], start[1], 40); curIdx = startIdx; drawSel(); }
+    else { box = h('div', { class: 'user-flag pending drawing' }); page.append(box); }
   });
   page.addEventListener('pointermove', e => {
     if (!start) return; const [x, y] = pos(e);
-    if (textMode) { if (!words) return; const i = nearest(x, y); if (i >= 0 && i !== curIdx) { curIdx = i; drawSel(); } return; }
+    if (textMode) { const i = nearest(x, y, 60); if (i >= 0 && i !== curIdx) { curIdx = i; drawSel(); } return; }
+    if (!box) return;
     const x0 = Math.min(start[0], x), y0 = Math.min(start[1], y), x1 = Math.max(start[0], x), y1 = Math.max(start[1], y);
     Object.assign(box.style, { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` });
   });
   page.addEventListener('pointerup', e => {
     if (!start) return; const [x, y] = pos(e); const s0 = start; start = null;
-    let item;
+    let piece;
     if (textMode) {
-      if (!words || startIdx < 0 || curIdx < 0) { sel.forEach(el => el.remove()); sel = []; return; }
+      sel.forEach(el => el.remove()); sel = [];
+      if (startIdx < 0 || curIdx < 0) return;
       const a = Math.min(startIdx, curIdx), b = Math.max(startIdx, curIdx); const run = words.slice(a, b + 1);
       const rects = lineRects(run); const bb = [Math.min(...rects.map(r => r[0])), Math.min(...rects.map(r => r[1])), Math.max(...rects.map(r => r[2])), Math.max(...rects.map(r => r[3]))];
-      item = { p: n, r: bb, rects, mode: 'text', text: run.map(wd => wd[4]).join(' ') };
-      sel.forEach(el => el.classList.remove('drawing'));
+      piece = { p: n, r: bb, rects, mode: 'text', text: run.map(wd => wd[4]).join(' ') };
     } else {
+      if (box) box.remove(); box = null;
       const r = [Math.min(s0[0], x), Math.min(s0[1], y), Math.max(s0[0], x), Math.max(s0[1], y)];
-      if (r[2] - r[0] < 8 || r[3] - r[1] < 6) { box.remove(); return; }
-      item = { p: n, r: r.map(v => Math.round(v * 10) / 10), rects: [], mode: 'box', text: '' };
+      if (r[2] - r[0] < 8 || r[3] - r[1] < 6) return;
+      piece = { p: n, r: r.map(v => Math.round(v * 10) / 10), rects: [], mode: 'box', text: '' };
     }
-    const anchor = item.r;
-    const pop = h('div', { class: 'flag-pop', onclick: ev => ev.stopPropagation() },
-      h('div', { class: 'flag-pop-h', text: item.text ? '“' + trunc(item.text, 90) + '” — what is it?' : 'What is it?' }),
-      h('div', { class: 'flag-kinds' }, ...ORDER.map(k => h('button', { type: 'button', class: `chip-b ${MEASURES[k].plane}`, text: MEASURES[k].name, onclick: () => add(k) })), h('button', { type: 'button', class: 'chip-b', text: 'Other', onclick: () => add('other') })),
-      h('input', { type: 'text', class: 'flag-note', placeholder: 'One line on why (optional)', maxlength: 300 }),
-      h('button', { type: 'button', class: 'hl-x', 'aria-label': 'Cancel', onclick: () => { if (box) box.remove(); sel.forEach(el => el.remove()); sel = []; pop.remove(); } }, '×'));
-    const add = kind => { state.flags.items.push({ ...item, kind, note: pop.querySelector('.flag-note').value.trim() }); pop.remove(); rerender(); };
-    pop.style.left = `${Math.min(100 * anchor[0] / w, 55)}%`; pop.style.top = `calc(${100 * anchor[3] / hgt}% + 6px)`;
-    page.append(pop); pop.querySelector('.flag-note').focus();
+    if (F.extend != null && F.items[F.extend]) F.items[F.extend].pieces.push(piece); else F.pending.push(piece);
+    rerender();
   });
 }
 function layoutNotes(host) {

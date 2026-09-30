@@ -711,10 +711,14 @@ async def job_feedback(key: str, request: Request, body: dict):
     """Reader flags on a report: regions the reader marked as slop, and findings the reader disputes."""
     _rate_limit(request)
     job = _get_job(key)
-    ann = [{"p": int(a.get("p", 0)), "r": [round(float(v), 1) for v in (a.get("r") or [0, 0, 0, 0])[:4]],
-            "rects": [[round(float(v), 1) for v in rr[:4]] for rr in (a.get("rects") or [])[:60]], "mode": str(a.get("mode") or "box")[:8],
-            "text": str(a.get("text") or "")[:1000], "kind": str(a.get("kind") or "other")[:40], "note": str(a.get("note") or "")[:500]}
+    def _piece(pc):
+        return {"p": int(pc.get("p", 0)), "r": [round(float(v), 1) for v in (pc.get("r") or [0, 0, 0, 0])[:4]],
+                "rects": [[round(float(v), 1) for v in rr[:4]] for rr in (pc.get("rects") or [])[:60]], "mode": str(pc.get("mode") or "box")[:8],
+                "text": str(pc.get("text") or "")[:1000]}
+    ann = [{"kind": str(a.get("kind") or "other")[:40], "note": str(a.get("note") or "")[:500],
+            "pieces": [_piece(pc) for pc in (a.get("pieces") or ([a] if a.get("r") else []))[:40]]}
            for a in (body.get("annotations") or [])[:100]]
+    ann = [a for a in ann if a["pieces"]]
     disputed = [({"id": str(d.get("id"))[:60], "kind": str(d.get("kind") or "")[:40]} if isinstance(d, dict) else {"id": str(d)[:60], "kind": ""})
                 for d in (body.get("disputed") or [])[:200]]
     if not ann and not disputed:
