@@ -444,6 +444,8 @@ function paperView(job) {
   if (!pdf.available || job.local) {
     return h('div', { class: 'card pv-empty' }, pdf.reason || (job.local ? 'The paper view needs the report on the server.' : 'No PDF of this paper is available.'));
   }
+  if (state.notes == null) state.notes = true;
+  if (state.spine == null) state.spine = true;
   const byPage = new Map();
   const seen = new Set();
   const counts = {};
@@ -458,43 +460,121 @@ function paperView(job) {
           const sig = `${m.key}:${loc.p}:${r.join(',')}`;   // one figure box, not one per detected kind
           if (seen.has(sig)) continue;
           seen.add(sig);
-          byPage.get(loc.p).push({ m, it, i, r, box: !!loc.box });
+          byPage.get(loc.p).push({ m, it, i, r, box: !!loc.box, first: !byPage.get(loc.p).some(o => o.m === m && o.i === i) });
         }
       }
     });
   }
+  const rerender = () => { state.sig = ''; render(state.job); };
   const side = h('div', { class: 'pv-side' }, h('h4', { text: 'On the paper' }),
     ORDER.map(k => {
       const meta = MEASURES[k]; const c = counts[k] || { found: 0, total: 0 }; const on = !state.hidden.has(k);
-      const toggle = () => { state.hidden.has(k) ? state.hidden.delete(k) : state.hidden.add(k); state.sig = ''; render(state.job); };
+      const toggle = () => { state.hidden.has(k) ? state.hidden.delete(k) : state.hidden.add(k); rerender(); };
       return h('div', { class: `pv-toggle ${meta.plane}` + (on ? ' on' : '') },
         h('button', { type: 'button', class: 'pv-main', title: 'Open the graph and findings for this measure', onclick: () => openMeasureModal(k) },
           h('span', { class: 'pv-n', text: String(c.found) }),
           h('span', { class: 'pv-l' }, h('span', { class: 'pv-name', text: meta.name }), h('span', { class: 'pv-sub', text: c.total ? `${c.found} of ${c.total} placed · graph ↗` : 'nothing flagged' }))),
         h('button', { type: 'button', class: 'pv-eye', 'aria-pressed': String(on), title: on ? 'Hide on the paper' : 'Show on the paper', onclick: toggle }, on ? '●' : '○'));
     }),
+    h('h4', { text: 'Layers', style: { marginTop: '10px' } }),
+    h('label', { class: 'pv-layer' }, h('input', { type: 'checkbox', checked: state.notes ? true : null, onchange: e => { state.notes = e.target.checked; rerender(); } }), h('span', {}, h('b', { text: 'Margin notes' }), h('small', { text: 'why each highlight was flagged, beside the page' }))),
+    h('label', { class: 'pv-layer' }, h('input', { type: 'checkbox', checked: state.spine ? true : null, onchange: e => { state.spine = e.target.checked; rerender(); } }), h('span', {}, h('b', { text: 'Reference spine' }), h('small', { text: 'sections and the figures, tables, and equations they refer to' }))),
     h('a', { class: 'btn ghost small', href: `/api/jobs/${encodeURIComponent(key)}/pdf`, download: '', style: { textAlign: 'center', textDecoration: 'none', marginTop: '8px' } }, 'Download highlighted PDF'));
-  const pages = h('div', { class: 'pv-pages' });
+  const pagesHost = h('div', { class: 'pv-pages' + (state.notes ? ' with-notes' : '') + (state.spine ? ' with-spine' : '') });
+  const pageEls = [];
   (pdf.sizes || []).forEach(([w, hgt], n) => {
     const page = h('div', { class: 'pv-page', style: { aspectRatio: `${w} / ${hgt}` } },
       h('span', { class: 'pl', text: `Loading page ${n + 1}…` }),
-      h('img', { src: `/api/jobs/${encodeURIComponent(key)}/pages/${n}.jpg`, alt: `Page ${n + 1}`, loading: 'lazy', width: 1100, height: Math.round(1100 * hgt / w) }),
+      h('img', { src: `/api/jobs/${encodeURIComponent(key)}/pages/${n}.jpg`, alt: `Page ${n + 1}`, loading: n < 3 ? 'eager' : 'lazy', width: 1100, height: Math.round(1100 * hgt / w) }),
       h('span', { class: 'pno', text: `${n + 1}` }));
+    const notes = h('div', { class: 'pv-notes' });
+    const row = h('div', { class: 'pv-row' }, h('div', { class: 'pv-gutter-l' }), page, notes);
+    pageEls.push({ page, w, hgt, row });
     for (const hl of byPage.get(n) || []) {
       if (state.hidden.has(hl.m.key)) continue;
-      const [x0, y0, x1, y1] = hl.r;
-      const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, 'data-hl': `${hl.m.key}-${hl.i}`, tabindex: 0,
+      const [x0, y0, x1, y1] = hl.r; const id = `${hl.m.key}-${hl.i}`;
+      const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, 'data-hl': id, tabindex: 0,
         style: { left: `${100 * x0 / w}%`, top: `${100 * y0 / hgt}%`, width: `${100 * (x1 - x0) / w}%`, height: `${100 * (y1 - y0) / hgt}%` } });
-      bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 160));
+      if (!state.notes) bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 160));
       const openFindings = () => { hideTip(); state.tab = 'findings'; state.open.add(hl.m.key); if (hl.i >= 8) state.showAll.add(hl.m.key); if (hl.m.key === 'cross_refs') state.showAll.add('cross_refs:list'); state.flash = `f-${hl.m.key}-${hl.i}`; state.sig = ''; render(state.job); };
       const open = e => { if (e && e.stopPropagation) e.stopPropagation(); hideTip(); hlCard(page, hl, { x0, y0, x1, y1 }, w, hgt, openFindings); };
       d.addEventListener('click', open);
       d.addEventListener('keydown', e => { if (e.key === 'Enter') open(e); });
+      const sync = on => { d.classList.toggle('lit', on); notes.querySelectorAll(`[data-for="${id}"]`).forEach(x => x.classList.toggle('lit', on)); };
+      d.addEventListener('pointerenter', () => sync(true)); d.addEventListener('pointerleave', () => sync(false));
       page.append(d);
+      // margin note, once per finding, at the highlight's height
+      if (state.notes && hl.first) {
+        const it = hl.it; const body = it.why || (it.coverage != null ? `${Math.round(it.coverage * 100)}% copied from ${it.source_title}` : '') || it.text || it.caption || '';
+        const note = h('div', { class: `pv-note ${hl.m.plane}`, 'data-for': id, 'data-y': String(y0 / hgt), tabindex: 0,
+          onclick: openFindings, onkeydown: e => { if (e.key === 'Enter') openFindings(); } },
+          h('span', { class: 'pv-note-h' }, h('i', { class: `swatch sw-${hl.m.plane}` }), h('b', { text: hl.m.name }), it.section_title ? h('span', { class: 'pv-note-sec', text: it.section_title }) : null),
+          h('span', { class: 'pv-note-b', text: trunc(body, 150) }));
+        note.addEventListener('pointerenter', () => sync(true)); note.addEventListener('pointerleave', () => sync(false));
+        notes.append(note);
+      }
     }
-    pages.append(page);
+    pagesHost.append(row);
   });
-  return h('div', { class: 'pv-layout' }, side, pages);
+  const spine = h('div', { class: 'pv-spine', hidden: !state.spine });
+  pagesHost.prepend(spine);
+  const layout = h('div', { class: 'pv-layout' + (state.notes || state.spine ? ' wide' : '') }, side, pagesHost);
+  // after the DOM is in place: stack the notes without overlap, draw the spine, redo both on resize
+  const settle = () => { layoutNotes(pagesHost); if (state.spine) drawSpine(spine, pagesHost, pageEls, res, key); };
+  requestAnimationFrame(() => requestAnimationFrame(settle));
+  if (pagesHost._ro) pagesHost._ro.disconnect();
+  let lastW = 0; pagesHost._ro = new ResizeObserver(() => { const w = pagesHost.clientWidth; if (Math.abs(w - lastW) > 4) { lastW = w; settle(); } }); pagesHost._ro.observe(pagesHost);
+  return layout;
+}
+function layoutNotes(host) {
+  host.querySelectorAll('.pv-row').forEach(row => {
+    const page = row.querySelector('.pv-page'); const H = page.clientHeight; if (!H) return;
+    let cursor = 0;
+    [...row.querySelectorAll('.pv-note')].sort((a, b) => +a.dataset.y - +b.dataset.y).forEach(n => {
+      const want = +n.dataset.y * H; const top = Math.max(want, cursor);
+      n.style.top = top + 'px'; n.style.setProperty('--lead', Math.max(0, top - want) + 'px'); n.classList.toggle('pushed', top - want > 6);
+      cursor = top + n.offsetHeight + 6;
+    });
+  });
+}
+const SPINE_CACHE = {};
+async function drawSpine(host, pagesHost, pageEls, res, key) {
+  let data = SPINE_CACHE[key];
+  if (!data) { try { data = await (await fetch(`/api/jobs/${encodeURIComponent(key)}/layout`)).json(); } catch (_) { return; } SPINE_CACHE[key] = data; }
+  if (!host.isConnected) return;
+  const nodes = (data.nodes || []).filter(n => pageEls[n.p]); if (!nodes.length) { host.replaceChildren(); return; }
+  const hostTop = pagesHost.getBoundingClientRect().top;
+  const yOf = n => { const pe = pageEls[n.p]; const r = pe.page.getBoundingClientRect(); return r.top - hostTop + (n.y / pe.hgt) * r.height; };
+  const W = host.clientWidth || 170; const H = pagesHost.scrollHeight; const X = W - 14;   // the spine line sits at the right edge of the gutter, next to the pages
+  const svg = s('svg', { class: 'spine', width: W, height: H, viewBox: `0 0 ${W} ${H}` });
+  svg.append(s('line', { x1: X, x2: X, y1: 0, y2: H, class: 'sp-axis' }));
+  const secY = new Map(nodes.filter(n => n.kind === 'section').map(n => [n.sec, yOf(n)]));
+  const objY = new Map(nodes.filter(n => n.kind !== 'section').map(n => [n.id, yOf(n)]));
+  const flagged = new Set(nodes.filter(n => n.kind !== 'section' && !(n.from || []).length).map(n => n.id));
+  const secTitle = new Map(nodes.filter(n => n.kind === 'section').map(n => [n.sec, n.label]));
+  // edges: referencing section → object, bulging into the gutter; deeper bulge for longer spans
+  for (const e of data.edges || []) {
+    const y1 = secY.get(e.src), y2 = objY.get(e.target); if (y1 == null || y2 == null) continue;
+    const span = Math.abs(y2 - y1); const bulge = Math.min(W - 30, 26 + span * 0.08);
+    const path = s('path', { class: 'sp-edge', d: `M${X},${y1} C${X - bulge},${y1} ${X - bulge},${y2} ${X},${y2}` });
+    const tn = nodes.find(n => n.id === e.target);
+    bindTip(path, `${secTitle.get(e.src) || '§' + e.src} → ${tn ? tn.label : e.target}`, e.roadmap ? 'Referred to in a roadmap sentence' : `Referred to from ${secTitle.get(e.src) || 'this section'}`);
+    svg.append(path);
+  }
+  for (const n of nodes) {
+    const y = yOf(n);
+    if (n.kind === 'section') {
+      svg.append(s('line', { class: 'sp-tick', x1: X - 8, x2: X + 6, y1: y, y2: y }));
+      const t = s('text', { class: 'sp-sec', x: X - 12, y: y - 4, 'text-anchor': 'end', text: trunc(n.label, Math.floor((W - 20) / 6.2)) });
+      svg.append(t);
+    } else {
+      const miss = flagged.has(n.id);
+      const dot = s('circle', { class: 'sp-obj' + (miss ? ' miss' : ''), cx: X, cy: y, r: miss ? 5 : 4 });
+      bindTip(dot, n.label, miss ? 'Never referred to from another section' : `Referred to from ${(n.from || []).map(f => secTitle.get(f) || '§' + f).join(', ')}`);
+      svg.append(dot, s('text', { class: 'sp-lab' + (miss ? ' miss' : ''), x: X - 10, y: y + 4, 'text-anchor': 'end', text: n.label.replace(/^Eq\. \((.*)\)$/, 'Eq. $1') }));
+    }
+  }
+  host.replaceChildren(svg, h('div', { class: 'sp-legend' }, h('span', {}, h('i', { class: 'sp-lg-line' }), 'section refers to it'), h('span', {}, h('i', { class: 'sp-lg-miss' }), 'never referred to')));
 }
 function hlCard(page, hl, r, w, hgt, openFindings) {
   document.querySelectorAll('.hl-card').forEach(n => n.remove());

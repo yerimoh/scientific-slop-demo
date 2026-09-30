@@ -426,6 +426,69 @@ async def job_page(key: str, n: int):
     return FileResponse(cache, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
 
 
+def _layout_nodes(pdf_path: str, res: dict) -> dict:
+    """Positions of every section heading and referable object on the PDF, for the reference spine."""
+    from engine.pdf import read_pdf
+    pdf_doc = read_pdf(pdf_path)
+    objs = list(pdf_doc.objects)
+    def norm(t): return re.sub(r"[^a-z0-9]", "", (t or "").lower())
+    def find(kind: str, number: Optional[str], title: str):
+        for o in objs:
+            if o.kind == kind and o.loc and number and o.number == number:
+                return o.loc
+        if title:
+            t = norm(title)
+            for o in objs:
+                if o.kind == kind and o.loc and norm(re.sub(r"^§\S*\s*", "", o.display or "")) == t:
+                    return o.loc
+        return None
+    nodes = []
+    m = next((x for x in res.get("measures", []) if x["key"] == "cross_refs"), None)
+    outline = (res.get("document") or {}).get("outline") or []
+    seen = set()
+    for sec in outline:
+        if sec.get("idx") is None or sec.get("kind") not in (None, "body"):
+            continue
+        loc = find("section", sec.get("number"), sec.get("title") or "")
+        if loc:
+            p_, x0, y0, x1, y1 = loc
+            nodes.append({"id": f"§{sec.get('number') or sec['idx']}", "kind": "section", "sec": sec["idx"], "label": (("§" + sec["number"] + " ") if sec.get("number") else "") + (sec.get("title") or ""), "p": p_, "y": round(y0, 1), "y1": round(y1, 1), "x0": round(x0, 1)})
+            seen.add(sec["idx"])
+    if m:
+        KIND = {"figure": "figure", "table": "table", "equation": "equation", "algorithm": "algorithm"}
+        for o in (m.get("details") or {}).get("objects", []):
+            if o.get("kind") == "section":
+                continue
+            lab = o.get("label") or ""
+            mm = re.match(r"^(Figure|Fig\.?|Table|Tab\.?|Eq\.?|Equation|Algorithm|Alg\.?)\s*\(?([A-Za-z0-9.]+)\)?", lab)
+            kind = KIND.get(o.get("kind"), o.get("kind")); number = mm.group(2) if mm else None
+            loc = find(kind, number, "")
+            if loc:
+                p_, x0, y0, x1, y1 = loc
+                nodes.append({"id": o["id"], "kind": kind, "home": o.get("home"), "from": o.get("from", []), "own": o.get("own", 0), "label": lab, "p": p_, "y": round(y0, 1), "y1": round(y1, 1), "x0": round(x0, 1)})
+    return {"nodes": nodes, "edges": (m.get("details") or {}).get("edges", []) if m else []}
+
+
+@app.get("/api/jobs/{key}/layout")
+async def job_layout(key: str):
+    job = _get_job(key)
+    res = job.get("result") or {}
+    if not (res.get("pdf") or {}).get("available"):
+        raise HTTPException(404, "No PDF for this report.")
+    cache = os.path.join(_job_dir(job["id"]), "files", "layout.json")
+    shipped = _find_file(job["id"], "layout.json")
+    if shipped:
+        return FileResponse(shipped, media_type="application/json")
+    src = await _ensure_pdf(job)
+    if not src:
+        raise HTTPException(404, "The paper's PDF is no longer available.")
+    out = await asyncio.to_thread(_layout_nodes, src, res)
+    os.makedirs(os.path.dirname(cache), exist_ok=True)
+    with open(cache, "w") as f:
+        json.dump(out, f)
+    return JSONResponse(out)
+
+
 @app.get("/api/jobs/{key}/thumb.png")
 async def job_thumb(key: str):
     job = _get_job(key)
