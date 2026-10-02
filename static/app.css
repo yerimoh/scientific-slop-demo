@@ -205,20 +205,22 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .prev-col-ex { grid-column: 1 / -1; }
 .exh-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; margin-bottom: 6px; }
 .exh-row .exh { margin: 0; }
-.exh-row .crop { max-height: 150px; }
-.exh-row .crop::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 36px; background: linear-gradient(transparent, #fff); pointer-events: none; }
+.exh-row .crop { max-height: 170px; }
+.exh-row .crop.clip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 36px; background: linear-gradient(transparent, #fff); pointer-events: none; }
 .exh { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 11px 13px 10px; margin-bottom: 10px; }
 .exh-head { display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 1.25; }
 .exh-head .exh-m { margin-left: auto; font-size: 11px; color: var(--ink-3); white-space: nowrap; }
 .exh-sub { font-size: 12px; color: var(--ink-3); margin: 3px 0 8px; line-height: 1.4; }
 .exh-q { font-size: 12.5px; line-height: 1.5; color: var(--ink-2); margin: 5px 0; }
-.exh-src { border-left: 3px solid var(--structure); padding-left: 8px; color: var(--ink); }
+.exh-src { border-left: 3px solid var(--structure); padding-left: 8px; color: var(--ink-2); font-size: 12px; }
 .exh-q mark { padding: 0 1px; border-radius: 2px; color: inherit; }
 mark.mk-structure { background: rgba(149, 98, 122, .28); } mark.mk-argument { background: rgba(228, 149, 158, .5); }
 .ex-chip { display: inline-block; font-size: 10.5px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; vertical-align: 1px; }
 .ex-chip.big { font-size: 12px; padding: 3px 9px; }
 .exh-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.exh-where { margin-bottom: 6px; }
+.exh-where { margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+.exh-snap { margin: 8px 0 0; }
+.exh-again { font-size: 10.5px; color: var(--structure); font-weight: 600; }
 .crop { position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--line); background: #fff; width: 100%; }
 .crop-in { position: relative; }
 .crop-in img { display: block; width: 100%; height: auto; }

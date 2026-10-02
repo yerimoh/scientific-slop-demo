@@ -1755,7 +1755,7 @@ function pageCrop(key, p, pw, ph, rect, hls, pad = 10) {
   const inner = h('div', { class: 'crop-in', style: { width: `${100 * pw / cw}%`, marginLeft: `${-100 * x0 / cw}%`, marginTop: `${-100 * y0 / cw}%` } },
     h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${p}.jpg`, alt: `Page ${p + 1}`, loading: 'lazy', style: { aspectRatio: `${pw} / ${ph}` } }),
     ...hls.map(x => h('span', { class: `hl ${x.plane}${x.box ? ' box' : ''}`, style: { left: `${100 * x.r[0] / pw}%`, top: `${100 * x.r[1] / ph}%`, width: `${100 * (x.r[2] - x.r[0]) / pw}%`, height: `${100 * (x.r[3] - x.r[1]) / ph}%` } })));
-  return h('div', { class: 'crop', style: { aspectRatio: `${cw} / ${ch}` } }, inner);
+  return h('div', { class: 'crop' + (ch / cw > 0.42 ? ' clip' : ''), style: { aspectRatio: `${cw} / ${ch}` } }, inner);
 }
 function markedText(text, ranges, cls) {
   const out = []; let i = 0;
@@ -1780,11 +1780,12 @@ function pickExhibits(job, openAt) {
     for (const it of mr.instances) { const g = (it.source_text || '').slice(0, 60); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(it); }
     const best = [...groups.values()].sort((a, b) => b.length - a.length || Math.max(...b.map(x => x.coverage || 0)) - Math.max(...a.map(x => x.coverage || 0)))[0];
     if (best?.length) {
-      const src = best[0]; const echoes = best.slice(0, 2); const p0 = loc(echoes[0])?.p;
+      const src = best[0]; const located = best.filter(it => loc(it)); const echoes = located.length > 2 ? [located[0], located[located.length - 1]] : located; const p0 = loc(echoes[0])?.p;
       cards.push(card('macro_redundancy', best.length > 1 ? `One sentence, said ${best.length + 1} times` : 'A sentence copied from earlier', 'Later sections restate the same sentence instead of adding to it.',
         h('div', {},
-          h('div', { class: 'exh-q exh-src' }, h('span', { class: 'ex-chip', text: (src.source_title || '').replace(/^§\d+\s*/, '§') }), ' ', h('span', { text: trunc(src.source_text || '', 150) })),
-          ...echoes.map(it => { const l = loc(it); return h('div', { class: 'exh-q' }, chip(it, l?.p), ' ', ...markedText(trunc(it.text || '', 150), (it.highlights || []).filter(r => r[0] < 149).map(r => [r[0], Math.min(r[1], 149)]), 'mk-structure')); })),
+          h('div', { class: 'exh-q exh-src' }, h('span', { class: 'ex-chip', text: (src.source_title || '').replace(/^§\d+\s*/, '§') }), ' ', h('span', { text: trunc(src.source_text || '', 110) })),
+          ...echoes.map(it => { const l = loc(it); const [pw, ph] = sz(l.p); const u = [Math.min(...l.r.map(r => r[0])), Math.min(...l.r.map(r => r[1])), Math.max(...l.r.map(r => r[2])), Math.max(...l.r.map(r => r[3]))];
+            return h('div', { class: 'exh-snap' }, h('div', { class: 'exh-where' }, chip(it, l.p), h('span', { class: 'exh-again', text: 'again' })), pageCrop(key, l.p, pw, ph, u, l.r.map(r => ({ r, plane: 'structure' })), 12)); })),
         p0));
     }
   }
@@ -1804,9 +1805,10 @@ function pickExhibits(job, openAt) {
       cards.push(card('citation_isolation', `${best.length} sentences in a row, one citation each`, 'Each names a single work and relates it to nothing else: a list, not an argument.',
         h('div', {}, h('div', { class: 'exh-where' }, chip(best[0].it, p)), pageCrop(key, p, pw, ph, u, rects.map(r => ({ r, plane: 'argument' })), 8)), p));
     } else {
-      const three = ci.instances.slice(0, 3);
+      const three = ci.instances.filter(it => loc(it)).slice(0, 3);
       cards.push(card('citation_isolation', `${ci.instances.length} citations that connect to nothing`, 'Each names a single work and relates it to nothing else: a list, not an argument.',
-        h('div', {}, ...three.map(it => h('div', { class: 'exh-q' }, chip(it, loc(it)?.p), ' ', ...markedText(trunc(it.text || '', 150), [...trunc(it.text || '', 150).matchAll(/\[cite\]/g)].map(m => [m.index, m.index + 6]), 'mk-argument')))), loc(three[0])?.p));
+        h('div', {}, ...three.map(it => { const l = loc(it); const [pw, ph] = sz(l.p); const u = [Math.min(...l.r.map(r => r[0])), Math.min(...l.r.map(r => r[1])), Math.max(...l.r.map(r => r[2])), Math.max(...l.r.map(r => r[3]))];
+          return h('div', { class: 'exh-snap' }, h('div', { class: 'exh-where' }, chip(it, l.p)), pageCrop(key, l.p, pw, ph, u, l.r.map(r => ({ r, plane: 'argument' })), 12)); })), loc(three[0])?.p));
     }
   }
   // tables of numbers, no example
