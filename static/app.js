@@ -176,7 +176,7 @@ function route() {
   clearTimeout(state.timer);
   let p = location.pathname; if (BASE && p.startsWith(BASE)) p = p.slice(BASE.length) || '/';
   const m = p.match(/^\/r\/([A-Za-z0-9_-]+)/);
-  if (m) { showPage('report'); openReport(m[1], new URLSearchParams(location.search).get('tab')); return; }
+  if (m) { const q = new URLSearchParams(location.search); showPage('report'); openReport(m[1], q.get('tab'), q.get('p')); return; }
   state.key = null; state.job = null; state.sig = '';
   if (p.startsWith('/leaderboard')) { showPage('leaderboard'); loadLeaderboard(); }
   else if (p.startsWith('/how')) { showPage('how'); buildHow(); }
@@ -255,7 +255,8 @@ function initInputs() {
 }
 
 // ------------------------------------------------------------------ report loading
-function openReport(key, tab) {
+function openReport(key, tab, page) {
+  state.jump = page != null && page !== '' ? +page : null;
   if (state.key !== key) { state.open.clear(); state.showAll.clear(); state.hidden.clear(); state.sig = ''; state.tab = 'findings'; state.job = null; }
   if (tab === 'paper' || tab === 'findings') { state.tab = tab; state.sig = ''; }
   state.key = key;
@@ -275,6 +276,7 @@ async function poll(key, fails) {
     }
     const job = await r.json();
     state.job = job; render(job);
+    if (state.jump != null && job.status === 'done') { const n = state.jump; state.jump = null; requestAnimationFrame(() => { const row = document.querySelector(`.pv-row[data-page="${n}"]`); if (row) window.scrollTo({ top: row.getBoundingClientRect().top + window.scrollY - 80 }); }); }
     if (job.status === 'running') state.timer = setTimeout(() => poll(key, 0), 700);
     else if (job.status === 'done') { remember(job.result); if (state.autoReader === key && job.result?.pdf?.available) { state.autoReader = null; state.tab = 'paper'; if (state.autoFlag) { state.autoFlag = false; state.flags = { on: true, items: [], pending: [], extend: null, disputed: new Map(), sent: null, mode: store.get('ssi-flagmode', 'auto') }; state.notes = true; } state.sig = ''; render(job); } }
   } catch (e) {
@@ -1743,14 +1745,97 @@ async function fetchReport(key) {
   if (!r.ok || !job.result) throw new Error('no report');
   return job;
 }
+
+// ------------------------------------------------------------------ exhibits (home example)
+// The most telling findings of a report, shown in the paper's own words: a sentence the paper
+// keeps repeating, a run of one-citation sentences, result tables with no example, objects nothing points to.
+function pageCrop(key, p, pw, ph, rect, hls, pad = 10) {
+  const x0 = Math.max(0, rect[0] - pad), y0 = Math.max(0, rect[1] - pad), x1 = Math.min(pw, rect[2] + pad), y1 = Math.min(ph, rect[3] + pad);
+  const cw = x1 - x0, ch = y1 - y0;
+  const inner = h('div', { class: 'crop-in', style: { width: `${100 * pw / cw}%`, marginLeft: `${-100 * x0 / cw}%`, marginTop: `${-100 * y0 / cw}%` } },
+    h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${p}.jpg`, alt: `Page ${p + 1}`, loading: 'lazy', style: { aspectRatio: `${pw} / ${ph}` } }),
+    ...hls.map(x => h('span', { class: `hl ${x.plane}${x.box ? ' box' : ''}`, style: { left: `${100 * x.r[0] / pw}%`, top: `${100 * x.r[1] / ph}%`, width: `${100 * (x.r[2] - x.r[0]) / pw}%`, height: `${100 * (x.r[3] - x.r[1]) / ph}%` } })));
+  return h('div', { class: 'crop', style: { aspectRatio: `${cw} / ${ch}` } }, inner);
+}
+function markedText(text, ranges, cls) {
+  const out = []; let i = 0;
+  for (const [a, b] of [...(ranges || [])].sort((x, y) => x[0] - y[0])) { if (a > i) out.push(text.slice(i, a)); out.push(h('mark', { class: cls, text: text.slice(a, b) })); i = b; }
+  if (i < text.length) out.push(text.slice(i));
+  return out;
+}
+function pickExhibits(job, openAt) {
+  const res = job.result; const ms = measuresOf(job); const sizes = res.pdf?.sizes || []; const key = job.key || job.id; const cards = [];
+  const sz = p => sizes[p] || [612, 792];
+  const chip = (it, p) => h('span', { class: 'ex-chip', text: `${(it.section_title || '').replace(/^§\d+\s*/, '§') }${p != null ? ` · p. ${p + 1}` : ''}` });
+  const loc = it => (it.pdf || []).find(l => l.r && l.r.length) || null;
+  const foot = p => h('a', { class: 'exh-foot', href: `/r/${key}?tab=paper${p != null ? `&p=${p}` : ''}`, 'data-link': '', text: p != null ? `See it on page ${p + 1} →` : 'Open in the reader →' });
+  const card = (k, title, sub, body, p) => h('div', { class: 'exh' },
+    h('div', { class: 'exh-head' }, h('span', { class: `swatch sw-${MEASURES[k].plane}` }), h('b', { text: title }), h('span', { class: 'exh-m', text: MEASURES[k].name })),
+    h('p', { class: 'exh-sub', text: sub }), body, foot(p));
+
+  // a sentence the paper keeps saying
+  const mr = ms.macro_redundancy;
+  if (mr?.status === 'done' && (mr.instances || []).length) {
+    const groups = new Map();
+    for (const it of mr.instances) { const g = (it.source_text || '').slice(0, 60); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(it); }
+    const best = [...groups.values()].sort((a, b) => b.length - a.length || Math.max(...b.map(x => x.coverage || 0)) - Math.max(...a.map(x => x.coverage || 0)))[0];
+    if (best?.length) {
+      const src = best[0]; const echoes = best.slice(0, 2); const p0 = loc(echoes[0])?.p;
+      cards.push(card('macro_redundancy', best.length > 1 ? `One sentence, said ${best.length + 1} times` : 'A sentence copied from earlier', 'Later sections restate the same sentence instead of adding to it.',
+        h('div', {},
+          h('div', { class: 'exh-q exh-src' }, h('span', { class: 'ex-chip', text: (src.source_title || '').replace(/^§\d+\s*/, '§') }), ' ', h('span', { text: trunc(src.source_text || '', 150) })),
+          ...echoes.map(it => { const l = loc(it); return h('div', { class: 'exh-q' }, chip(it, l?.p), ' ', ...markedText(trunc(it.text || '', 150), (it.highlights || []).filter(r => r[0] < 149).map(r => [r[0], Math.min(r[1], 149)]), 'mk-structure')); })),
+        p0));
+    }
+  }
+  // a run of sentences each citing one work in isolation
+  const ci = ms.citation_isolation;
+  if (ci?.status === 'done' && (ci.instances || []).length >= 3) {
+    const byPage = new Map();
+    for (const it of ci.instances) for (const l of it.pdf || []) { if (!l.r?.length) continue; if (!byPage.has(l.p)) byPage.set(l.p, []); byPage.get(l.p).push({ it, r: l.r, y0: Math.min(...l.r.map(r => r[1])), y1: Math.max(...l.r.map(r => r[3])) }); }
+    let best = [];
+    for (const [p, items] of byPage) {
+      items.sort((a, b) => a.y0 - b.y0); let run = [];
+      for (const x of items) { if (run.length && x.y0 <= run[run.length - 1].y1 + 6) run.push(x); else run = [x]; if (run.length > best.length) best = run.map(y => ({ ...y, p })); }
+    }
+    if (best.length >= 3) {
+      const p = best[0].p; const [pw, ph] = sz(p); const rects = best.flatMap(x => x.r);
+      const u = [Math.min(...rects.map(r => r[0])), Math.min(...rects.map(r => r[1])), Math.max(...rects.map(r => r[2])), Math.max(...rects.map(r => r[3]))];
+      cards.push(card('citation_isolation', `${best.length} sentences in a row, one citation each`, 'Each names a single work and relates it to nothing else: a list, not an argument.',
+        h('div', {}, h('div', { class: 'exh-where' }, chip(best[0].it, p)), pageCrop(key, p, pw, ph, u, rects.map(r => ({ r, plane: 'argument' })), 8)), p));
+    } else {
+      const three = ci.instances.slice(0, 3);
+      cards.push(card('citation_isolation', `${ci.instances.length} citations that connect to nothing`, 'Each names a single work and relates it to nothing else: a list, not an argument.',
+        h('div', {}, ...three.map(it => h('div', { class: 'exh-q' }, chip(it, loc(it)?.p), ' ', ...markedText(trunc(it.text || '', 150), [...trunc(it.text || '', 150).matchAll(/\[cite\]/g)].map(m => [m.index, m.index + 6]), 'mk-argument')))), loc(three[0])?.p));
+    }
+  }
+  // tables of numbers, no example
+  const eg = ms.evidence_gap;
+  if (eg?.status === 'done' && (eg.instances || []).length) {
+    const it = eg.instances[0]; const n = +((it.text || '').match(/(\d+) result table/) || [])[1] || 1; const l = loc(it); const p = l?.p;
+    const body = h('div', {},
+      h('div', { class: 'exh-tabs' }, ...Array.from({ length: Math.min(n, 6) }, (_, i) => h('span', { class: 'exh-tab', title: `Result table ${i + 1}` })), h('span', { class: 'exh-none', text: 'example?' })),
+      l && p != null ? (() => { const [pw, ph] = sz(p); const r = l.r[0]; return pageCrop(key, p, pw, ph, [r[0], r[1], r[2], Math.min(ph, r[3] + 70)], [{ r, plane: 'artifacts', box: true }], 6); })() : null);
+    cards.push(card('evidence_gap', `${n} result table${n === 1 ? '' : 's'}, not one example`, 'Aggregate numbers only. No input, output, case, or failure is shown anywhere, appendix included.', body, p));
+  }
+  // labeled objects nothing points to
+  const cr = ms.cross_refs;
+  if (cards.length < 3 && cr?.status === 'done') {
+    const objs = (cr.instances || []).filter(it => it.kind && it.kind !== 'section');
+    if (objs.length) cards.push(card('cross_refs', `${objs.length} object${objs.length === 1 ? '' : 's'} no other section points to`, 'Figures, tables, and equations that the rest of the paper never refers to.',
+      h('div', { class: 'exh-chips' }, ...objs.slice(0, 8).map(it => { const l = loc(it); return h('span', { class: 'ex-chip big', text: `${it.label}${l ? ` · p. ${l.p + 1}` : ''}` }); })), loc(objs[0])?.p));
+  }
+  return cards.slice(0, 3);
+}
 // The report digest: score card, first page with highlights, paper map, six measures with a graph stage.
 function previewBody(key, job, openReportAt, opts = {}) {
   const res = job.result; const doc = res.document || {}; const ms = measuresOf(job);
   const pdf = res.pdf || {}; const [pw, ph] = (pdf.sizes || [])[0] || [612, 792];
   const marks = [];
   for (const m of res.measures) (m.instances || []).forEach((it, i) => (it.pdf || []).forEach(loc => { if (loc.p !== 0) return; for (const r of loc.r) marks.push({ m, it, i, r, box: !!loc.box }); }));
-  const page = h('div', { class: 'pv-page prev-page' }, pdf.available ? h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/0.jpg`, alt: 'Page 1', width: 1100, height: Math.round(1100 * ph / pw) }) : h('div', { class: 'pv-empty', text: 'No PDF available.' }));
-  for (const hl of marks) {
+  const compact = !!opts.compact;
+  const page = compact ? null : h('div', { class: 'pv-page prev-page' }, pdf.available ? h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/0.jpg`, alt: 'Page 1', width: 1100, height: Math.round(1100 * ph / pw) }) : h('div', { class: 'pv-empty', text: 'No PDF available.' }));
+  for (const hl of compact ? [] : marks) {
     const [x0, y0, x1, y1] = hl.r;
     const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, tabindex: 0, style: { left: `${100 * x0 / pw}%`, top: `${100 * y0 / ph}%`, width: `${100 * (x1 - x0) / pw}%`, height: `${100 * (y1 - y0) / ph}%` } });
     bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 160));
@@ -1766,14 +1851,13 @@ function previewBody(key, job, openReportAt, opts = {}) {
     stage.replaceChildren(v || h('div', { class: 'muted', text: ms[k]?.status === 'done' ? 'Nothing to draw.' : ((ms[k]?.notes || [])[0] || 'Not measured.') }));
   });
   const map = h('div', { class: 'card map-card' });
-  const compact = !!opts.compact;
   const body = h('div', { class: 'prev-body' + (compact ? ' compact' : '') },
     scoreCard(res.index, ms, false),
     compact
       ? h('div', { class: 'prev-grid3' },
-        h('div', { class: 'prev-col' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings. Hover to read why, click for details.` : 'Nothing flagged on the first page.' })),
-          page),
+        h('div', { class: 'prev-col prev-col-ex' },
+          h('div', { class: 'section-title' }, h('h3', { text: 'What it found' }), h('p', { text: 'The most telling findings, in the paper\'s own words.' })),
+          h('div', { class: 'exh-row' }, ...pickExhibits(job, openReportAt))),
         h('div', { class: 'prev-col' },
           h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
           map,
