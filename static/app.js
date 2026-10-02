@@ -1746,90 +1746,6 @@ async function fetchReport(key) {
   return job;
 }
 
-// ------------------------------------------------------------------ exhibits (home example)
-// The most telling findings of a report, shown in the paper's own words: a sentence the paper
-// keeps repeating, a run of one-citation sentences, result tables with no example, objects nothing points to.
-function pageCrop(key, p, pw, ph, rect, hls, pad = 10) {
-  const x0 = Math.max(0, rect[0] - pad), y0 = Math.max(0, rect[1] - pad), x1 = Math.min(pw, rect[2] + pad), y1 = Math.min(ph, rect[3] + pad);
-  const cw = x1 - x0, ch = y1 - y0;
-  const inner = h('div', { class: 'crop-in', style: { width: `${100 * pw / cw}%`, marginLeft: `${-100 * x0 / cw}%`, marginTop: `${-100 * y0 / cw}%` } },
-    h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${p}.jpg`, alt: `Page ${p + 1}`, loading: 'lazy', style: { aspectRatio: `${pw} / ${ph}` } }),
-    ...hls.map(x => h('span', { class: `hl ${x.plane}${x.box ? ' box' : ''}`, style: { left: `${100 * x.r[0] / pw}%`, top: `${100 * x.r[1] / ph}%`, width: `${100 * (x.r[2] - x.r[0]) / pw}%`, height: `${100 * (x.r[3] - x.r[1]) / ph}%` } })));
-  return h('div', { class: 'crop' + (ch / cw > 0.42 ? ' clip' : ''), style: { aspectRatio: `${cw} / ${ch}` } }, inner);
-}
-function markedText(text, ranges, cls) {
-  const out = []; let i = 0;
-  for (const [a, b] of [...(ranges || [])].sort((x, y) => x[0] - y[0])) { if (a > i) out.push(text.slice(i, a)); out.push(h('mark', { class: cls, text: text.slice(a, b) })); i = b; }
-  if (i < text.length) out.push(text.slice(i));
-  return out;
-}
-function pickExhibits(job, openAt) {
-  const res = job.result; const ms = measuresOf(job); const sizes = res.pdf?.sizes || []; const key = job.key || job.id; const cards = [];
-  const sz = p => sizes[p] || [612, 792];
-  const chip = (it, p) => h('span', { class: 'ex-chip', text: `${(it.section_title || '').replace(/^§\d+\s*/, '§') }${p != null ? ` · p. ${p + 1}` : ''}` });
-  const loc = it => (it.pdf || []).find(l => l.r && l.r.length) || null;
-  const foot = p => h('a', { class: 'exh-foot', href: `/r/${key}?tab=paper${p != null ? `&p=${p}` : ''}`, 'data-link': '', text: p != null ? `See it on page ${p + 1} →` : 'Open in the reader →' });
-  const card = (k, title, sub, body, p) => h('div', { class: 'exh' },
-    h('div', { class: 'exh-head' }, h('span', { class: `swatch sw-${MEASURES[k].plane}` }), h('b', { text: title }), h('span', { class: 'exh-m', text: MEASURES[k].name })),
-    h('p', { class: 'exh-sub', text: sub }), body, foot(p));
-
-  // a sentence the paper keeps saying
-  const mr = ms.macro_redundancy;
-  if (mr?.status === 'done' && (mr.instances || []).length) {
-    const groups = new Map();
-    for (const it of mr.instances) { const g = (it.source_text || '').slice(0, 60); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(it); }
-    const best = [...groups.values()].sort((a, b) => b.length - a.length || Math.max(...b.map(x => x.coverage || 0)) - Math.max(...a.map(x => x.coverage || 0)))[0];
-    if (best?.length) {
-      const src = best[0]; const located = best.filter(it => loc(it)); const echoes = located.length > 2 ? [located[0], located[located.length - 1]] : located; const p0 = loc(echoes[0])?.p;
-      cards.push(card('macro_redundancy', best.length > 1 ? `One sentence, said ${best.length + 1} times` : 'A sentence copied from earlier', 'Later sections restate the same sentence instead of adding to it.',
-        h('div', {},
-          h('div', { class: 'exh-q exh-src' }, h('span', { class: 'ex-chip', text: (src.source_title || '').replace(/^§\d+\s*/, '§') }), ' ', h('span', { text: trunc(src.source_text || '', 110) })),
-          ...echoes.map(it => { const l = loc(it); const [pw, ph] = sz(l.p); const u = [Math.min(...l.r.map(r => r[0])), Math.min(...l.r.map(r => r[1])), Math.max(...l.r.map(r => r[2])), Math.max(...l.r.map(r => r[3]))];
-            return h('div', { class: 'exh-snap' }, h('div', { class: 'exh-where' }, chip(it, l.p), h('span', { class: 'exh-again', text: 'again' })), pageCrop(key, l.p, pw, ph, u, l.r.map(r => ({ r, plane: 'structure' })), 12)); })),
-        p0));
-    }
-  }
-  // a run of sentences each citing one work in isolation
-  const ci = ms.citation_isolation;
-  if (ci?.status === 'done' && (ci.instances || []).length >= 3) {
-    const byPage = new Map();
-    for (const it of ci.instances) for (const l of it.pdf || []) { if (!l.r?.length) continue; if (!byPage.has(l.p)) byPage.set(l.p, []); byPage.get(l.p).push({ it, r: l.r, y0: Math.min(...l.r.map(r => r[1])), y1: Math.max(...l.r.map(r => r[3])) }); }
-    let best = [];
-    for (const [p, items] of byPage) {
-      items.sort((a, b) => a.y0 - b.y0); let run = [];
-      for (const x of items) { if (run.length && x.y0 <= run[run.length - 1].y1 + 6) run.push(x); else run = [x]; if (run.length > best.length) best = run.map(y => ({ ...y, p })); }
-    }
-    if (best.length >= 3) {
-      const p = best[0].p; const [pw, ph] = sz(p); const rects = best.flatMap(x => x.r);
-      const u = [Math.min(...rects.map(r => r[0])), Math.min(...rects.map(r => r[1])), Math.max(...rects.map(r => r[2])), Math.max(...rects.map(r => r[3]))];
-      cards.push(card('citation_isolation', `${best.length} sentences in a row, one citation each`, 'Each names a single work and relates it to nothing else: a list, not an argument.',
-        h('div', {}, h('div', { class: 'exh-where' }, chip(best[0].it, p)), pageCrop(key, p, pw, ph, u, rects.map(r => ({ r, plane: 'argument' })), 8)), p));
-    } else {
-      const three = ci.instances.filter(it => loc(it)).slice(0, 3);
-      cards.push(card('citation_isolation', `${ci.instances.length} citations that connect to nothing`, 'Each names a single work and relates it to nothing else: a list, not an argument.',
-        h('div', {}, ...three.map(it => { const l = loc(it); const [pw, ph] = sz(l.p); const u = [Math.min(...l.r.map(r => r[0])), Math.min(...l.r.map(r => r[1])), Math.max(...l.r.map(r => r[2])), Math.max(...l.r.map(r => r[3]))];
-          return h('div', { class: 'exh-snap' }, h('div', { class: 'exh-where' }, chip(it, l.p)), pageCrop(key, l.p, pw, ph, u, l.r.map(r => ({ r, plane: 'argument' })), 12)); })), loc(three[0])?.p));
-    }
-  }
-  // tables of numbers, no example
-  const eg = ms.evidence_gap;
-  if (eg?.status === 'done' && (eg.instances || []).length) {
-    const it = eg.instances[0]; const n = +((it.text || '').match(/(\d+) result table/) || [])[1] || 1; const l = loc(it); const p = l?.p;
-    const body = h('div', {},
-      h('div', { class: 'exh-tabs' }, ...Array.from({ length: Math.min(n, 6) }, (_, i) => h('span', { class: 'exh-tab', title: `Result table ${i + 1}` })), h('span', { class: 'exh-none', text: 'example?' })),
-      l && p != null ? (() => { const [pw, ph] = sz(p); const r = l.r[0]; return pageCrop(key, p, pw, ph, [r[0], r[1], r[2], Math.min(ph, r[3] + 70)], [{ r, plane: 'artifacts', box: true }], 6); })() : null);
-    cards.push(card('evidence_gap', `${n} result table${n === 1 ? '' : 's'}, not one example`, 'Aggregate numbers only. No input, output, case, or failure is shown anywhere, appendix included.', body, p));
-  }
-  // labeled objects nothing points to
-  const cr = ms.cross_refs;
-  if (cards.length < 3 && cr?.status === 'done') {
-    const objs = (cr.instances || []).filter(it => it.kind && it.kind !== 'section');
-    if (objs.length) cards.push(card('cross_refs', `${objs.length} object${objs.length === 1 ? '' : 's'} no other section points to`, 'Figures, tables, and equations that the rest of the paper never refers to.',
-      h('div', { class: 'exh-chips' }, ...objs.slice(0, 8).map(it => { const l = loc(it); return h('span', { class: 'ex-chip big', text: `${it.label}${l ? ` · p. ${l.p + 1}` : ''}` }); })), loc(objs[0])?.p));
-  }
-  return cards.slice(0, 3);
-}
-
 // ------------------------------------------------------------------ page stage (home example)
 // One page shown large with its findings drawn on it; a filmstrip of every page below it.
 // Hover or click a thumbnail to show that page; hover a mark to read why; click a mark for the card.
@@ -1906,10 +1822,7 @@ function previewBody(key, job, openReportAt, opts = {}) {
           h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
           bars,
           h('div', { class: 'section-title' }, stageTitle, stageSub),
-          stage),
-        h('div', { class: 'prev-col prev-col-ex' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'What it found' }), h('p', { text: 'The most telling findings, cut from the pages above.' })),
-          h('div', { class: 'exh-row' }, ...pickExhibits(job, openReportAt))))
+          stage))
       : h('div', { class: 'prev-grid' },
         h('div', { class: 'prev-left' },
           h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings placed here. Hover one to read why; click it for details.` : 'Nothing flagged on the first page.' })),
@@ -1923,7 +1836,7 @@ function previewBody(key, job, openReportAt, opts = {}) {
           stage)));
   const init = () => {
     // open on the most telling graph: copied sentences first, then claims, then the reference map
-    const PREF = ['macro_redundancy', 'argument_graph', 'cross_refs', 'citation_isolation', 'figure_exposition', 'evidence_gap'];
+    const PREF = ['figure_exposition', 'macro_redundancy', 'argument_graph', 'cross_refs', 'citation_isolation', 'evidence_gap'];
     const first = PREF.find(k => ms[k]?.status === 'done' && (ms[k].instances || []).length && measureViz(ms[k], doc)) || ORDER.find(k => measureViz(ms[k], doc));
     if (first) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
     drawMap(map, doc, ms, () => openReportAt('findings'));
