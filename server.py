@@ -49,6 +49,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 _load_dotenv(os.path.join(HERE, ".env"))
 
 from engine.fetch import InputError, find_paper_pdf, materialize, resolve_url, _get  # noqa: E402
+from engine.typeset import compile_latex
 from engine.highlight import annotated_pdf, page_image  # noqa: E402
 from engine.llm import LLM  # noqa: E402
 from engine.pipeline import analyze_document, attach_pdf, document_summary, read_document, rerun_figure  # noqa: E402
@@ -218,6 +219,16 @@ async def _run(job: dict, kind: Optional[str], path: Optional[str], url: Optiona
             view_pdf = meta.get("view_pdf") or (path if kind == "pdf" else None)
             if not view_pdf and kind == "latex":
                 view_pdf = await asyncio.to_thread(find_paper_pdf, path, doc.title)
+            if not view_pdf and kind == "latex":
+                # no compiled PDF came with the source: typeset it here so the findings can be shown on the paper
+                job["stage"] = "Typesetting the paper"
+                progress(16, "Typesetting the paper (LaTeX → PDF)")
+                notes: list[str] = []
+                view_pdf = await asyncio.to_thread(compile_latex, path, 300, notes.append)
+                if view_pdf:
+                    meta["route"] = (meta.get("route") or "LaTeX source") + " · typeset here"
+                elif notes:
+                    print("typeset failed:", notes[-1][-300:])
             if not doc.title and view_pdf:
                 doc.title = await asyncio.to_thread(_pdf_title, view_pdf)
             job["document"] = document_summary(doc, meta)

@@ -69,6 +69,7 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
 - **Argument graph**: 논문은 Qwen2.5-7B의 log-probability로 PMI를 계산해 각 claim의 supporting sentence를 고릅니다. gpt-5.6-luna 호출에서는 logprob을 쓰지 않으므로, claim마다 나머지 Introduction 문장을 **무작위 순서 + 중립 ID**로 보여 주고 LLM이 하나를 고르게 했습니다. 위치 정보가 없으니 선택이 문장 순서에 끌리지 않습니다 (PMI처럼 (context, claim) 쌍만 보고 판단). claim 라벨은 논문처럼 3회 다수결입니다.
 - **Citation isolation**: 논문의 "frozen cue list"가 공개되어 있지 않아, 관계 cue 목록을 재구성했습니다 (`engine/text.py`).
 - **Figure exposition**: method figure는 caption gate(overview / pipeline / framework / architecture / workflow / schematic)로 고릅니다. 통과하는 figure가 없으면 N/A이며, 리포트에서 사용자가 직접 figure를 골라 채점할 수 있습니다.
+- **LaTeX만 올린 경우**: 아카이브에 컴파일된 PDF가 없으면 서버가 [Tectonic](https://tectonic-typesetting.github.io/)으로 직접 조판합니다 (Docker 이미지에 포함, 자주 쓰는 패키지는 빌드 때 미리 캐시). 조판된 PDF 위에 발견 항목을 올리고, 리더·플래깅·스냅샷이 모두 동작합니다. 로컬에서는 `tectonic`이 PATH나 `.venv/bin`에 있으면 되고, 없으면 `latexmk`를 시도합니다.
 - **PDF 입력**: 논문의 Agents4Science 처리와 같이 PDF에서 구조를 복원합니다. LaTeX로 만든 PDF는 hyperref 내부 링크로 `\ref`/`\eqref`를 거의 그대로 복원합니다. arXiv 4편(DetectGPT, Self-Refine, Binoculars, Attention)에서 PDF와 LaTeX 결과를 비교해 섹션 구성과 Evidence gap이 일치하고, Cross-section references 차이는 0.02–0.08입니다.
 - **Index 구간**(Low < 20 ≤ Moderate < 40 ≤ High < 60 ≤ Very high)은 서술용 구분이며, 보정된 AI 확률이 아닙니다. 논문의 AI 확률은 FARS 쌍에 대한 logistic fit인데, 그 데이터가 여기 없기 때문입니다.
 

@@ -66,8 +66,8 @@ def attach_pdf(result: dict, doc: Document, out_dir: str, view_pdf: Optional[str
         shutil.copyfile(view_pdf, keep)
     if not os.path.exists(keep):
         result["pdf"] = {"available": False,
-                         "reason": "No PDF of this paper was available (LaTeX source only). Upload the PDF, or an "
-                                   "archive that includes the compiled PDF, to see the findings on the paper."}
+                         "reason": "No PDF of this paper was available and the LaTeX source could not be typeset. Upload "
+                                   "the PDF, or an archive that includes the compiled PDF, to see the findings on the paper."}
         return
     try:
         info = locate_findings(result, doc, keep, pdf_doc=doc if doc.source == "pdf" else None)
