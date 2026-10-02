@@ -186,10 +186,12 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 
 /* deep dive on the home page */
 .dive-wrap { padding-top: 8px; }
-.dive { padding: 22px 24px 26px; margin-top: -8px; }
-.dive-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
-.dive-title { margin: 0; font-size: 22px; line-height: 1.25; letter-spacing: -.015em; }
-.dive-meta { margin: 4px 0 0; color: var(--ink-3); font-size: 13.5px; }
+.dive { padding: 16px 24px 22px; margin-top: -8px; }
+.dive-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.dive-head-l { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.dive-eyebrow { margin: 0; flex: none; }
+.dive-title { margin: 0; font-size: 17px; line-height: 1.3; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.dive-meta { color: var(--ink-3); font-size: 13px; flex: none; }
 .dive .score-card { border: 1px solid var(--line); box-shadow: none; padding: 16px 20px; }
 .dive .hero-num .n { font-size: 64px; }
 .dive .plane-tiles { margin-top: 12px; }
@@ -230,7 +232,7 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .cf-dots { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
 .cf-dot { width: 8px; height: 8px; border-radius: 50%; border: 0; background: var(--line-2); padding: 0; cursor: pointer; }
 .cf-dot.on { background: var(--ink); transform: scale(1.25); }
-@media (max-width: 860px) { .cf-stage { height: 340px; } .cf-card { width: 78%; } .dive { padding: 16px; } .dive-head { flex-direction: column; } .planes-wrap { padding: 40px 16px 8px; } }
+@media (max-width: 860px) { .cf-stage { height: 340px; } .cf-card { width: 78%; } .dive { padding: 16px; } .dive-head { flex-direction: column; align-items: flex-start; } .dive-head-l { flex-wrap: wrap; } .dive-title { white-space: normal; } .planes-wrap { padding: 40px 16px 8px; } }
 @media (prefers-reduced-motion: reduce) { .cf-card { transition: none; } }
 
 /* ------------------------------------------------------------------ report */

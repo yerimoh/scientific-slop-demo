@@ -1929,10 +1929,10 @@ async function renderDeepDive(key, ranked) {
   const x = ranked.find(r => r.key === key); const rank = x ? ranked.indexOf(x) + 1 : null;
   host.replaceChildren(
     h('div', { class: 'dive-head' },
-      h('div', {},
-        h('p', { class: 'eyebrow', text: 'Example · what a report looks like' }),
-        h('h2', { class: 'dive-title' }, x?.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, doc.title || job.title),
-        h('p', { class: 'dive-meta', text: [x?.source, rank ? `ranked #${rank} of ${ranked.length} papers on this site` : null].filter(Boolean).join(' · ') })),
+      h('div', { class: 'dive-head-l' },
+        h('span', { class: 'eyebrow dive-eyebrow', text: 'Example report' }),
+        h('h2', { class: 'dive-title', title: doc.title || job.title }, x?.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, doc.title || job.title),
+        h('span', { class: 'dive-meta', text: [x?.source, rank ? `#${rank} of ${ranked.length}` : null].filter(Boolean).join(' · ') })),
       h('div', { class: 'modal-actions' },
         h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('paper') }, 'All pages'),
         h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('findings') }, 'Full report →'))),
