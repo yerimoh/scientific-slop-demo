@@ -1802,7 +1802,7 @@ function previewBody(key, job, openReportAt, opts = {}) {
   }
   opts_key.current = key;
   const stage = h('div', { class: 'viz-stage' }); const stageTitle = h('h3', { text: 'Graph' }); const stageSub = h('p', { text: '' });
-  const bars = measureBars(ms, (k, row) => {
+  const bars = measureBars(ms, compact ? null : (k, row) => {
     bars.querySelectorAll('.mb-row').forEach(r => r.classList.toggle('on', r === row));
     const v = measureViz(ms[k], doc); stageTitle.textContent = MEASURES[k].name;
     stageSub.textContent = v ? MEASURES[k].unit : (ms[k]?.status === 'done' ? 'No graph for this measure on this paper.' : 'This measure did not run.');
@@ -1819,10 +1819,8 @@ function previewBody(key, job, openReportAt, opts = {}) {
         h('div', { class: 'prev-col' },
           h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
           map,
-          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
-          bars,
-          h('div', { class: 'section-title' }, stageTitle, stageSub),
-          stage))
+          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Share of measured units that show each pattern.' })),
+          bars))
       : h('div', { class: 'prev-grid' },
         h('div', { class: 'prev-left' },
           h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings placed here. Hover one to read why; click it for details.` : 'Nothing flagged on the first page.' })),
@@ -1838,7 +1836,7 @@ function previewBody(key, job, openReportAt, opts = {}) {
     // open on the most telling graph: copied sentences first, then claims, then the reference map
     const PREF = ['figure_exposition', 'macro_redundancy', 'argument_graph', 'cross_refs', 'citation_isolation', 'evidence_gap'];
     const first = PREF.find(k => ms[k]?.status === 'done' && (ms[k].instances || []).length && measureViz(ms[k], doc)) || ORDER.find(k => measureViz(ms[k], doc));
-    if (first) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
+    if (first && !compact) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
     drawMap(map, doc, ms, () => openReportAt('findings'));
     requestAnimationFrame(() => requestAnimationFrame(() => body.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
   };
