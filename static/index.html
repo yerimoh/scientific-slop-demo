@@ -91,7 +91,7 @@
             <p class="call-p">The next version is built from what the community finds. Mark slop the index missed, dispute what it got wrong, name patterns it does not know yet.<br>Every contribution is credited. Substantial ones earn <mark class="coauthor">co-authorship on the v2 paper</mark>.</p>
             <form id="ct-ask" class="call-ask" autocomplete="off">
               <input id="ct-url" type="text" inputmode="url" placeholder="Paste a link to any paper, or upload its PDF" aria-label="Paper link">
-              <button class="btn" type="submit">Open in reader →</button>
+              <button class="finder-btn" type="submit"><svg class="fb-ico" viewBox="0 0 34 34" aria-hidden="true"><circle cx="15" cy="15" r="9.5" fill="rgba(255,255,255,.08)"/><path d="M15 4.5A10.5 10.5 0 0 1 24.1 20.25" fill="none" stroke="#b98aa3" stroke-width="3.2"/><path d="M24.1 20.25A10.5 10.5 0 0 1 5.9 20.25" fill="none" stroke="#e8a1a9" stroke-width="3.2"/><path d="M5.9 20.25A10.5 10.5 0 0 1 15 4.5" fill="none" stroke="#90aebb" stroke-width="3.2"/><circle cx="12.5" cy="12.5" r="2.1" fill="#b98aa3"/><circle cx="18.5" cy="16.5" r="2.4" fill="#e8a1a9"/><circle cx="12.8" cy="19.2" r="1.8" fill="#90aebb"/><path d="M22.5 22.5 30 30" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg><span class="fb-l"><small>open in</small><b>The SciSlop Finder</b></span><span class="fb-arrow" aria-hidden="true">→</span></button>
               <span class="file-btn call-file" title="Choose a PDF"><button class="ib" type="button" tabindex="-1" aria-label="Choose a PDF"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></button><input id="ct-file" type="file" accept=".pdf,.zip,.tar,.gz,.tgz,.tex" aria-label="Upload a PDF"></span>
             </form>
             <div class="call-links">
@@ -108,6 +108,15 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="wrap news">
+      <h2 class="sec-h left">News</h2>
+      <ul class="news-list">
+        <li><span class="news-date">Oct 2026</span><span class="news-body"><b>Paper, benchmark, code, and this site are out.</b> <i>Science or Slop?</i> is on <a href="https://arxiv.org/abs/2610.00531" target="_blank" rel="noopener">arXiv (2610.00531)</a>, SciSlopBench on <a href="https://huggingface.co/datasets/yerim0210/Scientific_Slop" target="_blank" rel="noopener">Hugging Face</a>, the code on <a href="https://github.com/yerimoh/ScientificSlop" target="_blank" rel="noopener">GitHub</a>.</span></li>
+        <li><span class="news-date">Coming</span><span class="news-body"><b>A Science Slop Index for every ICLR submission.</b> We are preparing to run the six measures over this year's ~60K ICLR submissions and publish the venue-wide picture: how much scientific slop is in the pool, which patterns, and how it relates to the outcomes.</span></li>
+        <li class="news-ask"><span class="news-date">Looking for</span><span class="news-body"><b>API credit sponsorship.</b> The four rule-based measures run on our own machines; the two model-based ones (Argument graph, Figure exposition) need roughly a million model calls for 60K papers. If your organization can sponsor API credits, write to <a href="mailto:yerim.oh@vision.snu.ac.kr">yerim.oh@vision.snu.ac.kr</a>. Sponsors are acknowledged in the release.</span></li>
+      </ul>
     </div>
 
     <div class="wrap team">

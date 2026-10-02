@@ -598,7 +598,9 @@ function paperView(job) {
   const zoomLbl = h('span', { class: 'rd-zoom-v', text: `${state.zoom}%` });
   const setZoom = z => { state.zoom = Math.max(60, Math.min(160, z)); pagesHost.style.setProperty('--zoom', state.zoom / 100); zoomLbl.textContent = `${state.zoom}%`; setTimeout(() => { layoutNotes(pagesHost); if (state.spine) drawSpine(spine, pagesHost, pageEls, res, key); }, 60); };
   const F = state.flags; const nF = F.items.length + F.disputed.size;
+  const brand = h('span', { class: 'rd-brand', title: 'The SciSlop Finder: the paper with every finding on its pages' }); brand.innerHTML = FINDER_INNER.replace('<small>open in</small>', '').replace(/<span class="fb-arrow"[^<]*<\/span>/, '');
   const toolbar = h('div', { class: 'rd-bar' },
+    brand,
     h('span', { class: 'rd-title', text: trunc((res.document || {}).title || '', 70) }),
     h('span', { class: 'rd-idx' }, h('b', { text: res.index?.index != null ? String(res.index.index) : '—' }), ' / 100'),
     h('span', { class: 'rd-sp' }),
@@ -1746,6 +1748,13 @@ async function fetchReport(key) {
   return job;
 }
 
+// ------------------------------------------------------------------ The SciSlop Finder (the reader)
+const FINDER_INNER = '<svg class="fb-ico" viewBox="0 0 34 34" aria-hidden="true"><circle cx="15" cy="15" r="9.5" fill="rgba(255,255,255,.08)"/><path d="M15 4.5A10.5 10.5 0 0 1 24.1 20.25" fill="none" stroke="#b98aa3" stroke-width="3.2"/><path d="M24.1 20.25A10.5 10.5 0 0 1 5.9 20.25" fill="none" stroke="#e8a1a9" stroke-width="3.2"/><path d="M5.9 20.25A10.5 10.5 0 0 1 15 4.5" fill="none" stroke="#90aebb" stroke-width="3.2"/><circle cx="12.5" cy="12.5" r="2.1" fill="#b98aa3"/><circle cx="18.5" cy="16.5" r="2.4" fill="#e8a1a9"/><circle cx="12.8" cy="19.2" r="1.8" fill="#90aebb"/><path d="M22.5 22.5 30 30" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg><span class="fb-l"><small>open in</small><b>The SciSlop Finder</b></span><span class="fb-arrow" aria-hidden="true">→</span>';
+function finderBtn(onclick, cls = '') {
+  const b = h('button', { type: 'button', class: 'finder-btn' + (cls ? ' ' + cls : ''), onclick, title: 'Read the paper with every finding drawn on its pages, and flag what the index missed' });
+  b.innerHTML = FINDER_INNER;
+  return b;
+}
 // ------------------------------------------------------------------ page stage (home example)
 // One page shown large with its findings drawn on it; a filmstrip of every page below it.
 // Hover or click a thumbnail to show that page; hover a mark to read why; click a mark for the card.
@@ -1877,7 +1886,7 @@ async function openPreview(key) {
     h('div', { class: 'modal-head' },
       h('div', {}, h('p', { class: 'eyebrow', text: 'Preview' }), h('h3', { text: doc.title || job.title || 'Paper' })),
       h('div', { class: 'modal-actions' },
-        h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('paper') }, 'Open in the reader →'),
+        finderBtn(() => openReportAt('paper'), 'small'),
         h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('findings') }, 'Findings'),
         h('button', { class: 'hl-x', type: 'button', 'aria-label': 'Close', onclick: close }, '×'))),
     body);
@@ -2005,7 +2014,7 @@ async function renderDeepDive(key, ranked) {
         h('h2', { class: 'dive-title', title: doc.title || job.title }, x?.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, doc.title || job.title),
         h('span', { class: 'dive-meta', text: [x?.source, rank ? `#${rank} of ${ranked.length}` : null].filter(Boolean).join(' · ') })),
       h('div', { class: 'modal-actions' },
-        h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('paper') }, 'Open in the reader →'),
+        finderBtn(() => openReportAt('paper'), 'small'),
         h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('findings') }, 'Findings'))),
     body);
   init();

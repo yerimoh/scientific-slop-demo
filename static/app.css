@@ -869,6 +869,28 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 
 /* ------------------------------------------------------------------ propose */
 .call-band { padding: 40px 0 44px; margin-top: 8px; }
+.call-band + .news { padding-top: 44px; }
+.news { padding: 48px 24px 0; }
+.news-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; max-width: 920px; }
+.news-list li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; align-items: start; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14.5px; line-height: 1.5; }
+.news-date { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding-top: 3px; }
+.news-list li.news-ask { border-color: color-mix(in oklab, var(--red) 45%, var(--line)); background: color-mix(in oklab, var(--red) 6%, var(--surface)); }
+.news-list li.news-ask .news-date { color: var(--red); }
+.news-body b { color: var(--ink); }
+@media (max-width: 640px) { .news-list li { grid-template-columns: 1fr; gap: 4px; } }
+/* The SciSlop Finder: the reader, presented as a device of its own */
+.finder-btn { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 8px; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: linear-gradient(180deg, #2b3647 0%, #1f2937 55%, #161d28 100%); color: #fff; cursor: pointer; text-decoration: none; box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 6px 16px -8px rgba(31,41,55,.6); transition: transform .12s, box-shadow .15s; white-space: nowrap; font: inherit; }
+.finder-btn:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 10px 22px -8px rgba(31,41,55,.65), 0 0 0 3px color-mix(in oklab, var(--argument) 35%, transparent); }
+.finder-btn:active { transform: translateY(0); }
+.finder-btn .fb-ico { width: 30px; height: 30px; flex: none; filter: drop-shadow(0 0 4px rgba(232,161,169,.35)); }
+.finder-btn .fb-l { display: grid; line-height: 1.1; text-align: left; }
+.finder-btn .fb-l small { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.62); font-weight: 600; }
+.finder-btn .fb-l b { font-size: 14px; font-weight: 700; letter-spacing: .01em; }
+.finder-btn .fb-arrow { margin-left: 2px; color: rgba(255,255,255,.7); }
+.finder-btn.small { padding: 4px 12px 4px 6px; } .finder-btn.small .fb-ico { width: 26px; height: 26px; } .finder-btn.small .fb-l b { font-size: 13px; } .finder-btn.small .fb-l small { font-size: 9px; }
+.rd-brand { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 4px; border-radius: 999px; background: var(--ink); color: var(--bg); flex: none; }
+.rd-brand .fb-ico { width: 22px; height: 22px; } .rd-brand .fb-l { display: grid; line-height: 1; } .rd-brand .fb-l b { font-size: 12px; font-weight: 700; }
+:root:not([data-theme="light"]) .finder-btn, :root[data-theme="dark"] .finder-btn { border-color: rgba(255,255,255,.2); }
 .call-band + .team { padding-top: 40px; }
 .propose-teaser { padding: 0 24px; }
 .hero-call { display: block; max-width: 720px; margin: 16px auto 0; padding: 10px 16px; border-radius: 12px; background: var(--argument-band); border: 1px solid var(--argument-light); color: var(--ink-2); font-size: 14px; text-decoration: none; line-height: 1.45; }
