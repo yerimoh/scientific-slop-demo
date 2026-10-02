@@ -1829,6 +1829,38 @@ function pickExhibits(job, openAt) {
   }
   return cards.slice(0, 3);
 }
+
+// ------------------------------------------------------------------ page deck (home example)
+// Every page of the paper, fanned like a stack of sheets, with the findings drawn on each one.
+// Hover a page to bring it to the front; hover a mark to read why; click a mark for the card.
+function pageDeck(key, res, openFindings) {
+  const pdf = res.pdf || {}; const sizes = pdf.sizes || [];
+  const n = Math.min(sizes.length, (STATIC_MODE && STATIC_KEYS.has(key)) ? (state.config?.max_pages || 40) : sizes.length);
+  const per = Array.from({ length: n }, () => []);
+  for (const m of res.measures) (m.instances || []).forEach((it, i) => (it.pdf || []).forEach(loc => { if (loc.p < n) for (const r of loc.r) per[loc.p].push({ m, it, i, r, box: !!loc.box }); }));
+  const STEP = 36, SIDE = 7;
+  const deck = h('div', { class: 'deck' });
+  per.forEach((marks, p) => {
+    const [pw, ph] = sizes[p] || [612, 792];
+    const page = h('div', { class: 'pv-page deck-page', style: { zIndex: String(n - p), left: `${p * SIDE}px`, top: `${p * STEP}px`, width: `calc(100% - ${(n - 1) * SIDE}px)` } },
+      h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${p}.jpg`, alt: `Page ${p + 1}`, loading: 'lazy', style: { aspectRatio: `${pw} / ${ph}` } }),
+      h('span', { class: 'deck-tab', text: `p. ${p + 1}` + (marks.length ? ` · ${marks.length} finding${marks.length === 1 ? '' : 's'}` : '') }));
+    for (const hl of marks) {
+      const [x0, y0, x1, y1] = hl.r;
+      const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, tabindex: 0, style: { left: `${100 * x0 / pw}%`, top: `${100 * y0 / ph}%`, width: `${100 * (x1 - x0) / pw}%`, height: `${100 * (y1 - y0) / ph}%` } });
+      bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 160));
+      d.addEventListener('click', e => { e.stopPropagation(); hideTip(); hlCard(page, hl, { x0, y0, x1, y1 }, pw, ph, openFindings); });
+      page.append(d);
+    }
+    page.addEventListener('pointerenter', () => { deck.querySelectorAll('.deck-page.top').forEach(x => x.classList.remove('top')); page.classList.add('top'); });
+    deck.append(page);
+  });
+  deck.addEventListener('pointerleave', () => { if (!deck.querySelector('.hl-card')) deck.querySelectorAll('.deck-page.top').forEach(x => x.classList.remove('top')); });
+  if (n < sizes.length) deck.append(h('span', { class: 'deck-more', text: `+${sizes.length - n} more pages in the reader` }));
+  const fit = () => { const w = deck.clientWidth - (n - 1) * SIDE; const [pw, ph] = sizes[0] || [612, 792]; deck.style.height = `${w * ph / pw + (n - 1) * STEP}px`; };
+  new ResizeObserver(fit).observe(deck); fit();
+  return deck;
+}
 // The report digest: score card, first page with highlights, paper map, six measures with a graph stage.
 function previewBody(key, job, openReportAt, opts = {}) {
   const res = job.result; const doc = res.document || {}; const ms = measuresOf(job);
@@ -1857,9 +1889,9 @@ function previewBody(key, job, openReportAt, opts = {}) {
     scoreCard(res.index, ms, false),
     compact
       ? h('div', { class: 'prev-grid3' },
-        h('div', { class: 'prev-col prev-col-ex' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'What it found' }), h('p', { text: 'The most telling findings, in the paper\'s own words.' })),
-          h('div', { class: 'exh-row' }, ...pickExhibits(job, openReportAt))),
+        h('div', { class: 'prev-col' },
+          h('div', { class: 'section-title' }, h('h3', { text: 'On the paper' }), h('p', { text: `${marks.length ? `${res.measures.reduce((a, m) => a + (m.instances || []).length, 0)} findings over ${pdf.sizes?.length || 0} pages. ` : ''}Hover a page to lift it, hover a mark to read why, click it for details.` })),
+          pageDeck(key, res, () => openReportAt('findings'))),
         h('div', { class: 'prev-col' },
           h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
           map,
@@ -1867,7 +1899,10 @@ function previewBody(key, job, openReportAt, opts = {}) {
           bars),
         h('div', { class: 'prev-col' },
           h('div', { class: 'section-title' }, stageTitle, stageSub),
-          stage))
+          stage),
+        h('div', { class: 'prev-col prev-col-ex' },
+          h('div', { class: 'section-title' }, h('h3', { text: 'What it found' }), h('p', { text: 'The most telling findings, cut from the pages above.' })),
+          h('div', { class: 'exh-row' }, ...pickExhibits(job, openReportAt))))
       : h('div', { class: 'prev-grid' },
         h('div', { class: 'prev-left' },
           h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings placed here. Hover one to read why; click it for details.` : 'Nothing flagged on the first page.' })),
