@@ -26,7 +26,7 @@ def dump(rel, obj):
 async def main():
     gal = await server.gallery()
     dump("api/gallery.json", gal)
-    featured = os.environ.get("SCISLOP_FEATURED", "4jrs-rg3f-g5uq")
+    featured = os.environ.get("SCISLOP_FEATURED", "sut7-28cn-z7r6")
     dump("api/config.json", {"llm": {"model": "", "provider": ""}, "llm_available": False, "byok": False, "static": True, "live": args.live, "max_pages": args.max_pages,
                              "featured": featured if featured in server.JOBS else (gal["items"][0]["key"] if gal["items"] else None),
                              "max_upload_mb": 0, "persistent": True, "examples": []})

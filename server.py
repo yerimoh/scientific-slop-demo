@@ -919,7 +919,7 @@ def _github_proposals() -> list:
 async def _warm_up():
     """After a (re)start: make sure the featured paper's PDF and first page are on disk, so the home loads fast."""
     await asyncio.sleep(2)
-    key = os.environ.get("SCISLOP_FEATURED", "4jrs-rg3f-g5uq")
+    key = os.environ.get("SCISLOP_FEATURED", "sut7-28cn-z7r6")
     job = JOBS.get(key)
     if not job:
         return
@@ -986,7 +986,7 @@ async def propose(request: Request, body: dict):
 @app.get("/api/config")
 async def config():
     llm = LLM()
-    featured = os.environ.get("SCISLOP_FEATURED", "4jrs-rg3f-g5uq")
+    featured = os.environ.get("SCISLOP_FEATURED", "sut7-28cn-z7r6")
     if featured not in JOBS:
         featured = next((k for k, j in JOBS.items() if j.get("status") == "done" and j.get("gallery")), None)
     return {"llm": llm.describe(), "llm_available": llm.available, "byok": True, "featured": featured,

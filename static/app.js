@@ -1794,7 +1794,9 @@ function previewBody(key, job, openReportAt, opts = {}) {
           h('div', { class: 'section-title' }, stageTitle, stageSub),
           stage)));
   const init = () => {
-    const first = ORDER.find(k => measureViz(ms[k], doc));
+    // open on the most telling graph: copied sentences first, then claims, then the reference map
+    const PREF = ['macro_redundancy', 'argument_graph', 'cross_refs', 'citation_isolation', 'figure_exposition', 'evidence_gap'];
+    const first = PREF.find(k => ms[k]?.status === 'done' && (ms[k].instances || []).length && measureViz(ms[k], doc)) || ORDER.find(k => measureViz(ms[k], doc));
     if (first) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
     drawMap(map, doc, ms, () => openReportAt('findings'));
     requestAnimationFrame(() => requestAnimationFrame(() => body.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
