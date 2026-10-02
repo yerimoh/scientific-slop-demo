@@ -49,7 +49,11 @@
   <section id="page-home">
     <div class="hero-band">
       <div class="wrap landing">
-        <a class="pill" href="/how" data-link>Based on <i>Science or Slop?</i> · ICLR 2027 submission →</a>
+        <div class="res-row">
+          <a class="res-btn" href="https://arxiv.org/abs/2610.00531" target="_blank" rel="noopener"><span class="rb-ico">📄</span><span><b>Paper</b><small>arXiv:2610.00531</small></span></a>
+          <a class="res-btn" href="https://github.com/yerimoh/ScientificSlop" target="_blank" rel="noopener"><span class="rb-ico">⌘</span><span><b>Code</b><small>github.com/yerimoh/ScientificSlop</small></span></a>
+          <a class="res-btn" href="https://huggingface.co/datasets/yerim0210/Scientific_Slop" target="_blank" rel="noopener"><span class="rb-ico">🤗</span><span><b>Benchmark</b><small>SciSlopBench · 390 pairs</small></span></a>
+        </div>
         <h1 class="hero">Science, or <em>slop</em>?</h1>
         <p class="lede">A paper can read well sentence by sentence while its science does not connect. Unlike token-level AI detectors, the Science Slop Index reads the <em class="lede-k">scientific reasoning</em>: whether <span class="lede-structure">sections build on one another</span>, <span class="lede-argument">claims and citations are argued</span>, and <span class="lede-artifacts">the method and evidence can be inspected</span>.</p>
         <form id="ask" class="ask" autocomplete="off">
@@ -114,12 +118,20 @@
 
     <div class="wrap cite">
       <h2 class="sec-h left">Cite</h2>
-      <p class="cap muted" style="margin:4px 0 12px">If you use the Science Slop Index or SciSlopBench, please cite the paper.</p>
+      <p class="cap muted" style="margin:4px 0 12px">If you use the Science Slop Index, SciSlopBench, or the code, please cite the paper.</p>
+      <div class="res-row res-row-l">
+        <a class="res-btn" href="https://arxiv.org/abs/2610.00531" target="_blank" rel="noopener"><span class="rb-ico">📄</span><span><b>Paper</b><small>arXiv:2610.00531</small></span></a>
+        <a class="res-btn" href="https://github.com/yerimoh/ScientificSlop" target="_blank" rel="noopener"><span class="rb-ico">⌘</span><span><b>Code</b><small>measures, harness, scripts</small></span></a>
+        <a class="res-btn" href="https://huggingface.co/datasets/yerim0210/Scientific_Slop" target="_blank" rel="noopener"><span class="rb-ico">🤗</span><span><b>Benchmark</b><small>SciSlopBench on Hugging Face</small></span></a>
+      </div>
       <div class="bib card"><pre id="bib">@article{oh2026scislop,
-  title   = {Science or Slop?: Benchmarking and Mitigating Scientific Slop in AI-Generated Papers},
-  author  = {Oh, Yerim and Lee, Young-Jun and Ahn, Jaewoo and Kim, Gunhee and Kang, Dongyeop},
-  journal = {arXiv preprint arXiv:2610.00000},
-  year    = {2026}
+  title         = {Science or Slop?: Benchmarking and Mitigating Scientific Slop in AI-Generated Papers},
+  author        = {Oh, Yerim and Lee, Young-Jun and Ahn, Jaewoo and Kim, Gunhee and Kang, Dongyeop},
+  journal       = {arXiv preprint arXiv:2610.00531},
+  year          = {2026},
+  eprint        = {2610.00531},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2610.00531}
 }</pre><button class="btn ghost small bib-copy" type="button" id="bib-copy">Copy BibTeX</button></div>
     </div>
 
@@ -348,7 +360,7 @@
 
 <footer>
   <div class="wrap">
-    <span>Based on “Science or Slop? Benchmarking and Mitigating Scientific Slop in AI-Generated Papers” (ICLR 2027 submission).</span>
+    <span><a href="https://arxiv.org/abs/2610.00531" target="_blank" rel="noopener"><i>Science or Slop?: Benchmarking and Mitigating Scientific Slop in AI-Generated Papers</i></a> · arXiv:2610.00531 · <a href="https://github.com/yerimoh/ScientificSlop" target="_blank" rel="noopener">Code</a> · <a href="https://huggingface.co/datasets/yerim0210/Scientific_Slop" target="_blank" rel="noopener">Benchmark</a></span>
     <span>The index describes a paper's text, not its authors.</span>
   </div>
 </footer>

@@ -1,6 +1,6 @@
 # Science Slop Index
 
-논문 한 편(PDF, LaTeX 소스, arXiv / OpenReview 링크)을 넣으면 *Science or Slop?* (ICLR 2027 submission)의 6가지 scientific slop 측정을 돌려 **Science Slop Index (0–100)** 와 근거 위치를 보여주는 웹사이트입니다.
+논문 한 편(PDF, LaTeX 소스, arXiv / OpenReview 링크)을 넣으면 *Science or Slop?* (arXiv:2610.00531)의 6가지 scientific slop 측정을 돌려 **Science Slop Index (0–100)** 와 근거 위치를 보여주는 웹사이트입니다.
 
 ```
 S(p) = plane 평균( plane 안에서 적용 가능한 measure 평균 )      # Appendix A, Eq. slop-aggregate

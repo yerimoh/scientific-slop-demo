@@ -1817,8 +1817,8 @@ async function openPreview(key) {
     h('div', { class: 'modal-head' },
       h('div', {}, h('p', { class: 'eyebrow', text: 'Preview' }), h('h3', { text: doc.title || job.title || 'Paper' })),
       h('div', { class: 'modal-actions' },
-        h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('paper') }, 'All pages'),
-        h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('findings') }, 'Full report →'),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('paper') }, 'Open in the reader →'),
+        h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('findings') }, 'Findings'),
         h('button', { class: 'hl-x', type: 'button', 'aria-label': 'Close', onclick: close }, '×'))),
     body);
   init();
@@ -1945,8 +1945,8 @@ async function renderDeepDive(key, ranked) {
         h('h2', { class: 'dive-title', title: doc.title || job.title }, x?.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, doc.title || job.title),
         h('span', { class: 'dive-meta', text: [x?.source, rank ? `#${rank} of ${ranked.length}` : null].filter(Boolean).join(' · ') })),
       h('div', { class: 'modal-actions' },
-        h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('paper') }, 'All pages'),
-        h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('findings') }, 'Full report →'))),
+        h('button', { class: 'btn small', type: 'button', onclick: () => openReportAt('paper') }, 'Open in the reader →'),
+        h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('findings') }, 'Findings'))),
     body);
   init();
 }
