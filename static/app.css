@@ -100,13 +100,12 @@ a { color: inherit; }
     radial-gradient(42% 45% at 55% 100%, var(--artifacts) 0%, transparent 70%); }
 :root[data-theme="dark"] .hero-band::before { opacity: .28; }
 .landing { text-align: center; padding: 64px 0 56px; }
-.res-row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.res-row { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
 .res-row-l { justify-content: flex-start; margin-bottom: 14px; }
-.res-btn { display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); text-decoration: none; color: inherit; box-shadow: var(--shadow); transition: border-color .15s, transform .15s; text-align: left; }
-.res-btn:hover { border-color: var(--ink); transform: translateY(-1px); }
-.res-btn .rb-ico { width: 28px; height: 28px; border-radius: 8px; background: var(--surface-2); display: grid; place-items: center; font-size: 14px; font-weight: 700; color: var(--ink-2); }
-.res-btn b { display: block; font-size: 14px; line-height: 1.15; }
-.res-btn small { display: block; font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+.res-btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px 0 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line-2); color: var(--ink); font-weight: 600; font-size: 14px; text-decoration: none; box-shadow: var(--shadow); transition: background .15s, border-color .15s, transform .15s; }
+.res-btn:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); transform: translateY(-1px); }
+.res-btn svg { flex: none; }
+.res-btn .rb-emoji { font-size: 15px; line-height: 1; }
 .pill { display: inline-flex; align-items: center; gap: 7px; padding: 5px 13px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 12.5px; color: var(--ink-2); text-decoration: none; box-shadow: 0 1px 2px rgba(31,41,55,.05); }
 .pill i { font-style: italic; color: var(--ink); }
 .pill:hover { border-color: var(--line-2); color: var(--ink); }
