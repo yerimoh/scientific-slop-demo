@@ -1830,36 +1830,44 @@ function pickExhibits(job, openAt) {
   return cards.slice(0, 3);
 }
 
-// ------------------------------------------------------------------ page deck (home example)
-// Every page of the paper, fanned like a stack of sheets, with the findings drawn on each one.
-// Hover a page to bring it to the front; hover a mark to read why; click a mark for the card.
-function pageDeck(key, res, openFindings) {
+// ------------------------------------------------------------------ page stage (home example)
+// One page shown large with its findings drawn on it; a filmstrip of every page below it.
+// Hover or click a thumbnail to show that page; hover a mark to read why; click a mark for the card.
+function pageStage(key, res, openFindings) {
   const pdf = res.pdf || {}; const sizes = pdf.sizes || [];
   const n = Math.min(sizes.length, (STATIC_MODE && STATIC_KEYS.has(key)) ? (state.config?.max_pages || 40) : sizes.length);
   const per = Array.from({ length: n }, () => []);
   for (const m of res.measures) (m.instances || []).forEach((it, i) => (it.pdf || []).forEach(loc => { if (loc.p < n) for (const r of loc.r) per[loc.p].push({ m, it, i, r, box: !!loc.box }); }));
-  const STEP = 36, SIDE = 7;
-  const deck = h('div', { class: 'deck' });
-  per.forEach((marks, p) => {
-    const [pw, ph] = sizes[p] || [612, 792];
-    const page = h('div', { class: 'pv-page deck-page', style: { zIndex: String(n - p), left: `${p * SIDE}px`, top: `${p * STEP}px`, width: `calc(100% - ${(n - 1) * SIDE}px)` } },
-      h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${p}.jpg`, alt: `Page ${p + 1}`, loading: 'lazy', style: { aspectRatio: `${pw} / ${ph}` } }),
-      h('span', { class: 'deck-tab', text: `p. ${p + 1}` + (marks.length ? ` · ${marks.length} finding${marks.length === 1 ? '' : 's'}` : '') }));
+  const src = p => `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${p}.jpg`;
+  const big = h('div', { class: 'pv-page stage-page' });
+  const label = h('span', { class: 'stage-label' });
+  const strip = h('div', { class: 'stage-strip' });
+  let cur = -1;
+  const show = p => {
+    if (p === cur) return; cur = p;
+    const [pw, ph] = sizes[p] || [612, 792]; const marks = per[p];
+    big.replaceChildren(h('img', { src: src(p), alt: `Page ${p + 1}`, width: pw, height: ph, decoding: 'async' }));
     for (const hl of marks) {
       const [x0, y0, x1, y1] = hl.r;
       const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, tabindex: 0, style: { left: `${100 * x0 / pw}%`, top: `${100 * y0 / ph}%`, width: `${100 * (x1 - x0) / pw}%`, height: `${100 * (y1 - y0) / ph}%` } });
       bindTip(d, hl.m.name, trunc(hl.it.why || hl.it.text || '', 160));
-      d.addEventListener('click', e => { e.stopPropagation(); hideTip(); hlCard(page, hl, { x0, y0, x1, y1 }, pw, ph, openFindings); });
-      page.append(d);
+      d.addEventListener('click', e => { e.stopPropagation(); hideTip(); hlCard(big, hl, { x0, y0, x1, y1 }, pw, ph, openFindings); });
+      big.append(d);
     }
-    page.addEventListener('pointerenter', () => { deck.querySelectorAll('.deck-page.top').forEach(x => x.classList.remove('top')); page.classList.add('top'); });
-    deck.append(page);
+    label.textContent = `Page ${p + 1} of ${sizes.length}` + (marks.length ? ` · ${marks.length} finding${marks.length === 1 ? '' : 's'}` : ' · nothing flagged');
+    strip.querySelectorAll('.stage-thumb').forEach((t, i) => t.classList.toggle('on', i === p));
+  };
+  per.forEach((marks, p) => {
+    const [pw, ph] = sizes[p] || [612, 792];
+    const t = h('button', { type: 'button', class: 'stage-thumb', title: `Page ${p + 1}`, onpointerenter: () => show(p), onclick: () => show(p), onfocus: () => show(p) },
+      h('span', { class: 'g-page' }, h('img', { src: src(p), alt: '', loading: 'lazy', decoding: 'async', style: { aspectRatio: `${pw} / ${ph}` } }),
+        ...marks.map(k => h('span', { class: `g-mark ${k.m.plane}${k.box ? ' box' : ''}`, style: { left: `${100 * k.r[0] / pw}%`, top: `${100 * k.r[1] / ph}%`, width: `${100 * (k.r[2] - k.r[0]) / pw}%`, height: `${100 * (k.r[3] - k.r[1]) / ph}%` } }))),
+      h('span', { class: 'st-no', text: String(p + 1) }), marks.length ? h('span', { class: 'st-n', text: String(marks.length) }) : null);
+    strip.append(t);
   });
-  deck.addEventListener('pointerleave', () => { if (!deck.querySelector('.hl-card')) deck.querySelectorAll('.deck-page.top').forEach(x => x.classList.remove('top')); });
-  if (n < sizes.length) deck.append(h('span', { class: 'deck-more', text: `+${sizes.length - n} more pages in the reader` }));
-  const fit = () => { const w = deck.clientWidth - (n - 1) * SIDE; const [pw, ph] = sizes[0] || [612, 792]; deck.style.height = `${w * ph / pw + (n - 1) * STEP}px`; };
-  new ResizeObserver(fit).observe(deck); fit();
-  return deck;
+  if (n < sizes.length) strip.append(h('a', { class: 'stage-thumb stage-more', href: `/r/${key}?tab=paper&p=${n}`, 'data-link': '', text: `+${sizes.length - n}` }));
+  show(0);
+  return h('div', { class: 'stage' }, big, h('div', { class: 'stage-foot' }, label, h('span', { class: 'muted', text: 'Hover a thumbnail to switch pages' })), strip);
 }
 // The report digest: score card, first page with highlights, paper map, six measures with a graph stage.
 function previewBody(key, job, openReportAt, opts = {}) {
@@ -1890,14 +1898,13 @@ function previewBody(key, job, openReportAt, opts = {}) {
     compact
       ? h('div', { class: 'prev-grid3' },
         h('div', { class: 'prev-col' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'On the paper' }), h('p', { text: `${marks.length ? `${res.measures.reduce((a, m) => a + (m.instances || []).length, 0)} findings over ${pdf.sizes?.length || 0} pages. ` : ''}Hover a page to lift it, hover a mark to read why, click it for details.` })),
-          pageDeck(key, res, () => openReportAt('findings'))),
+          h('div', { class: 'section-title' }, h('h3', { text: 'On the paper' }), h('p', { text: `${res.measures.reduce((a, m) => a + (m.instances || []).length, 0)} findings over ${pdf.sizes?.length || 0} pages. Hover a mark to read why, click it for details.` })),
+          pageStage(key, res, () => openReportAt('findings'))),
         h('div', { class: 'prev-col' },
           h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
           map,
           h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
-          bars),
-        h('div', { class: 'prev-col' },
+          bars,
           h('div', { class: 'section-title' }, stageTitle, stageSub),
           stage),
         h('div', { class: 'prev-col prev-col-ex' },
