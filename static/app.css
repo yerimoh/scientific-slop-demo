@@ -190,7 +190,16 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .dive-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
 .dive-title { margin: 0; font-size: 22px; line-height: 1.25; letter-spacing: -.015em; }
 .dive-meta { margin: 4px 0 0; color: var(--ink-3); font-size: 13.5px; }
-.dive .score-card { border: 1px solid var(--line); box-shadow: none; }
+.dive .score-card { border: 1px solid var(--line); box-shadow: none; padding: 16px 20px; }
+.dive .hero-num .n { font-size: 64px; }
+.dive .plane-tiles { margin-top: 12px; }
+.prev-body.compact .prev-grid { gap: 18px; }
+.prev-page-clip { position: relative; max-height: 420px; overflow: hidden; border-radius: 6px; }
+.prev-page-clip .pv-page { border-radius: 6px 6px 0 0; }
+.prev-page-clip::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 110px; background: linear-gradient(transparent, var(--surface)); pointer-events: none; }
+.prev-more { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 2; font-size: 13px; font-weight: 600; color: var(--ink); background: var(--surface); border: 1px solid var(--line-2); border-radius: 999px; padding: 6px 14px; text-decoration: none; box-shadow: var(--shadow); white-space: nowrap; }
+.prev-body.compact .map-card { padding: 10px 14px 8px; }
+.prev-body.compact .mbars { gap: 5px; }
 .prev-body { display: grid; gap: 8px; }
 .sec-sub.left { text-align: left; margin-left: 0; }
 .planes-wrap { padding: 56px 24px 8px; }

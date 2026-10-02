@@ -1766,21 +1766,24 @@ function previewBody(key, job, openReportAt, opts = {}) {
     stage.replaceChildren(v || h('div', { class: 'muted', text: ms[k]?.status === 'done' ? 'Nothing to draw.' : ((ms[k]?.notes || [])[0] || 'Not measured.') }));
   });
   const map = h('div', { class: 'card map-card' });
-  const body = h('div', { class: 'prev-body' },
+  const compact = !!opts.compact;
+  const pageWrap = compact ? h('div', { class: 'prev-page-clip' }, page, h('a', { class: 'prev-more', href: `${BASE}/r/${key}?tab=paper`, 'data-link': '', text: 'Open the full page with every finding →' })) : page;
+  const compactBars = compact ? measureBars(ms, k => openReportAt('findings')) : null;
+  const body = h('div', { class: 'prev-body' + (compact ? ' compact' : '') },
     scoreCard(res.index, ms, false),
     h('div', { class: 'prev-grid' },
       h('div', { class: 'prev-left' },
         h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings placed here. Hover one to read why; click it for details.` : 'Nothing flagged on the first page.' })),
-        page),
+        pageWrap),
       h('div', { class: 'prev-right' },
         h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
         map,
-        h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
-        bars,
-        h('div', { class: 'section-title' }, stageTitle, stageSub),
-        stage)));
+        h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: compact ? 'Click a measure to open it in the report.' : 'Click a measure to see its graph.' })),
+        compact ? compactBars : bars,
+        compact ? null : h('div', { class: 'section-title' }, stageTitle, stageSub),
+        compact ? null : stage)));
   const init = () => {
-    const first = ORDER.find(k => measureViz(ms[k], doc));
+    const first = compact ? null : ORDER.find(k => measureViz(ms[k], doc));
     if (first) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
     drawMap(map, doc, ms, () => openReportAt('findings'));
     requestAnimationFrame(() => requestAnimationFrame(() => body.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
@@ -1922,7 +1925,7 @@ async function renderDeepDive(key, ranked) {
   const host = $('#dive'); host.replaceChildren(h('p', { class: 'muted', text: 'Loading the example…' }));
   let job; try { job = await fetchReport(key); } catch (_) { host.replaceChildren(); return; }
   const openReportAt = tab => go(`/r/${key}?tab=${tab}`);
-  const { body, init, doc } = previewBody(key, job, openReportAt);
+  const { body, init, doc } = previewBody(key, job, openReportAt, { compact: true });
   const x = ranked.find(r => r.key === key); const rank = x ? ranked.indexOf(x) + 1 : null;
   host.replaceChildren(
     h('div', { class: 'dive-head' },
