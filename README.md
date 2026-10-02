@@ -115,6 +115,7 @@ data/                작업별 리포트(job.json), 렌더링된 figure, LLM 캐
    ```
 2. **배포 → 새 배포 → 웹 앱**, 실행 사용자 "나", 액세스 "모든 사용자"로 배포하고 웹 앱 URL을 복사합니다.
 3. Render 서비스 환경 변수에 `SCISLOP_SHEETS_WEBHOOK=<그 URL>`을 넣습니다. 시트에는 `analysis`, `proposal`, `feedback` 탭이 자동으로 생깁니다.
+4. 플래그 스냅샷(드래그한 영역의 그림)은 `feedback` 행의 `snapshot_urls` 열에 링크로, `preview` 열에 `=IMAGE(...)`로 들어가 시트 안에서 바로 보입니다. 링크는 `/api/snap/<key>/<page>/<x0,y0,x1,y1>.jpg` 형태로 요청 때마다 PDF에서 다시 그리므로 서버에 파일을 두지 않습니다 (번들된 논문은 영구, 방문자가 올린 논문은 리포트가 서버에 남아 있는 동안). 영구 보관이 필요하면 `SCISLOP_SNAPSHOT_REPO=<owner/repo>`와 `GITHUB_TOKEN`(contents: write)을 설정하세요. 그러면 그림이 그 저장소의 `snapshots/<feedback id>/`에 커밋되고 시트는 raw 링크를 씁니다. 두 경우 모두 Apps Script는 위 코드 그대로면 됩니다. 저장소를 설정하지 않았을 때만 `kind: "snapshot"` 호출(이미지 base64)이 추가로 가며, 위 스크립트의 `saveSnapshots`가 Drive에 저장합니다.
 
 ## 정적 미러 (GitHub Pages)
 
