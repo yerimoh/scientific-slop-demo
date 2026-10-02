@@ -745,9 +745,35 @@ async def contributors():
 FEEDBACK_DIR = os.path.join(DATA, "feedback")
 
 
+def _render_piece(page, pc: dict) -> Optional[bytes]:
+    """One flagged region plus a little context, rendered at up to 2x with the marked rects tinted."""
+    import pymupdf
+    x0, y0, x1, y1 = pc["r"]
+    pad = 10 if pc.get("mode") == "text" else 6
+    clip = pymupdf.Rect(max(0, x0 - pad), max(0, y0 - pad), min(page.rect.width, x1 + pad), min(page.rect.height, y1 + pad)) & page.rect
+    if clip.is_empty:
+        return None
+    z = min(2.0, 1400 / max(clip.width, 1))
+    annots = []
+    for rr in (pc.get("rects") or [pc["r"]]):
+        an = page.add_rect_annot(pymupdf.Rect(*rr)); an.set_colors(stroke=(0.66, 0.2, 0.24), fill=(0.66, 0.2, 0.24)); an.set_border(width=0.6); an.set_opacity(0.22); an.update()
+        annots.append(an)
+    pix = page.get_pixmap(matrix=pymupdf.Matrix(z, z), clip=clip, alpha=False)
+    for an in annots:
+        page.delete_annot(an)
+    return pix.tobytes("jpeg", jpg_quality=80)
+
+
+def _snap_piece(pdf_path: str, pc: dict) -> Optional[bytes]:
+    import pymupdf
+    with pymupdf.open(pdf_path) as pdf:
+        if not (0 <= pc["p"] < len(pdf)):
+            return None
+        return _render_piece(pdf[pc["p"]], pc)
+
+
 def _crop_pieces(pdf_path: str, ann: list, out_dir: str) -> list:
     """Snapshot every marked piece: the region plus a little context, rendered from the PDF at 2x. Returns file names."""
-    import base64
     import pymupdf
     os.makedirs(out_dir, exist_ok=True)
     names = []
@@ -755,23 +781,10 @@ def _crop_pieces(pdf_path: str, ann: list, out_dir: str) -> list:
         for i, a in enumerate(ann):
             for j, pc in enumerate(a["pieces"]):
                 try:
-                    page = pdf[pc["p"]]
-                    x0, y0, x1, y1 = pc["r"]
-                    pad = 10 if pc.get("mode") == "text" else 6
-                    clip = pymupdf.Rect(max(0, x0 - pad), max(0, y0 - pad), min(page.rect.width, x1 + pad), min(page.rect.height, y1 + pad)) & page.rect
-                    if clip.is_empty:
+                    data = _render_piece(pdf[pc["p"]], pc)
+                    if not data:
                         continue
-                    z = min(2.0, 1400 / max(clip.width, 1))
-                    # tint the marked rects so the snapshot shows exactly what was flagged
-                    annots = []
-                    for rr in (pc.get("rects") or [pc["r"]]):
-                        an = page.add_rect_annot(pymupdf.Rect(*rr)); an.set_colors(stroke=(0.66, 0.2, 0.24), fill=(0.66, 0.2, 0.24)); an.set_border(width=0.6); an.set_opacity(0.22); an.update()
-                        annots.append(an)
-                    pix = page.get_pixmap(matrix=pymupdf.Matrix(z, z), clip=clip, alpha=False)
-                    for an in annots:
-                        page.delete_annot(an)
                     name = f"s{i + 1}_p{j + 1}.jpg"
-                    data = pix.tobytes("jpeg", jpg_quality=80)
                     with open(os.path.join(out_dir, name), "wb") as f:
                         f.write(data)
                     pc["image"] = name
@@ -779,6 +792,33 @@ def _crop_pieces(pdf_path: str, ann: list, out_dir: str) -> list:
                 except Exception as e:  # noqa: BLE001
                     print("crop failed:", e)
     return names
+
+
+@app.get("/api/snap/{key}/{n}/{rect}.jpg")
+async def snapshot_image(key: str, n: int, rect: str, m: str = "box", r: str = ""):
+    """A picture of one flagged region, rendered from the report's PDF on request (nothing stored):
+    rect = x0,y0,x1,y1 in PDF points; r = extra tinted rects "x0,y0,x1,y1;..." (text selections); m = box|text."""
+    job = _get_job(key)
+    try:
+        box = [float(v) for v in rect.split(",")]
+        extra = [[float(v) for v in q.split(",")] for q in r.split(";") if q]
+        assert len(box) == 4 and all(len(q) == 4 for q in extra)
+    except (ValueError, AssertionError):
+        raise HTTPException(400, "rect must be x0,y0,x1,y1")
+    src = await _ensure_pdf(job)
+    if not src:
+        raise HTTPException(404, "The paper's PDF is no longer available.")
+    piece = {"p": n, "r": box, "rects": extra or [box], "mode": "text" if m == "text" else "box"}
+    data = await asyncio.to_thread(_snap_piece, src, piece)
+    if not data:
+        raise HTTPException(404, "Nothing to render there.")
+    return Response(content=data, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=604800"})
+
+
+def _snap_url(base: str, key: str, pc: dict) -> str:
+    rect = ",".join(f"{v:g}" for v in pc["r"])
+    extra = ";".join(",".join(f"{v:g}" for v in rr) for rr in (pc.get("rects") or []) if rr != list(pc["r"]))
+    return f"{base}/api/snap/{key}/{pc['p']}/{rect}.jpg?m={pc.get('mode') or 'box'}" + (f"&r={extra}" if extra else "")
 
 
 @app.get("/api/feedback/{fid}/{name}")
@@ -797,9 +837,11 @@ async def job_feedback(key: str, request: Request, body: dict):
     _rate_limit(request)
     job = _get_job(key)
     def _piece(pc):
-        return {"p": int(pc.get("p", 0)), "r": [round(float(v), 1) for v in (pc.get("r") or [0, 0, 0, 0])[:4]],
-                "rects": [[round(float(v), 1) for v in rr[:4]] for rr in (pc.get("rects") or [])[:60]], "mode": str(pc.get("mode") or "box")[:8],
-                "text": str(pc.get("text") or "")[:1000]}
+        rects = [[round(float(v), 1) for v in rr[:4]] for rr in (pc.get("rects") or [])[:60]]
+        r = [round(float(v), 1) for v in (pc.get("r") or [0, 0, 0, 0])[:4]]
+        if rects and r == [0, 0, 0, 0]:   # no union given: take the bounds of the rects
+            r = [min(q[0] for q in rects), min(q[1] for q in rects), max(q[2] for q in rects), max(q[3] for q in rects)]
+        return {"p": int(pc.get("p", 0)), "r": r, "rects": rects, "mode": str(pc.get("mode") or "box")[:8], "text": str(pc.get("text") or "")[:1000]}
     ann = [{"kind": str(a.get("kind") or "other")[:40], "title": str(a.get("title") or "")[:80].strip(), "note": str(a.get("note") or "")[:600],
             "pattern_name": str(a.get("pattern_name") or "")[:80].strip(), "pattern_what": str(a.get("pattern_what") or "")[:300].strip(),
             "pieces": [_piece(pc) for pc in (a.get("pieces") or ([a] if a.get("r") else []))[:40]]}
@@ -849,13 +891,18 @@ async def job_feedback(key: str, request: Request, body: dict):
         proposal_urls.append(pr["issue_url"] or "")
     import base64
     base = str(request.base_url).rstrip("/")
+    # pictures of the flagged regions: committed to the snapshot repo when configured (durable), else served from here
+    pushed = await asyncio.to_thread(_push_snapshots, fb["id"], images) if images else []
+    urls = pushed or [_snap_url(base, job["id"], pc) for a in ann for pc in a["pieces"]]
     await _log_submission("feedback", {"id": fb["id"], "report": fb["key"], "title": fb["title"], "flags": len(ann), "disputed": len(disputed),
                                        "name": fb["name"], "affiliation": fb["affiliation"], "email": fb["email"],
                                        "slops": " | ".join(f"{a['title']} [{a['kind']}]: {a['note']}" for a in ann)[:5000],
                                        "quotes": " | ".join(pc["text"] for a in ann for pc in a["pieces"] if pc.get("text"))[:5000],
                                        "annotations": json.dumps(ann, ensure_ascii=False)[:20000], "disputed_ids": json.dumps(disputed, ensure_ascii=False)[:5000],
-                                       "snapshot_urls": " ".join(f"{base}/api/feedback/{fb['id']}/{n}" for n, _ in images)})
-    if images and SHEETS_WEBHOOK:
+                                       "snapshot_urls": " ".join(urls), "preview": f'=IMAGE("{urls[0]}")' if urls else "",
+                                       "snapshot_store": "github" if pushed else ("server" if urls else "")})
+    if images and SHEETS_WEBHOOK and not pushed:
+        # no durable store: hand the pictures to the sheet script (its saveSnapshots puts them in Drive)
         asyncio.create_task(_log_submission("snapshot", {"feedback_id": fb["id"], "images": [{"name": f"{fb['id']}_{n}", "b64": base64.b64encode(d).decode()} for n, d in images][:40]}))
     return {"id": fb["id"], "flags": len(ann), "disputed": len(disputed), "proposals": len(proposal_urls), "proposal_urls": [u for u in proposal_urls if u]}
 
@@ -863,6 +910,29 @@ async def job_feedback(key: str, request: Request, body: dict):
 # ---------------------------------------------------------------- proposals (new slop patterns)
 PROPOSALS_REPO = os.environ.get("SCISLOP_PROPOSALS_REPO", "yerimoh/scientific-slop-demo")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+SNAPSHOT_REPO = os.environ.get("SCISLOP_SNAPSHOT_REPO", "")   # e.g. yerimoh/scislop-submissions: flagged-region images are committed there
+
+
+def _push_snapshots(fid: str, images: list) -> list:
+    """Commit the snapshot images of one feedback to the snapshot repo (GitHub Contents API) and return their raw URLs.
+    A durable home for the pictures: the sheet links them and previews the first one. Empty list when not configured."""
+    if not (GITHUB_TOKEN and SNAPSHOT_REPO):
+        return []
+    import base64
+    import urllib.request
+    urls = []
+    for name, data in images[:40]:
+        path = f"snapshots/{fid}/{name}"
+        body = json.dumps({"message": f"snapshot {fid}/{name}", "content": base64.b64encode(data).decode()}).encode()
+        req = urllib.request.Request(f"https://api.github.com/repos/{SNAPSHOT_REPO}/contents/{path}", data=body, method="PUT",
+                                     headers={"Authorization": f"Bearer {GITHUB_TOKEN}", "Accept": "application/vnd.github+json", "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                urls.append(json.load(r)["content"]["download_url"])
+        except Exception as e:  # noqa: BLE001
+            print("snapshot push failed:", e)
+            break
+    return urls
 PROPOSALS_DIR = os.path.join(DATA, "proposals")
 _PROPOSAL_CACHE: dict = {"at": 0.0, "items": []}
 PROPOSAL_FIELDS = ("name", "plane", "what", "unit", "numerator", "denominator", "one_means", "detect", "example_url", "example_quote", "example2_url", "example2_quote",
