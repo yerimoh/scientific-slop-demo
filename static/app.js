@@ -1767,29 +1767,34 @@ function previewBody(key, job, openReportAt, opts = {}) {
   });
   const map = h('div', { class: 'card map-card' });
   const compact = !!opts.compact;
-  const pageWrap = compact ? h('div', { class: 'prev-page-clip' }, page, h('a', { class: 'prev-more', href: `${BASE}/r/${key}?tab=paper`, 'data-link': '', text: 'Open the full page with every finding →' })) : page;
-  const compactBars = compact ? measureBars(ms, k => openReportAt('findings')) : null;
-  const idx = res.index || {}; const b = idx.index != null ? band(idx.index) : null;
-  const miniScore = compact ? h('div', { class: 'mini-score' },
-    h('div', { class: 'ms-num' }, h('b', { text: idx.index != null ? String(idx.index) : '—' }), h('span', { text: '/100' })),
-    h('div', { class: 'ms-label' }, 'Science Slop Index', b ? h('span', { class: 'band' }, h('span', { class: 'ico', style: { background: b.color } }), b.label) : null),
-    h('div', { class: 'ms-planes' }, PLANES.map(p => { const v = idx.planes?.[p.key]?.score; return h('div', { class: `ms-plane band-${p.key}` }, h('span', { class: `tag ${p.key}`, text: p.label }), h('b', { text: v == null ? '—' : fmt(v) })); })),
-    h('p', { class: 'ms-sub', text: idx.index != null ? `${idx.index}% of the units measured show a slop pattern, averaged over the three planes.` : '' })) : null;
   const body = h('div', { class: 'prev-body' + (compact ? ' compact' : '') },
-    compact ? miniScore : scoreCard(res.index, ms, false),
-    h('div', { class: 'prev-grid' },
-      h('div', { class: 'prev-left' },
-        h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings placed here. Hover one to read why; click it for details.` : 'Nothing flagged on the first page.' })),
-        pageWrap),
-      h('div', { class: 'prev-right' },
-        h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
-        map,
-        h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: compact ? 'Click a measure to open it in the report.' : 'Click a measure to see its graph.' })),
-        compact ? compactBars : bars,
-        compact ? null : h('div', { class: 'section-title' }, stageTitle, stageSub),
-        compact ? null : stage)));
+    scoreCard(res.index, ms, false),
+    compact
+      ? h('div', { class: 'prev-grid3' },
+        h('div', { class: 'prev-col' },
+          h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings. Hover to read why, click for details.` : 'Nothing flagged on the first page.' })),
+          page),
+        h('div', { class: 'prev-col' },
+          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
+          map,
+          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
+          bars),
+        h('div', { class: 'prev-col' },
+          h('div', { class: 'section-title' }, stageTitle, stageSub),
+          stage))
+      : h('div', { class: 'prev-grid' },
+        h('div', { class: 'prev-left' },
+          h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings placed here. Hover one to read why; click it for details.` : 'Nothing flagged on the first page.' })),
+          page),
+        h('div', { class: 'prev-right' },
+          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
+          map,
+          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
+          bars,
+          h('div', { class: 'section-title' }, stageTitle, stageSub),
+          stage)));
   const init = () => {
-    const first = compact ? null : ORDER.find(k => measureViz(ms[k], doc));
+    const first = ORDER.find(k => measureViz(ms[k], doc));
     if (first) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
     drawMap(map, doc, ms, () => openReportAt('findings'));
     requestAnimationFrame(() => requestAnimationFrame(() => body.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
