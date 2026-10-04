@@ -94,6 +94,13 @@ async def main():
     shutil.copytree(os.path.join(HERE, "static"), os.path.join(OUT, "static"))
     html = open(os.path.join(HERE, "static", "index.html")).read()
     html = html.replace('href="/static/', f'href="{args.base}/static/').replace('src="/static/', f'src="{args.base}/static/')
+    # cache-busting: browsers keep Pages files for ten minutes, so a new build must point at new script/style URLs
+    try:
+        import subprocess
+        ver = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=HERE, text=True).strip()
+    except Exception:  # noqa: BLE001
+        ver = str(int(__import__("time").time()))
+    html = html.replace('/static/app.css"', f'/static/app.css?v={ver}"').replace('/static/app.js"', f'/static/app.js?v={ver}"')
     keys = json.dumps([it["key"] for it in gal["items"]])
     html = html.replace("<head>", f"<head>\n<script>window.SCISLOP_STATIC = {{ base: '{args.base}', live: '{args.live}', repo: '{args.repo}', keys: {keys} }};</script>", 1)
     for name in ("index.html", "404.html"):
