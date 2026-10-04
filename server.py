@@ -1064,6 +1064,49 @@ async def propose(request: Request, body: dict):
     return {"id": pr["id"], "issue_url": pr["issue_url"], "fallback_issue_url": None if pr["issue_url"] else fallback}
 
 
+SHEET_ID = os.environ.get("SCISLOP_SHEET_ID", "")      # the sheet the webhook writes to; read for the home-page counter
+_stats_cache: dict = {"at": 0.0, "val": None}
+
+
+def _stats_from_rows(rows: list) -> dict:
+    """Analyses per day (cumulative series for the sparkline) from rows carrying an 'at' timestamp."""
+    days = defaultdict(int)
+    for r in rows:
+        d = (r.get("at") or "").split(" ")[0]
+        if re.match(r"\d{4}-\d{2}-\d{2}$", d):
+            days[d] += 1
+    daily = sorted(days.items())
+    return {"analyses": len(rows), "since": daily[0][0] if daily else None, "daily": daily}
+
+
+@app.get("/api/stats")
+async def stats():
+    """How many analyses have been run on the site. Source: the Google Sheet when SCISLOP_SHEET_ID is set
+    (it outlives Render redeploys), else the local submissions log. Cached for five minutes."""
+    if _stats_cache["val"] and time.time() - _stats_cache["at"] < 300:
+        return _stats_cache["val"]
+    rows = None
+    if SHEET_ID:
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=10, follow_redirects=True) as c:
+                r = await c.get(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq", params={"tqx": "out:csv", "sheet": "analysis"})
+            r.raise_for_status()
+            rows = [x for x in csv.DictReader(io.StringIO(r.text)) if x.get("kind") == "analysis"]
+        except Exception as e:  # noqa: BLE001
+            print("stats: sheet read failed:", e)
+    if rows is None:
+        rows = []
+        try:
+            with open(SUBMISSIONS_LOG) as f:
+                rows = [x for x in map(json.loads, filter(str.strip, f)) if x.get("kind") == "analysis"]
+        except FileNotFoundError:
+            pass
+    val = {**_stats_from_rows(rows), "source": "sheet" if SHEET_ID and rows else "log"}
+    _stats_cache.update(at=time.time(), val=val)
+    return val
+
+
 @app.get("/api/config")
 async def config():
     llm = LLM()

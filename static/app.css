@@ -158,6 +158,15 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .check input { accent-color: var(--structure); width: 15px; height: 15px; }
 .form-error { color: var(--red); font-size: 14px; margin: 14px 0 0; min-height: 1em; }
 .notice { font-size: 13px; color: var(--ink-3); margin-top: 10px; }
+.usage { display: flex; width: fit-content; max-width: 100%; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0 8px; margin: 24px auto 8px; color: var(--ink-2); text-decoration: none; font-size: 15px; }
+.usage[hidden] { display: none; }
+.usage b { font-size: 30px; line-height: 1; font-weight: 700; letter-spacing: -.035em; font-variant-numeric: tabular-nums;
+  background: linear-gradient(90deg, var(--artifacts-deep), var(--structure), var(--argument-deep)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.usage:hover span { color: var(--ink); }
+.u-dot { position: relative; align-self: center; width: 7px; height: 7px; margin-right: 2px; border-radius: 50%; background: var(--good); }
+.u-dot::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--good); animation: u-pulse 2s ease-out infinite; }
+@keyframes u-pulse { from { transform: scale(1); opacity: .5; } to { transform: scale(3.2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .u-dot::after { animation: none; } }
 
 .dots-band { padding: 56px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background-color: var(--surface-2);
   background-image: radial-gradient(color-mix(in oklab, var(--line-2) 70%, transparent) 1px, transparent 1.2px); background-size: 22px 22px; }

@@ -1990,6 +1990,24 @@ async function loadProposalCount() {
   try { const d = await (await fetch(API + '/proposals')).json(); const n = (d.items || []).length; const acc = (d.items || []).filter(x => x.status === 'accepted').length;
     const el = $('#pt-proposals'); if (el) el.textContent = n ? `${n} proposal${n === 1 ? '' : 's'} so far${acc ? `, ${acc} adopted` : ''}` : ''; } catch (_) { /* optional */ }
 }
+// Home counter: analyses run on the site so far (server reads the submissions sheet). Mirror shows its build-time copy first, then the live one.
+let usageShown = 0;
+function drawUsage(st) {
+  const n = st && st.analyses; if (!n) return;
+  $('#usage').hidden = false;
+  // count up from what is already on screen
+  const el = $('#u-n'), from = usageShown; usageShown = n;
+  if (from === n) { el.textContent = n.toLocaleString('en-US'); return; }
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = n.toLocaleString('en-US'); return; }
+  const t0 = performance.now(), dur = from ? 600 : 1300;
+  const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = Math.round(from + (n - from) * e).toLocaleString('en-US'); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+async function loadUsage() {
+  try { drawUsage(await (await fetch(API + '/stats')).json()); } catch (_) { /* optional */ }
+  if (STATIC_MODE) try { drawUsage(await (await fetch(LIVE_API + '/stats')).json()); } catch (_) { /* live server asleep */ }
+}
 let homeFeatured = null;
 async function loadHome() {
   if (!state.gallery) {
@@ -1997,7 +2015,7 @@ async function loadHome() {
     catch (_) { return; }
   }
   const ranked = [...state.gallery.items].filter(x => x.index != null).sort((a, b) => b.index - a.index);
-  buildCoverflow(ranked); loadTeam(); loadContributors();
+  buildCoverflow(ranked); loadTeam(); loadContributors(); if (!usageShown) loadUsage();
   const key = state.config?.featured || ranked[0]?.key;
   if (key && homeFeatured !== key) { homeFeatured = key; renderDeepDive(key, ranked); }
 }

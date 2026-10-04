@@ -31,6 +31,14 @@ async def main():
                              "featured": featured if featured in server.JOBS else (gal["items"][0]["key"] if gal["items"] else None),
                              "max_upload_mb": 0, "persistent": True, "examples": []})
     dump("api/contributors.json", await server.contributors())
+    # home-page counter: the live server's count at build time (the page refreshes it from the live server)
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=60) as c:
+            st = (await c.get(args.live.rstrip("/") + "/api/stats")).json()
+    except Exception:  # noqa: BLE001
+        st = await server.stats()
+    dump("api/stats.json", st)
     for item in gal["items"]:
         key = item["key"]; job = server.JOBS[key]; res = job.get("result") or {}
         jd = os.path.join(OUT, "api", "jobs", key); os.makedirs(os.path.join(jd, "pages"), exist_ok=True); os.makedirs(os.path.join(jd, "files"), exist_ok=True)
