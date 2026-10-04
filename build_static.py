@@ -31,16 +31,19 @@ async def main():
                              "featured": featured if featured in server.JOBS else (gal["items"][0]["key"] if gal["items"] else None),
                              "max_upload_mb": 0, "persistent": True, "examples": []})
     dump("api/contributors.json", await server.contributors())
-    # home-page counter: the live server's count at build time (the page refreshes it from the live server)
-    try:
-        import httpx
-        async with httpx.AsyncClient(timeout=60) as c:
-            st = (await c.get(args.live.rstrip("/") + "/api/stats")).json()
-        if "analyses" not in st:
-            raise ValueError(st)
-    except Exception:  # noqa: BLE001
-        st = await server.stats()
-    dump("api/stats.json", st)
+    # home-page counter: read the submissions sheet directly when SCISLOP_SHEET_ID is set (fresh at every build,
+    # including the scheduled ones); otherwise take the live server's count. The page then refreshes from the live server.
+    st = await server.stats() if server.SHEET_ID else None
+    if not (st and st.get("analyses")):
+        try:
+            import httpx
+            async with httpx.AsyncClient(timeout=60) as c:
+                live = (await c.get(args.live.rstrip("/") + "/api/stats")).json()
+            if live.get("analyses"):
+                st = live
+        except Exception:  # noqa: BLE001
+            pass
+    dump("api/stats.json", st or await server.stats())
     for item in gal["items"]:
         key = item["key"]; job = server.JOBS[key]; res = job.get("result") or {}
         jd = os.path.join(OUT, "api", "jobs", key); os.makedirs(os.path.join(jd, "pages"), exist_ok=True); os.makedirs(os.path.join(jd, "files"), exist_ok=True)

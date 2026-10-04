@@ -3,6 +3,8 @@ name: pages
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: "17 */6 * * *"        # refresh the home-page count (api/stats.json) every six hours
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,6 +22,8 @@ jobs:
         with: { python-version: "3.12" }
       - run: pip install fastapi uvicorn python-multipart pymupdf httpx
       - run: python build_static.py --base /scientific-slop-demo --live https://scientific-slop-demo.onrender.com
+        env:
+          SCISLOP_SHEET_ID: ${{ secrets.SCISLOP_SHEET_ID }}   # repo secret; the submissions sheet the count is read from
       - uses: actions/upload-pages-artifact@v3
         with: { path: docs }
   deploy:
