@@ -36,6 +36,8 @@ async def main():
         import httpx
         async with httpx.AsyncClient(timeout=60) as c:
             st = (await c.get(args.live.rstrip("/") + "/api/stats")).json()
+        if "analyses" not in st:
+            raise ValueError(st)
     except Exception:  # noqa: BLE001
         st = await server.stats()
     dump("api/stats.json", st)
