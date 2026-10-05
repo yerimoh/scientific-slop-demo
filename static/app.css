@@ -901,29 +901,24 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .rd-brand .fb-ico { width: 22px; height: 22px; } .rd-brand .fb-l { display: grid; line-height: 1; } .rd-brand .fb-l b { font-size: 12px; font-weight: 700; }
 :root:not([data-theme="light"]) .finder-btn, :root[data-theme="dark"] .finder-btn { border-color: rgba(255,255,255,.2); }
 .call-band + .team { padding-top: 40px; }
-/* discussion: the two public posts where replies are read */
-.discuss { padding: 48px 24px 0; }
-.discuss .sec-sub { max-width: 720px; }
-.discuss-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 18px; }
-.post { display: flex; flex-direction: column; gap: 12px; padding: 16px 18px 14px; color: var(--ink-2); text-decoration: none; transition: transform .15s, border-color .15s, box-shadow .15s; }
-.post:hover { transform: translateY(-2px); border-color: var(--line-2); box-shadow: 0 1px 2px rgba(31,41,55,.05), 0 16px 40px rgba(31,41,55,.10); }
-.post-head { display: flex; align-items: center; gap: 10px; }
-.post-net { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex: none; }
+/* discussion: one compact strip pointing at the two public posts where replies are read */
+.discuss { padding: 40px 24px 0; }
+.discuss-bar { display: flex; align-items: center; gap: 20px 28px; flex-wrap: wrap; padding: 18px 20px; max-width: 920px; }
+.discuss-text { flex: 1 1 320px; min-width: 0; }
+.discuss-text h3 { margin: 0 0 4px; font-size: 17px; letter-spacing: -.01em; }
+.discuss-text p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.discuss-links { display: flex; gap: 10px; flex-wrap: wrap; }
+.post-link { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); text-decoration: none; transition: transform .15s, border-color .15s, background .15s; }
+.post-link:hover { transform: translateY(-1px); border-color: var(--ink); }
+.post-net { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex: none; }
 .net-x { background: #0f1419; } .net-in { background: #0a66c2; }
 :root[data-theme="dark"] .net-x { background: #e7e9ea; color: #0f1419; }
-.post-who { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-.post-who b { color: var(--ink); font-size: 14.5px; } .post-who small { color: var(--ink-3); font-size: 12.5px; }
-.post-open { margin-left: auto; font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
-.post:hover .post-open { color: var(--ink); }
-.post-text { margin: 0; font-size: 14.5px; line-height: 1.55; }
-.post-text em { font-style: italic; color: var(--ink); } .post-text b { color: var(--ink); }
-.post-img { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); aspect-ratio: 16 / 9; background: var(--surface-2); }
-.post-img img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-.post-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; margin-top: auto; }
-.post-cta { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 600; font-size: 13px; }
-.post-cta::before { content: "💬"; font-size: 12px; }
+.pl-t { display: flex; flex-direction: column; line-height: 1.15; }
+.pl-t b { font-size: 14px; } .pl-t small { font-size: 11.5px; color: var(--ink-3); }
+.pl-arrow { color: var(--ink-3); font-size: 13px; margin-left: 2px; }
+.post-link:hover .pl-arrow { color: var(--ink); }
 .discuss + .team { padding-top: 44px; }
-@media (max-width: 720px) { .discuss-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .discuss-links { width: 100%; } .post-link { flex: 1 1 100%; } }
 
 .propose-teaser { padding: 0 24px; }
 .hero-call { display: block; max-width: 720px; margin: 16px auto 0; padding: 10px 16px; border-radius: 12px; background: var(--argument-band); border: 1px solid var(--argument-light); color: var(--ink-2); font-size: 14px; text-decoration: none; line-height: 1.45; }
