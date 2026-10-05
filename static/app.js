@@ -1993,7 +1993,7 @@ async function loadProposalCount() {
 // Home counter: analyses run on the site so far (server reads the submissions sheet). Mirror shows its build-time copy first, then the live one.
 let usageShown = 0, usageAnim = 0;
 function drawUsage(st) {
-  const n = st && st.analyses; if (!n) return;
+  const n = st && st.analyses; if (!n || n < usageShown) return;     // the count only grows: keep the larger of the mirror's and the live server's (5-min cache) values
   $('#usage').hidden = false;
   // count up from what is already on screen; a newer value (the live server's, arriving while the first
   // count-up still runs) takes over the animation instead of being overwritten by its last frame
