@@ -903,12 +903,12 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .call-band + .team { padding-top: 40px; }
 /* discussion: one compact strip pointing at the two public posts where replies are read */
 .discuss { padding: 40px 24px 0; }
-.discuss-bar { display: flex; align-items: center; gap: 20px 28px; flex-wrap: wrap; padding: 18px 20px; max-width: 920px; }
+.discuss-bar { display: flex; align-items: center; gap: 16px 28px; flex-wrap: wrap; padding: 16px 20px; max-width: 920px; }
 .discuss-text { flex: 1 1 320px; min-width: 0; }
 .discuss-text h3 { margin: 0 0 4px; font-size: 17px; letter-spacing: -.01em; }
 .discuss-text p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
 .discuss-links { display: flex; gap: 10px; flex-wrap: wrap; }
-.post-link { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); text-decoration: none; transition: transform .15s, border-color .15s, background .15s; }
+.post-link { display: inline-flex; align-items: center; gap: 9px; padding: 6px 14px 6px 6px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); text-decoration: none; transition: transform .15s, border-color .15s, background .15s; }
 .post-link:hover { transform: translateY(-1px); border-color: var(--ink); }
 .post-net { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex: none; }
 .net-x { background: #0f1419; } .net-in { background: #0a66c2; }
