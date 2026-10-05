@@ -1991,16 +1991,18 @@ async function loadProposalCount() {
     const el = $('#pt-proposals'); if (el) el.textContent = n ? `${n} proposal${n === 1 ? '' : 's'} so far${acc ? `, ${acc} adopted` : ''}` : ''; } catch (_) { /* optional */ }
 }
 // Home counter: analyses run on the site so far (server reads the submissions sheet). Mirror shows its build-time copy first, then the live one.
-let usageShown = 0;
+let usageShown = 0, usageAnim = 0;
 function drawUsage(st) {
   const n = st && st.analyses; if (!n) return;
   $('#usage').hidden = false;
-  // count up from what is already on screen
+  // count up from what is already on screen; a newer value (the live server's, arriving while the first
+  // count-up still runs) takes over the animation instead of being overwritten by its last frame
   const el = $('#u-n'), from = usageShown; usageShown = n;
+  const run = ++usageAnim;
   if (from === n) { el.textContent = n.toLocaleString('en-US'); return; }
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = n.toLocaleString('en-US'); return; }
   const t0 = performance.now(), dur = from ? 600 : 1300;
-  const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+  const step = t => { if (run !== usageAnim) return; const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
     el.textContent = Math.round(from + (n - from) * e).toLocaleString('en-US'); if (k < 1) requestAnimationFrame(step); };
   requestAnimationFrame(step);
 }
