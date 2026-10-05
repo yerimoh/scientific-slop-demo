@@ -212,10 +212,75 @@ def _trim_memory():
         pass
 
 
+DISK_FREE_MIN_MB = int(os.environ.get("SCISLOP_DISK_FREE_MIN_MB", "600"))   # prune the report store below this
+_CACHE_FILES = re.compile(r"^(page_\d+\.jpg|words_\d+\.json|layout\.json|highlighted\.pdf)$")   # re-made on demand from paper.pdf
+
+
+def _disk_free_mb(path: str = None) -> int:
+    try:
+        st = os.statvfs(path or DATA)
+        return st.f_bavail * st.f_frsize // (1024 * 1024)
+    except OSError:
+        return 1 << 20
+
+
+def _prune_disk(free_min_mb: int = None) -> dict:
+    """Keep the report store from filling its disk (a full disk makes every new analysis fail with ENOSPC).
+    Pass 1 drops caches that are rebuilt from paper.pdf on demand (page renders, word boxes, layout, the
+    highlighted PDF), oldest reports first. Pass 2, only if still short, drops the PDF copy of unlisted
+    reports, oldest first: their report stays readable, the paper view says the PDF is gone. Listed
+    reports keep everything. Returns what was removed."""
+    free_min_mb = DISK_FREE_MIN_MB if free_min_mb is None else free_min_mb
+    stats = {"free_before_mb": _disk_free_mb(), "cache_files": 0, "pdfs": 0, "free_after_mb": None}
+    if stats["free_before_mb"] >= free_min_mb or not os.path.isdir(JOBS_DIR):
+        stats["free_after_mb"] = stats["free_before_mb"]
+        return stats
+    jobs = []
+    for key in os.listdir(JOBS_DIR):
+        d = os.path.join(JOBS_DIR, key)
+        try:
+            with open(os.path.join(d, "job.json")) as f:
+                j = json.load(f)
+        except Exception:  # noqa: BLE001  (half-written or foreign folder)
+            continue
+        if j.get("status") == "running" or key in JOBS and JOBS[key].get("status") == "running":
+            continue
+        jobs.append((j.get("finished") or j.get("created") or 0, key, bool(j.get("gallery"))))
+    jobs.sort()
+    recent = time.time() - 2 * 3600                       # someone may be reading these right now
+    for ts, key, listed in jobs:                           # pass 1: caches
+        if _disk_free_mb() >= free_min_mb:
+            break
+        fd = os.path.join(JOBS_DIR, key, "files")
+        if ts > recent or not os.path.isdir(fd):
+            continue
+        for name in os.listdir(fd):
+            if _CACHE_FILES.match(name):
+                try:
+                    os.remove(os.path.join(fd, name)); stats["cache_files"] += 1
+                except OSError:
+                    pass
+    for ts, key, listed in jobs:                           # pass 2: PDF copies of unlisted reports
+        if _disk_free_mb() >= free_min_mb:
+            break
+        if listed or ts > recent:
+            continue
+        p = os.path.join(JOBS_DIR, key, "files", "paper.pdf")
+        if os.path.exists(p):
+            try:
+                os.remove(p); stats["pdfs"] += 1
+            except OSError:
+                pass
+    stats["free_after_mb"] = _disk_free_mb()
+    print("disk prune:", stats)
+    return stats
+
+
 async def _housekeeping():
     while True:
         await asyncio.sleep(300)
         await asyncio.to_thread(_trim_memory)
+        await asyncio.to_thread(_prune_disk)
 
 
 # ----------------------------------------------------------------------------- analysis
@@ -309,6 +374,10 @@ def _pdf_title(path: str) -> str:
 
 
 def _new_job(label: str, gallery: bool) -> dict:
+    if _disk_free_mb() < DISK_FREE_MIN_MB // 2:
+        _prune_disk()
+        if _disk_free_mb() < 100:
+            raise HTTPException(507, "The server's disk is full right now. Try again in a few minutes.")
     key = _new_key()
     job = {"id": key, "key": key, "status": "running", "stage": "Queued", "label": label, "created": time.time(),
            "gallery": gallery, "progress": {"pct": 0, "label": "Queued"},
@@ -1052,6 +1121,7 @@ async def _startup_warm():
         anyio.to_thread.current_default_thread_limiter().total_tokens = int(os.environ.get("SCISLOP_THREADS", "8"))
     except Exception:  # noqa: BLE001
         pass
+    await asyncio.to_thread(_prune_disk)
     asyncio.create_task(_warm_up())
     asyncio.create_task(_housekeeping())
 
