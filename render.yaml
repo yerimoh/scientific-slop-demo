@@ -5,11 +5,18 @@ services:
     name: scientific-slop-demo
     runtime: docker
     dockerfilePath: ./Dockerfile
-    plan: free
+    plan: standard               # 2 GB RAM: the free 512 MB instance was OOM-killed under real traffic (2026-10-05)
     region: oregon
     healthCheckPath: /api/config
     autoDeploy: true
+    disk:                        # visitor reports and listings survive restarts and deploys
+      name: data
+      mountPath: /app/data
+      sizeGB: 5
     envVars:
+      - key: SCISLOP_PERSISTENT   # tells the UI that reports are kept
+        value: "1"
+      # SCISLOP_SHEET_ID (the submissions sheet, read for the home-page count) is set in the dashboard, not here.
       # No OPENROUTER_API_KEY here: each visitor enters their own key on the site.
       - key: SCISLOP_MODEL
         value: openai/gpt-5.6-luna
