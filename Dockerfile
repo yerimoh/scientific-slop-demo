@@ -21,6 +21,9 @@ COPY seed ./seed
 COPY server.py cli.py ./
 
 ENV PATH="/app/.venv/bin:$PATH" SCISLOP_DATA=/app/data PORT=8000
+# glibc tuning: without this, memory freed by page renders stays in per-thread arenas and the resident size
+# climbs until the instance is OOM-killed (measured: 400 renders +674 MiB untuned, +186 MiB with these)
+ENV MALLOC_ARENA_MAX=2 MALLOC_TRIM_THRESHOLD_=131072 MALLOC_MMAP_THRESHOLD_=131072
 RUN useradd --create-home app && mkdir -p /app/data && chown -R app /app/data /app/.tectonic
 USER app
 EXPOSE 8000

@@ -61,7 +61,7 @@ os.makedirs(JOBS_DIR, exist_ok=True)
 MAX_UPLOAD = int(os.environ.get("SCISLOP_MAX_UPLOAD_MB", "50")) * 1024 * 1024
 RATE_PER_HOUR = int(os.environ.get("SCISLOP_RATE_PER_HOUR", "20"))       # analyses per client IP per hour
 MAX_CONCURRENT = int(os.environ.get("SCISLOP_MAX_CONCURRENT", "2"))      # analyses running at once
-MAX_DOCS = int(os.environ.get("SCISLOP_MAX_DOCS", "24"))                 # parsed papers kept for figure re-scoring
+MAX_DOCS = int(os.environ.get("SCISLOP_MAX_DOCS", "8"))                  # parsed papers kept for figure re-scoring (~10 MB each)
 PERSISTENT = os.environ.get("SCISLOP_PERSISTENT", "0") == "1"           # set when DATA sits on a persistent disk
 
 # The bundled example is served only when its source exists on this machine (it is not in the image).
@@ -188,10 +188,34 @@ def _remember_doc(key: str, doc):
     DOCS.move_to_end(key)
     while len(DOCS) > MAX_DOCS:
         DOCS.popitem(last=False)
-    if len(JOBS) > 400:
-        for k in sorted(JOBS, key=lambda k: JOBS[k].get("created", 0))[:len(JOBS) - 400]:
+    if len(JOBS) > 120:                                                    # reports live on disk; _load brings one back on demand
+        for k in sorted(JOBS, key=lambda k: JOBS[k].get("created", 0))[:len(JOBS) - 120]:
             if JOBS[k].get("status") != "running" and not JOBS[k].get("seed"):
                 JOBS.pop(k, None)
+
+
+def _trim_memory():
+    """Hand freed memory back to the OS. Page renders and PDF parsing allocate large short-lived buffers;
+    glibc keeps them in per-thread arenas and MuPDF keeps decoded resources in its store, so the resident
+    size of a busy server grows without a leak in Python. Called after each analysis and every few minutes."""
+    import gc
+    gc.collect()
+    try:
+        import pymupdf
+        pymupdf.TOOLS.store_shrink(100)
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        import ctypes
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:  # noqa: BLE001  (not glibc)
+        pass
+
+
+async def _housekeeping():
+    while True:
+        await asyncio.sleep(300)
+        await asyncio.to_thread(_trim_memory)
 
 
 # ----------------------------------------------------------------------------- analysis
@@ -267,6 +291,7 @@ async def _run(job: dict, kind: Optional[str], path: Optional[str], url: Optiona
                 pass
     job["finished"] = time.time()
     _save(job)
+    await asyncio.to_thread(_trim_memory)
 
 
 def _pdf_title(path: str) -> str:
@@ -1020,7 +1045,15 @@ async def _warm_up():
 
 @app.on_event("startup")
 async def _startup_warm():
+    # fewer worker threads: each one that renders pages holds its own malloc arena, and eight is plenty for
+    # page/word/layout requests (analyses are bounded by RUN_SLOTS)
+    try:
+        import anyio
+        anyio.to_thread.current_default_thread_limiter().total_tokens = int(os.environ.get("SCISLOP_THREADS", "8"))
+    except Exception:  # noqa: BLE001
+        pass
     asyncio.create_task(_warm_up())
+    asyncio.create_task(_housekeeping())
 
 
 @app.get("/api/proposals")
