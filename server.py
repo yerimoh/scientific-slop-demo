@@ -50,7 +50,7 @@ _load_dotenv(os.path.join(HERE, ".env"))
 
 from engine.fetch import InputError, find_paper_pdf, materialize, resolve_url, _get  # noqa: E402
 from engine.typeset import compile_latex
-from engine.highlight import annotated_pdf, page_image  # noqa: E402
+from engine.highlight import annotated_pdf, page_image, page_webp, png_to_webp  # noqa: E402
 from engine.llm import LLM  # noqa: E402
 from engine.pipeline import analyze_document, attach_pdf, document_summary, read_document, rerun_figure  # noqa: E402
 
@@ -213,7 +213,7 @@ def _trim_memory():
 
 
 DISK_FREE_MIN_MB = int(os.environ.get("SCISLOP_DISK_FREE_MIN_MB", "600"))   # prune the report store below this
-_CACHE_FILES = re.compile(r"^(page_\d+\.jpg|words_\d+\.json|layout\.json|highlighted\.pdf)$")   # re-made on demand from paper.pdf
+_CACHE_FILES = re.compile(r"^(page_\d+(\.t)?\.(jpg|webp)|thumb\.webp|words_\d+\.json|layout\.json|highlighted\.pdf)$")   # re-made on demand from paper.pdf
 
 
 def _disk_free_mb(path: str = None) -> int:
@@ -545,7 +545,7 @@ async def job_page(key: str, n: int):
         raise HTTPException(404)
     shipped = _find_file(job["id"], f"page_{n}.jpg")          # seeds ship their first page
     if shipped:
-        return FileResponse(shipped, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+        return FileResponse(shipped, media_type="image/jpeg", headers=IMMUTABLE)
     cache = os.path.join(_job_dir(job["id"]), "files", f"page_{n}.jpg")
     if not os.path.exists(cache):
         src = await _ensure_pdf(job)
@@ -555,7 +555,59 @@ async def job_page(key: str, n: int):
         os.makedirs(os.path.dirname(cache), exist_ok=True)
         with open(cache, "wb") as f:
             f.write(img)
-    return FileResponse(cache, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+    return FileResponse(cache, media_type="image/jpeg", headers=IMMUTABLE)
+
+
+IMMUTABLE = {"Cache-Control": "public, max-age=2592000, immutable"}      # a report's files never change for its key
+PAGE_WEBP = {"": (900, 72), "t": (360, 70)}                              # page.webp, page.t.webp (filmstrip thumbnail)
+
+
+@app.get("/api/jobs/{key}/pages/{n}.t.webp")
+async def job_page_webp_thumb(key: str, n: int):
+    """360 px WebP page thumbnail for filmstrips."""
+    return await _page_webp(key, n, "t")
+
+
+@app.get("/api/jobs/{key}/pages/{n}.webp")
+async def job_page_webp(key: str, n: int):   # registered after the .t.webp route, which this pattern would otherwise swallow
+    """WebP page render, 900 px: ~40% of the JPEG bytes."""
+    return await _page_webp(key, n, "")
+
+
+async def _page_webp(key: str, n: int, variant: str):
+    job = _get_job(key)
+    res = job.get("result") or {}
+    pages = (res.get("pdf") or {}).get("pages", 0)
+    if not (0 <= n < pages):
+        raise HTTPException(404)
+    name = f"page_{n}{'.' + variant if variant else ''}.webp"
+    cache = _find_file(job["id"], name) or os.path.join(_job_dir(job["id"]), "files", name)
+    if not os.path.exists(cache):
+        src = await _ensure_pdf(job)
+        if not src:
+            raise HTTPException(404, "The paper's PDF is no longer available.")
+        width, quality = PAGE_WEBP[variant]
+        img = await asyncio.to_thread(page_webp, src, n, width, quality)
+        os.makedirs(os.path.dirname(cache), exist_ok=True)
+        with open(cache, "wb") as f:
+            f.write(img)
+    return FileResponse(cache, media_type="image/webp", headers=IMMUTABLE)
+
+
+@app.get("/api/jobs/{key}/thumb.webp")
+async def job_thumb_webp(key: str):
+    job = _get_job(key)
+    have = _find_file(job["id"], "thumb.webp")
+    if not have:
+        png = _find_file(job["id"], "thumb.png")
+        if not png:
+            raise HTTPException(404)
+        have = os.path.join(_job_dir(job["id"]), "files", "thumb.webp")
+        data = await asyncio.to_thread(png_to_webp, png, 70)
+        os.makedirs(os.path.dirname(have), exist_ok=True)
+        with open(have, "wb") as f:
+            f.write(data)
+    return FileResponse(have, media_type="image/webp", headers=IMMUTABLE)
 
 
 def _layout_nodes(pdf_path: str, res: dict) -> dict:
@@ -662,7 +714,7 @@ async def job_thumb(key: str):
     p = _find_file(job["id"], "thumb.png")
     if not p:
         raise HTTPException(404)
-    return FileResponse(p, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+    return FileResponse(p, media_type="image/png", headers=IMMUTABLE)
 
 
 @app.get("/api/jobs/{key}/export.csv")
@@ -695,7 +747,7 @@ async def job_file(key: str, name: str):
     p = _find_file(job["id"], name)
     if not p:
         raise HTTPException(404)
-    return FileResponse(p, media_type="image/png")
+    return FileResponse(p, media_type="image/png", headers=IMMUTABLE)
 
 
 def _source_label(doc: dict) -> str:

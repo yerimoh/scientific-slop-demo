@@ -293,6 +293,33 @@ def thumbnail(view_pdf: str, width: int = 520) -> bytes:
         return page.get_pixmap(matrix=pymupdf.Matrix(z, z), alpha=False).tobytes("png")
 
 
+def _webp(pix, quality: int) -> bytes:
+    """Encode a pixmap as WebP: about 40% of the JPEG at the same visual quality (bandwidth, not disk, is
+    the scarce resource on the server)."""
+    import io
+    from PIL import Image
+    im = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    buf = io.BytesIO()
+    im.save(buf, "WEBP", quality=quality, method=4)
+    return buf.getvalue()
+
+
+def page_webp(view_pdf: str, n: int, width: int = 900, quality: int = 72) -> bytes:
+    """One page as WebP; 900 px reads fine on a 1100 px column, 360 px is for filmstrips."""
+    with pymupdf.open(view_pdf) as pdf:
+        page = pdf[n]
+        z = width / page.rect.width
+        return _webp(page.get_pixmap(matrix=pymupdf.Matrix(z, z), alpha=False), quality)
+
+
+def png_to_webp(path: str, quality: int = 78) -> bytes:
+    from PIL import Image
+    import io
+    buf = io.BytesIO()
+    Image.open(path).convert("RGB").save(buf, "WEBP", quality=quality, method=4)
+    return buf.getvalue()
+
+
 def page_image(view_pdf: str, n: int, width: int = 1100) -> bytes:
     with pymupdf.open(view_pdf) as pdf:
         page = pdf[n]

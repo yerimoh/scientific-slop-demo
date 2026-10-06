@@ -8,6 +8,10 @@ const STATIC_KEYS = new Set(STATIC_MODE ? (STATIC_MODE.keys || []) : []);
 const LIVE_API = STATIC_MODE ? LIVE + '/api' : API;
 // Job URLs: pre-rendered on the mirror for shipped reports, the live backend for everything analyzed after the build.
 const J = key => (STATIC_MODE && !STATIC_KEYS.has(key)) ? LIVE_API : API;
+// Page images: WebP from the live server (900 px; 't' = 360 px filmstrip thumbnail), JPEG/PNG for reports shipped with the mirror.
+const shipped = key => STATIC_MODE && STATIC_KEYS.has(key);
+const pageImg = (key, n, thumb) => `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${n}.${shipped(key) ? 'jpg' : (thumb ? 't.webp' : 'webp')}`;
+const thumbImg = key => `${J(key)}/jobs/${key}/thumb.${shipped(key) ? 'png' : 'webp'}`;
 if (STATIC_MODE) {
   const realFetch = window.fetch.bind(window);
   window.fetch = (url, opts) => {
@@ -531,7 +535,7 @@ function paperView(job) {
     if (n >= maxPages) return;
     const page = h('div', { class: 'pv-page', style: { aspectRatio: `${w} / ${hgt}` } },
       h('span', { class: 'pl', text: `Loading page ${n + 1}…` }),
-      h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${n}.jpg`, alt: `Page ${n + 1}`, loading: n < 3 ? 'eager' : 'lazy', width: 1100, height: Math.round(1100 * hgt / w) }),
+      h('img', { src: pageImg(key, n), alt: `Page ${n + 1}`, loading: n < 3 ? 'eager' : 'lazy', width: 1100, height: Math.round(1100 * hgt / w) }),
       h('span', { class: 'pno', text: `${n + 1}` }));
     const notesL = h('div', { class: 'pv-notes pv-notes-l' });
     const row = h('div', { class: 'pv-row', 'data-page': n }, notesL, h('div', { class: 'pv-gutter-l' }), page);
@@ -1464,7 +1468,7 @@ function renderLbList(rows, metric) {
         onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } } },
         h('span', { class: 'lbl-c rank' }, h('span', { class: 'lbl-rank', text: String(i + 1) })),
         h('span', { class: 'lbl-c paper' },
-          h('span', { class: 'lbl-thumb' }, x.thumb ? h('img', { src: `${J(x.key)}/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : null),
+          h('span', { class: 'lbl-thumb' }, x.thumb ? h('img', { src: thumbImg(x.key), alt: '', loading: 'lazy' }) : null),
           h('span', { class: 'lbl-t' }, h('span', { class: 'lbl-title' }, x.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, x.title || 'Untitled'), h('span', { class: 'lbl-meta', text: [x.source, fmtDate(x.created), x.partial ? 'partial' : null].filter(Boolean).join(' · ') }))),
         h('span', { class: 'lbl-c track' }, bar),
         h('span', { class: 'lbl-c idx' }, h('b', { style: { color: b ? b.color : 'inherit' }, text: v == null ? '—' : String(Math.round(v)) + (x.partial && metric.stacked ? '*' : '') }), b && metric.stacked ? h('small', { text: b.label }) : null),
@@ -1708,7 +1712,7 @@ function galleryCard(x, rankNo) {
     bindTip(el, k.name || k.m, k.t || '');
     return el;
   });
-  const page = h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `${J(x.key)}/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title }), ...marks);
+  const page = h('div', { class: 'g-page' }, x.thumb ? h('img', { src: thumbImg(x.key), alt: '', loading: 'lazy' }) : h('div', { class: 'ph', text: x.title }), ...marks);
   const card = h('div', { class: 'g-card' },
     h('button', { type: 'button', class: 'g-thumb', style: { borderBottomColor: b ? b.color : 'var(--line-2)' }, title: 'Preview: findings on the paper, map, and charts', onclick: () => openPreview(x.key) }, page,
       marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null,
@@ -1763,7 +1767,7 @@ function pageStage(key, res, openFindings) {
   const n = Math.min(sizes.length, (STATIC_MODE && STATIC_KEYS.has(key)) ? (state.config?.max_pages || 40) : sizes.length);
   const per = Array.from({ length: n }, () => []);
   for (const m of res.measures) (m.instances || []).forEach((it, i) => (it.pdf || []).forEach(loc => { if (loc.p < n) for (const r of loc.r) per[loc.p].push({ m, it, i, r, box: !!loc.box }); }));
-  const src = p => `${J(key)}/jobs/${encodeURIComponent(key)}/pages/${p}.jpg`;
+  const src = (p, thumb) => pageImg(key, p, thumb);
   const big = h('div', { class: 'pv-page stage-page' });
   const label = h('span', { class: 'stage-label' });
   const strip = h('div', { class: 'stage-strip' });
@@ -1785,7 +1789,7 @@ function pageStage(key, res, openFindings) {
   per.forEach((marks, p) => {
     const [pw, ph] = sizes[p] || [612, 792];
     const t = h('button', { type: 'button', class: 'stage-thumb', title: `Page ${p + 1}`, onpointerenter: () => show(p), onclick: () => show(p), onfocus: () => show(p) },
-      h('span', { class: 'g-page' }, h('img', { src: src(p), alt: '', loading: 'lazy', decoding: 'async', style: { aspectRatio: `${pw} / ${ph}` } }),
+      h('span', { class: 'g-page' }, h('img', { src: src(p, true), alt: '', loading: 'lazy', decoding: 'async', style: { aspectRatio: `${pw} / ${ph}` } }),
         ...marks.map(k => h('span', { class: `g-mark ${k.m.plane}${k.box ? ' box' : ''}`, style: { left: `${100 * k.r[0] / pw}%`, top: `${100 * k.r[1] / ph}%`, width: `${100 * (k.r[2] - k.r[0]) / pw}%`, height: `${100 * (k.r[3] - k.r[1]) / ph}%` } }))),
       h('span', { class: 'st-no', text: String(p + 1) }), marks.length ? h('span', { class: 'st-n', text: String(marks.length) }) : null);
     strip.append(t);
@@ -1811,7 +1815,7 @@ function previewBody(key, job, openReportAt, opts = {}) {
   const marks = [];
   for (const m of res.measures) (m.instances || []).forEach((it, i) => (it.pdf || []).forEach(loc => { if (loc.p !== 0) return; for (const r of loc.r) marks.push({ m, it, i, r, box: !!loc.box }); }));
   const compact = !!opts.compact;
-  const page = compact ? null : h('div', { class: 'pv-page prev-page' }, pdf.available ? h('img', { src: `${J(key)}/jobs/${encodeURIComponent(key)}/pages/0.jpg`, alt: 'Page 1', width: 1100, height: Math.round(1100 * ph / pw) }) : h('div', { class: 'pv-empty', text: 'No PDF available.' }));
+  const page = compact ? null : h('div', { class: 'pv-page prev-page' }, pdf.available ? h('img', { src: pageImg(key, 0), alt: 'Page 1', width: 1100, height: Math.round(1100 * ph / pw) }) : h('div', { class: 'pv-empty', text: 'No PDF available.' }));
   for (const hl of compact ? [] : marks) {
     const [x0, y0, x1, y1] = hl.r;
     const d = h('div', { class: `hl ${hl.m.plane}${hl.box ? ' box' : ''}`, tabindex: 0, style: { left: `${100 * x0 / pw}%`, top: `${100 * y0 / ph}%`, width: `${100 * (x1 - x0) / pw}%`, height: `${100 * (y1 - y0) / ph}%` } });
@@ -2051,7 +2055,7 @@ function buildCoverflow(items) {
     const card = h('div', { class: 'cf-card', 'data-i': i, role: 'button', tabindex: 0, 'aria-label': x.title,
       onclick: () => { if (cf.i === i) go(`/r/${x.key}`); else cfGo(i); },
       onkeydown: e => { if (e.key === 'Enter') { cf.i === i ? go(`/r/${x.key}`) : cfGo(i); } } },
-      h('div', { class: 'cf-thumb' }, h('div', { class: 'g-page' }, x.thumb ? h('img', { src: `${J(x.key)}/jobs/${x.key}/thumb.png`, alt: '', loading: 'lazy', draggable: false }) : h('div', { class: 'ph', text: x.title }), ...marks),
+      h('div', { class: 'cf-thumb' }, h('div', { class: 'g-page' }, x.thumb ? h('img', { src: thumbImg(x.key), alt: '', loading: 'lazy', draggable: false }) : h('div', { class: 'ph', text: x.title }), ...marks),
         marks.length ? h('span', { class: 'g-count', text: `${marks.length} on p.1` }) : null),
       h('div', { class: 'cf-cap' },
         h('button', { type: 'button', class: 'cf-digest', title: 'Quick digest without leaving this page', 'aria-label': 'Digest', onclick: e => { e.stopPropagation(); openPreview(x.key); } }, '◫'),
