@@ -555,6 +555,22 @@ def render_figure(doc: Document, fig_index: int, out_dir: str) -> list[tuple[byt
     return out
 
 
+def _llm_image(b: bytes, mime: str, max_width: int = 1200, quality: int = 80) -> tuple:
+    """What the model is shown: the figure as a JPEG of at most 1200 px. The PNG stays on disk for the
+    reader; the request (sent once per run, base64) is about a third of the PNG, and labels stay legible."""
+    try:
+        import io
+        from PIL import Image
+        im = Image.open(io.BytesIO(b)).convert("RGB")
+        if im.width > max_width:
+            im = im.resize((max_width, round(im.height * max_width / im.width)), Image.LANCZOS)
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=quality, optimize=True)
+        return buf.getvalue(), "image/jpeg"
+    except Exception:  # noqa: BLE001  (Pillow missing or odd image: send the original)
+        return b, mime
+
+
 async def figure_exposition(doc: Document, llm: LLM, out_dir: str, fig_index: Optional[int] = None,
                             runs: int = 3) -> dict:
     r = _base("figure_exposition")
@@ -584,7 +600,7 @@ async def figure_exposition(doc: Document, llm: LLM, out_dir: str, fig_index: Op
         r["notes"].append("Needs a vision language model: set LITELLM_PROXY_API_KEY (or OPENROUTER_API_KEY).")
         return r
     content = [{"type": "text", "text": _FIG_PROMPT.format(caption=f.caption[:600].replace('"', "'"))}]
-    content += [LLM.image_part(b, mime) for b, mime, _ in images[:4]]
+    content += [LLM.image_part(*_llm_image(b, mime)) for b, mime, _ in images[:4]]
     msgs = [{"role": "user", "content": content}]
     outs = await asyncio.gather(*[llm.json(msgs, _FIG_SCHEMA, "figure_transcript", run=k, max_tokens=12000)
                                   for k in range(runs)])
