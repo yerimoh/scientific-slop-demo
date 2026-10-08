@@ -426,13 +426,14 @@ function scoreCard(idx, ms, running) {
   const v = have ? idx.index : null;
   const b = have ? band(v) : null;
   const nDone = ORDER.filter(k => ms[k]?.status === 'done').length;
-  const sub = have ? `${v}% of the units we measured show a slop pattern, averaged over the three planes.` + (idx.partial ? ` Partial: ${nDone} of 6 measures could run.` : '')
+  // only states that need a word: partial runs, still running, nothing measured
+  const sub = have ? (idx.partial ? `Partial: ${nDone} of 6 measures could run.` : '')
     : running ? 'Measuring six patterns across the paper…' : 'No measure applied to this paper.';
   const hero = h('div', { class: 'sc-hero' },
     h('div', { class: 'hero-num' + (have ? '' : ' pending') }, h('span', { class: 'n', text: have ? String(v) : '··' }), h('span', { class: 'of', text: '/100' })),
     h('div', { class: 'hero-label' }, 'Science Slop Index',
       b ? h('span', { class: 'band', title: 'Descriptive cut-points on the share of flagged units, not a probability of AI authorship' }, b.label) : null),
-    h('p', { class: 'hero-sub', text: sub }));
+    sub ? h('p', { class: 'hero-sub', text: sub }) : null);
   // one chart, one scale: the overall index and the three planes as bars on the same 0–100 axis, with the band cut-points as gridlines
   const axis = h('div', { class: 'sc-axis' }, h('span'), h('div', { class: 'sc-axis-in' }, ...BANDS.map((bd, i) => h('span', { style: { left: (i ? BANDS[i - 1].max : 0) + '%' }, text: bd.label }))), h('span'));
   const grid = h('div', { class: 'sc-grid', 'aria-hidden': 'true' }, ...[20, 40, 60].map(t => h('i', { style: { left: t + '%' } })));
@@ -2035,7 +2036,6 @@ async function renderDeepDive(key, ranked) {
   host.replaceChildren(
     h('div', { class: 'dive-head' },
       h('div', { class: 'dive-head-l' },
-        h('span', { class: 'dive-kicker', text: ['Example report', x?.source, x?.ai_generated && !/ai-generated/i.test(x?.source || '') ? 'AI-generated' : null, rank ? `#${rank} of ${ranked.length}` : null].filter(Boolean).join(' · ') }),
         h('h2', { class: 'dive-title', text: doc.title || job.title })),
       h('div', { class: 'modal-actions' },
         finderBtn(() => openReportAt('paper'), 'small'),

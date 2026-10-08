@@ -1180,3 +1180,9 @@ button.sc-row:hover .sc-label { color: var(--ink); text-decoration: underline; t
 .finder-btn .fb-arrow { color: var(--ink-3); }
 .finder-btn, .finder-btn.small { border: 1px solid var(--line-2) !important; padding: 6px 12px 6px 10px; line-height: 1.45; }
 .finder-btn .fb-l b, .finder-btn.small .fb-l b { font-size: 13.5px; }
+
+/* score card without the explanatory line: number and chart side by side, centred */
+.score-card { align-items: center; grid-template-columns: minmax(200px, 240px) 1fr; }
+.dive .score-card { padding: 16px 22px; }
+.sc-hero .hero-label { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.dive-head { margin-bottom: 12px; }
