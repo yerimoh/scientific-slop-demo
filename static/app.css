@@ -888,7 +888,7 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 .news-body b { color: var(--ink); }
 @media (max-width: 640px) { .news-list li { grid-template-columns: 1fr; gap: 4px; } }
 /* The SciSlop Finder: the reader, presented as a device of its own */
-.finder-btn { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 8px; border: 1px solid rgba(255,255,255,.14); border-radius: 999px; background: linear-gradient(180deg, #2b3647 0%, #1f2937 55%, #161d28 100%); color: #fff; cursor: pointer; text-decoration: none; box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 6px 16px -8px rgba(31,41,55,.6); transition: transform .12s, box-shadow .15s; white-space: nowrap; font: inherit; }
+.finder-btn { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 8px; border: 1px solid #17181c; border-radius: 999px; background: #17181c; color: #fff; cursor: pointer; text-decoration: none; box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, 0 6px 16px -8px rgba(31,41,55,.6); transition: transform .12s, box-shadow .15s; white-space: nowrap; font: inherit; }
 .finder-btn:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 10px 22px -8px rgba(31,41,55,.65), 0 0 0 3px color-mix(in oklab, var(--argument) 35%, transparent); }
 .finder-btn:active { transform: translateY(0); }
 .finder-btn .fb-ico { width: 30px; height: 30px; flex: none; filter: drop-shadow(0 0 4px rgba(232,161,169,.35)); }
