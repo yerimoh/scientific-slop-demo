@@ -24,6 +24,12 @@ jobs:
       - run: python build_static.py --base /scientific-slop-demo --live https://scientific-slop-demo.onrender.com
         env:
           SCISLOP_SHEET_ID: ${{ secrets.SCISLOP_SHEET_ID }}   # repo secret; the submissions sheet the count is read from
+      # design preview: the `redesign` branch is built into docs/preview/ (https://yerimoh.github.io/scientific-slop-demo/preview/)
+      - run: |
+          git fetch --depth=1 origin redesign && git worktree add /tmp/preview origin/redesign
+          cd /tmp/preview && python build_static.py --base /scientific-slop-demo/preview --live https://scientific-slop-demo.onrender.com --out "$GITHUB_WORKSPACE/docs/preview"
+        env:
+          SCISLOP_SHEET_ID: ${{ secrets.SCISLOP_SHEET_ID }}
       - uses: actions/upload-pages-artifact@v3
         with: { path: docs }
   deploy:
