@@ -921,9 +921,10 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 @media (max-width: 560px) { .discuss-links { width: 100%; } .post-link { flex: 1 1 100%; } }
 
 .propose-teaser { padding: 0 24px; }
-.hero-call { display: block; max-width: 720px; margin: 16px auto 0; padding: 10px 16px; border-radius: 12px; background: var(--argument-band); border: 1px solid var(--argument-light); color: var(--ink-2); font-size: 14px; text-decoration: none; line-height: 1.45; }
-.hero-call b { color: var(--ink); } .hero-call span { color: var(--ink); font-weight: 600; white-space: nowrap; }
-.hero-call:hover { border-color: var(--argument-deep); }
+.hero-call { max-width: 720px; margin: 18px auto 0; padding: 0; font-size: 14.5px; color: var(--ink-2); text-align: center; line-height: 1.45; }
+.hero-call a { color: inherit; text-decoration: none; }
+.hero-call a span { color: var(--ink); font-weight: 600; white-space: nowrap; margin-left: 2px; }
+.hero-call a:hover span { text-decoration: underline; text-underline-offset: 3px; }
 .call-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 36px; align-items: start; }
 .call-text .sec-h { margin: 4px 0 8px; font-size: clamp(26px, 3.4vw, 34px); }
 .call-p { margin: 0 0 18px; color: var(--ink-2); font-size: 16.5px; line-height: 1.6; max-width: 620px; }
@@ -1126,3 +1127,19 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
   .view-form { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* 2026-10-08 review: modest corners instead of pills, no card shadows, severity as plain text */
+:root, :root[data-theme="dark"] { --shadow: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --shadow: none; } }
+.ask { box-shadow: none; border-color: var(--line-2); }
+.finder-btn, .finder-btn:hover, .call-chip:hover { box-shadow: none; } .finder-btn .fb-ico { filter: none; }
+.top nav a, .icon-btn { border-radius: 7px; }
+.res-btn { border-radius: 8px; box-shadow: none; } .res-btn:hover { transform: none; }
+.btn, .btn.ghost, .btn.small { border-radius: 8px; }
+.chip, .pill, .pill.soft { border-radius: 6px; }
+.ask .go { border-radius: 9px; } .ask .go-a { border-radius: 6px; }
+.finder-btn { border-radius: 9px; } .call-chip { border-radius: 9px; }
+.post-link, .contrib, .u-live, .post-cta { border-radius: 8px; }
+.post-link:hover, .call-chip:hover { transform: none; }
+.band { background: none; border: 0; padding: 0; font-size: 13.5px; color: var(--red); }
+.band .ico { display: none; }
