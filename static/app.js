@@ -1798,7 +1798,7 @@ function pageStage(key, res, openFindings) {
   });
   if (n < sizes.length) strip.append(h('a', { class: 'stage-thumb stage-more', href: `/r/${key}?tab=paper&p=${n}`, 'data-link': '', text: `+${sizes.length - n}` }));
   show(0);
-  const el = h('div', { class: 'stage' }, big, h('div', { class: 'stage-foot' }, label, h('span', { class: 'muted', text: 'Hover a thumbnail to switch pages' })), strip);
+  const el = h('div', { class: 'stage' }, big, h('div', { class: 'stage-foot' }, label), strip);
   // jump to the first page where a measure left a mark and flash those marks
   el.showMeasure = mk => {
     const p = per.findIndex(marks => marks.some(x => x.m.key === mk));
@@ -1845,12 +1845,12 @@ function previewBody(key, job, openReportAt, opts = {}) {
     compact
       ? h('div', { class: 'prev-grid3' },
         h('div', { class: 'prev-col' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'On the paper' }), h('p', { text: `${res.measures.reduce((a, m) => a + (m.instances || []).length, 0)} findings over ${pdf.sizes?.length || 0} pages. Hover a mark to read why, click it for details.` })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'On the paper' }), h('p', { text: `${res.measures.reduce((a, m) => a + (m.instances || []).length, 0)} findings · ${pdf.sizes?.length || 0} pages` })),
           (stageEl = pageStage(key, res, () => openReportAt('findings')))),
         h('div', { class: 'prev-col' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), null),
           map,
-          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), null),
           bars,
           h('div', { class: 'section-title' }, stageTitle, stageSub),
           stage))
@@ -1859,9 +1859,9 @@ function previewBody(key, job, openReportAt, opts = {}) {
           h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings placed here. Hover one to read why; click it for details.` : 'Nothing flagged on the first page.' })),
           page),
         h('div', { class: 'prev-right' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), null),
           map,
-          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), null),
           bars,
           h('div', { class: 'section-title' }, stageTitle, stageSub),
           stage)));
@@ -1870,7 +1870,7 @@ function previewBody(key, job, openReportAt, opts = {}) {
     const PREF = ['figure_exposition', 'macro_redundancy', 'argument_graph', 'cross_refs', 'citation_isolation', 'evidence_gap'];
     const first = PREF.find(k => ms[k]?.status === 'done' && (ms[k].instances || []).length && measureViz(ms[k], doc)) || ORDER.find(k => measureViz(ms[k], doc));
     if (first && !compact) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
-    else if (compact) { stageTitle.textContent = 'Graph'; stageSub.textContent = 'Pick a measure above.'; }
+    else if (compact) { stageTitle.textContent = 'Graph'; stageSub.textContent = ''; }
     drawMap(map, doc, ms, () => openReportAt('findings'));
     requestAnimationFrame(() => requestAnimationFrame(() => body.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
   };
