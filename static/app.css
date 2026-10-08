@@ -1197,3 +1197,5 @@ button.sc-row:hover .sc-label { color: var(--ink); text-decoration: underline; t
 .notice, .usage, .hero-call { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
 .notice { margin-top: 14px; } .usage { margin: 14px auto 0; } .hero-call { margin-top: 10px; }
 .usage span { color: var(--ink-2); font-weight: 400; }
+/* "slop" in the headline carries the three plane colours */
+h1.hero em { color: transparent; background: linear-gradient(90deg, var(--structure) 0%, var(--structure) 30%, var(--argument) 50%, var(--artifacts) 72%, var(--artifacts) 100%); -webkit-background-clip: text; background-clip: text; padding-right: .06em; }
