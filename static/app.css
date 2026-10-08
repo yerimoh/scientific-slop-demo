@@ -1178,3 +1178,5 @@ button.sc-row:hover .sc-label { color: var(--ink); text-decoration: underline; t
 .finder-btn { background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); box-shadow: none; }
 .finder-btn:hover { background: var(--surface-2); border-color: var(--ink); opacity: 1; transform: none; }
 .finder-btn .fb-arrow { color: var(--ink-3); }
+.finder-btn, .finder-btn.small { border: 1px solid var(--line-2) !important; padding: 6px 12px 6px 10px; line-height: 1.45; }
+.finder-btn .fb-l b, .finder-btn.small .fb-l b { font-size: 13.5px; }
