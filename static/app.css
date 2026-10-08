@@ -1173,3 +1173,8 @@ button.sc-row:hover .sc-label { color: var(--ink); text-decoration: underline; t
 .finder-btn .fb-l b { font-size: 14px; font-weight: 600; letter-spacing: 0; }
 .finder-btn .fb-arrow { color: rgba(255,255,255,.6); }
 .finder-btn.small { padding: 7px 12px 7px 10px; } .finder-btn.small .fb-ico { width: 15px; height: 15px; } .finder-btn.small .fb-l b { font-size: 13.5px; }
+
+/* finder button styled like the Findings button beside it */
+.finder-btn { background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); box-shadow: none; }
+.finder-btn:hover { background: var(--surface-2); border-color: var(--ink); opacity: 1; transform: none; }
+.finder-btn .fb-arrow { color: var(--ink-3); }
