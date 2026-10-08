@@ -202,10 +202,10 @@ a.tm:hover .tm-avatar { border-color: var(--ink); }
 /* deep dive on the home page */
 .dive-wrap { padding-top: 8px; }
 .dive { padding: 16px 24px 22px; margin-top: -8px; }
-.dive-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
-.dive-head-l { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
-.dive-eyebrow { margin: 0; flex: none; }
-.dive-title { margin: 0; font-size: 17px; line-height: 1.3; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.dive-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
+.dive-head-l { display: grid; gap: 3px; min-width: 0; }
+.dive-kicker { font-size: 12.5px; color: var(--ink-3); }
+.dive-title { margin: 0; font-size: 18px; line-height: 1.3; letter-spacing: -.01em; font-weight: 600; }
 .dive-meta { color: var(--ink-3); font-size: 13px; flex: none; }
 .dive .score-card { border: 1px solid var(--line); box-shadow: none; padding: 16px 20px; }
 .dive .hero-num .n { font-size: 72px; }
@@ -1143,3 +1143,46 @@ footer .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wr
 .post-link:hover, .call-chip:hover { transform: none; }
 .band { background: none; border: 0; padding: 0; font-size: 13.5px; color: var(--red); }
 .band .ico { display: none; }
+
+/* score card, one chart on one scale */
+.score-card { padding: 22px 26px; gap: 28px; --sc-lab: 84px; --sc-val: 36px; --sc-gap: 12px; }
+.sc-hero .hero-label { margin-top: 8px; }
+.sc-chart { position: relative; display: grid; gap: 0; }
+.sc-axis, .sc-row { display: grid; grid-template-columns: var(--sc-lab) minmax(0, 1fr) var(--sc-val); column-gap: var(--sc-gap); align-items: center; }
+.sc-axis-in { position: relative; height: 18px; font-size: 11px; color: var(--ink-3); }
+.sc-axis-in span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.sc-axis-in span:first-child { transform: none; }
+.sc-grid { position: absolute; left: calc(var(--sc-lab) + var(--sc-gap)); right: calc(var(--sc-val) + var(--sc-gap)); top: 18px; bottom: 0; pointer-events: none; }
+.sc-grid i { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }
+.sc-row { position: relative; z-index: 1; padding: 5px 0; }
+.sc-row.overall { padding-bottom: 9px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.sc-row.overall .sc-label, .sc-row.overall .sc-val { font-weight: 700; color: var(--ink); }
+.sc-row.overall .sc-track i { height: 10px; }
+.sc-label { font-size: 13.5px; color: var(--ink-2); text-align: left; }
+.sc-track { position: relative; height: 22px; display: flex; align-items: center; }
+.sc-track i { display: block; height: 8px; border-radius: 2px; width: 0; transition: width .9s cubic-bezier(.2, .8, .2, 1); }
+.sc-val { font-size: 15px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+button.sc-row { background: none; border: 0; border-radius: 0; cursor: pointer; font: inherit; color: inherit; width: 100%; }
+button.sc-row:hover .sc-label { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.dive .score-card { padding: 18px 22px; }
+@media (max-width: 720px) { .score-card { grid-template-columns: 1fr; gap: 14px; --sc-lab: 72px; --sc-val: 30px; } .sc-axis-in span:nth-child(2), .sc-axis-in span:nth-child(3) { display: none; } }
+
+/* finder button: one line, plain words, thin icon */
+.finder-btn { padding: 8px 14px 8px 12px; gap: 8px; border-radius: 8px; }
+.finder-btn .fb-ico { width: 16px; height: 16px; opacity: .9; }
+.finder-btn .fb-l b { font-size: 14px; font-weight: 600; letter-spacing: 0; }
+.finder-btn .fb-arrow { color: rgba(255,255,255,.6); }
+.finder-btn.small { padding: 7px 12px 7px 10px; } .finder-btn.small .fb-ico { width: 15px; height: 15px; } .finder-btn.small .fb-l b { font-size: 13.5px; }
+
+/* finder button styled like the Findings button beside it */
+.finder-btn { background: var(--surface); color: var(--ink); border: 1px solid var(--line-2); box-shadow: none; }
+.finder-btn:hover { background: var(--surface-2); border-color: var(--ink); opacity: 1; transform: none; }
+.finder-btn .fb-arrow { color: var(--ink-3); }
+.finder-btn, .finder-btn.small { border: 1px solid var(--line-2) !important; padding: 6px 12px 6px 10px; line-height: 1.45; }
+.finder-btn .fb-l b, .finder-btn.small .fb-l b { font-size: 13.5px; }
+
+/* score card without the explanatory line: number and chart side by side, centred */
+.score-card { align-items: center; grid-template-columns: minmax(200px, 240px) 1fr; }
+.dive .score-card { padding: 16px 22px; }
+.sc-hero .hero-label { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.dive-head { margin-bottom: 12px; }

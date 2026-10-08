@@ -426,30 +426,32 @@ function scoreCard(idx, ms, running) {
   const v = have ? idx.index : null;
   const b = have ? band(v) : null;
   const nDone = ORDER.filter(k => ms[k]?.status === 'done').length;
-  const sub = have ? `Averaged over the three planes, ${v}% of the units we measured show a slop pattern.` + (idx.partial ? ` Partial: ${nDone} of 6 measures could run.` : '')
+  // only states that need a word: partial runs, still running, nothing measured
+  const sub = have ? (idx.partial ? `Partial: ${nDone} of 6 measures could run.` : '')
     : running ? 'Measuring six patterns across the paper…' : 'No measure applied to this paper.';
-  const hero = h('div', {},
+  const hero = h('div', { class: 'sc-hero' },
     h('div', { class: 'hero-num' + (have ? '' : ' pending') }, h('span', { class: 'n', text: have ? String(v) : '··' }), h('span', { class: 'of', text: '/100' })),
     h('div', { class: 'hero-label' }, 'Science Slop Index',
-      b ? h('span', { class: 'band', title: 'Descriptive cut-points on the share of flagged units, not a probability of AI authorship' },
-        h('span', { class: 'ico', style: { background: b.color } }), b.label) : null),
-    h('p', { class: 'hero-sub', text: sub }));
-  const meter = h('div', { class: 'meter', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': v ?? 0, 'aria-label': 'Science Slop Index' },
-    h('i', { class: 'fill', style: { width: '0%', background: b ? b.color : 'var(--line-2)' }, 'data-w': (v ?? 0) + '%' }),
-    ...[20, 40, 60].map(t => h('span', { class: 'tick', style: { left: `calc(${t}% - 1px)` } })));
-  const labels = h('div', { class: 'scale-labels' },
-    h('span', { style: { left: '0%' }, text: 'Low' }), h('span', { style: { left: '30%' }, text: 'Moderate' }),
-    h('span', { style: { left: '50%' }, text: 'High' }), h('span', { style: { left: '100%' }, text: 'Very high' }));
-  const tiles = h('div', { class: 'plane-tiles' }, PLANES.map(p => {
-    const ps = idx?.planes?.[p.key]?.score;
-    const t = h('button', { class: `tile band-${p.key}`, type: 'button', onclick: () => { if (!state.job) return; state.tab = 'findings'; state.sig = ''; render(state.job); setTimeout(() => document.getElementById('plane-' + p.key)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); } },
-      h('span', { class: `tag ${p.key}`, text: p.label }),
-      h('div', { class: 't-val', text: ps == null ? (running ? '··' : '—') : fmt(ps) }),
-      h('div', { class: 't-bar' }, h('i', { style: { width: '0%', background: PLANE_VAR[p.key] }, 'data-w': ((ps || 0) * 100) + '%' })));
-    bindTip(t, `${p.label}: ${ps == null ? 'not measured' : fmt(ps) + ' / 100'}`, p.q);
-    return t;
-  }));
-  return h('div', { class: 'card score-card' }, hero, h('div', { class: 'scale' }, meter, labels, tiles));
+      b ? h('span', { class: 'band', title: 'Descriptive cut-points on the share of flagged units, not a probability of AI authorship' }, b.label) : null),
+    sub ? h('p', { class: 'hero-sub', text: sub }) : null);
+  // one chart, one scale: the overall index and the three planes as bars on the same 0–100 axis, with the band cut-points as gridlines
+  const axis = h('div', { class: 'sc-axis' }, h('span'), h('div', { class: 'sc-axis-in' }, ...BANDS.map((bd, i) => h('span', { style: { left: (i ? BANDS[i - 1].max : 0) + '%' }, text: bd.label }))), h('span'));
+  const grid = h('div', { class: 'sc-grid', 'aria-hidden': 'true' }, ...[20, 40, 60].map(t => h('i', { style: { left: t + '%' } })));
+  const row = (label, val, color, opts = {}) => {
+    const pct = val == null ? 0 : Math.round(val);
+    const el = h(opts.onclick ? 'button' : 'div', { class: 'sc-row' + (opts.cls ? ' ' + opts.cls : ''), type: opts.onclick ? 'button' : null, onclick: opts.onclick || null },
+      h('span', { class: 'sc-label', text: label }),
+      h('span', { class: 'sc-track', role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': 100, 'aria-valuenow': pct, 'aria-label': label },
+        h('i', { style: { width: '0%', background: color }, 'data-w': pct + '%' })),
+      h('span', { class: 'sc-val', text: val == null ? (running ? '··' : '—') : String(pct) }));
+    if (opts.tip) bindTip(el, opts.tip[0], opts.tip[1]);
+    return el;
+  };
+  const rows = [row('Overall', v, b ? b.color : 'var(--line-2)', { cls: 'overall' }),
+    ...PLANES.map(p => { const ps = idx?.planes?.[p.key]?.score;
+      return row(p.label, ps == null ? null : ps * 100, PLANE_VAR[p.key], { tip: [`${p.label}: ${ps == null ? 'not measured' : fmt(ps) + ' / 100'}`, p.q],
+        onclick: () => { if (!state.job) return; state.tab = 'findings'; state.sig = ''; render(state.job); setTimeout(() => document.getElementById('plane-' + p.key)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); } }); })];
+  return h('div', { class: 'card score-card' }, hero, h('div', { class: 'sc-chart' }, axis, grid, ...rows));
 }
 
 // ------------------------------------------------------------------ export
@@ -1753,7 +1755,7 @@ async function fetchReport(key) {
 }
 
 // ------------------------------------------------------------------ The SciSlop Finder (the reader)
-const FINDER_INNER = '<svg class="fb-ico" viewBox="0 0 34 34" aria-hidden="true"><circle cx="15" cy="15" r="9.5" fill="rgba(255,255,255,.1)"/><path d="M15 4.5A10.5 10.5 0 0 1 24.1 20.25" fill="none" stroke="currentColor" stroke-width="3.2"/><path d="M24.1 20.25A10.5 10.5 0 0 1 5.9 20.25" fill="none" stroke="currentColor" stroke-width="3.2"/><path d="M5.9 20.25A10.5 10.5 0 0 1 15 4.5" fill="none" stroke="currentColor" stroke-width="3.2"/><circle cx="12.5" cy="12.5" r="2.1" fill="currentColor"/><circle cx="18.5" cy="16.5" r="2.4" fill="currentColor"/><circle cx="12.8" cy="19.2" r="1.8" fill="currentColor"/><path d="M22.5 22.5 30 30" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg><span class="fb-l"><small>open in</small><b>The SciSlop Finder</b></span><span class="fb-arrow" aria-hidden="true">→</span>';
+const FINDER_INNER = '<svg class="fb-ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg><span class="fb-l"><b>Open in SciSlop Finder</b></span><span class="fb-arrow" aria-hidden="true">→</span>';
 function finderBtn(onclick, cls = '') {
   const b = h('button', { type: 'button', class: 'finder-btn' + (cls ? ' ' + cls : ''), onclick, title: 'Read the paper with every finding drawn on its pages, and flag what the index missed' });
   b.innerHTML = FINDER_INNER;
@@ -1796,7 +1798,7 @@ function pageStage(key, res, openFindings) {
   });
   if (n < sizes.length) strip.append(h('a', { class: 'stage-thumb stage-more', href: `/r/${key}?tab=paper&p=${n}`, 'data-link': '', text: `+${sizes.length - n}` }));
   show(0);
-  const el = h('div', { class: 'stage' }, big, h('div', { class: 'stage-foot' }, label, h('span', { class: 'muted', text: 'Hover a thumbnail to switch pages' })), strip);
+  const el = h('div', { class: 'stage' }, big, h('div', { class: 'stage-foot' }, label), strip);
   // jump to the first page where a measure left a mark and flash those marks
   el.showMeasure = mk => {
     const p = per.findIndex(marks => marks.some(x => x.m.key === mk));
@@ -1843,12 +1845,12 @@ function previewBody(key, job, openReportAt, opts = {}) {
     compact
       ? h('div', { class: 'prev-grid3' },
         h('div', { class: 'prev-col' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'On the paper' }), h('p', { text: `${res.measures.reduce((a, m) => a + (m.instances || []).length, 0)} findings over ${pdf.sizes?.length || 0} pages. Hover a mark to read why, click it for details.` })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'On the paper' }), h('p', { text: `${res.measures.reduce((a, m) => a + (m.instances || []).length, 0)} findings · ${pdf.sizes?.length || 0} pages` })),
           (stageEl = pageStage(key, res, () => openReportAt('findings')))),
         h('div', { class: 'prev-col' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), null),
           map,
-          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), null),
           bars,
           h('div', { class: 'section-title' }, stageTitle, stageSub),
           stage))
@@ -1857,9 +1859,9 @@ function previewBody(key, job, openReportAt, opts = {}) {
           h('div', { class: 'section-title' }, h('h3', { text: 'First page' }), h('p', { text: marks.length ? `${marks.length} findings placed here. Hover one to read why; click it for details.` : 'Nothing flagged on the first page.' })),
           page),
         h('div', { class: 'prev-right' },
-          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), h('p', { text: 'One row per measure, left to right through the paper.' })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'Where it shows up' }), null),
           map,
-          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), h('p', { text: 'Click a measure to see its graph.' })),
+          h('div', { class: 'section-title' }, h('h3', { text: 'Six measures' }), null),
           bars,
           h('div', { class: 'section-title' }, stageTitle, stageSub),
           stage)));
@@ -1868,7 +1870,7 @@ function previewBody(key, job, openReportAt, opts = {}) {
     const PREF = ['figure_exposition', 'macro_redundancy', 'argument_graph', 'cross_refs', 'citation_isolation', 'evidence_gap'];
     const first = PREF.find(k => ms[k]?.status === 'done' && (ms[k].instances || []).length && measureViz(ms[k], doc)) || ORDER.find(k => measureViz(ms[k], doc));
     if (first && !compact) bars.querySelector(`.mb-row[data-k="${first}"]`)?.click();
-    else if (compact) { stageTitle.textContent = 'Graph'; stageSub.textContent = 'Pick a measure above.'; }
+    else if (compact) { stageTitle.textContent = 'Graph'; stageSub.textContent = ''; }
     drawMap(map, doc, ms, () => openReportAt('findings'));
     requestAnimationFrame(() => requestAnimationFrame(() => body.querySelectorAll('[data-w]').forEach(n => { n.style.width = n.dataset.w; })));
   };
@@ -2034,9 +2036,7 @@ async function renderDeepDive(key, ranked) {
   host.replaceChildren(
     h('div', { class: 'dive-head' },
       h('div', { class: 'dive-head-l' },
-        h('span', { class: 'eyebrow dive-eyebrow', text: 'Example report' }),
-        h('h2', { class: 'dive-title', title: doc.title || job.title }, x?.ai_generated ? h('span', { class: 'ai-badge', text: 'AI-generated' }) : null, doc.title || job.title),
-        h('span', { class: 'dive-meta', text: [x?.source, rank ? `#${rank} of ${ranked.length}` : null].filter(Boolean).join(' · ') })),
+        h('h2', { class: 'dive-title', text: doc.title || job.title })),
       h('div', { class: 'modal-actions' },
         finderBtn(() => openReportAt('paper'), 'small'),
         h('button', { class: 'btn ghost small', type: 'button', onclick: () => openReportAt('findings') }, 'Findings'))),
