@@ -1754,7 +1754,7 @@ async function fetchReport(key) {
 }
 
 // ------------------------------------------------------------------ The SciSlop Finder (the reader)
-const FINDER_INNER = '<svg class="fb-ico" viewBox="0 0 34 34" aria-hidden="true"><circle cx="15" cy="15" r="9.5" fill="rgba(255,255,255,.1)"/><path d="M15 4.5A10.5 10.5 0 0 1 24.1 20.25" fill="none" stroke="currentColor" stroke-width="3.2"/><path d="M24.1 20.25A10.5 10.5 0 0 1 5.9 20.25" fill="none" stroke="currentColor" stroke-width="3.2"/><path d="M5.9 20.25A10.5 10.5 0 0 1 15 4.5" fill="none" stroke="currentColor" stroke-width="3.2"/><circle cx="12.5" cy="12.5" r="2.1" fill="currentColor"/><circle cx="18.5" cy="16.5" r="2.4" fill="currentColor"/><circle cx="12.8" cy="19.2" r="1.8" fill="currentColor"/><path d="M22.5 22.5 30 30" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg><span class="fb-l"><small>open in</small><b>The SciSlop Finder</b></span><span class="fb-arrow" aria-hidden="true">→</span>';
+const FINDER_INNER = '<svg class="fb-ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg><span class="fb-l"><b>Open in SciSlop Finder</b></span><span class="fb-arrow" aria-hidden="true">→</span>';
 function finderBtn(onclick, cls = '') {
   const b = h('button', { type: 'button', class: 'finder-btn' + (cls ? ' ' + cls : ''), onclick, title: 'Read the paper with every finding drawn on its pages, and flag what the index missed' });
   b.innerHTML = FINDER_INNER;
