@@ -1193,3 +1193,7 @@ button.sc-row:hover .sc-label { color: var(--ink); text-decoration: underline; t
 .hero-call a { color: var(--ink); font-weight: 500; text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; }
 .hero-call a:hover { text-decoration-color: var(--ink); }
 .hero-call a span { display: none; }
+/* the three lines under the input share one size, colour and spacing */
+.notice, .usage, .hero-call { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+.notice { margin-top: 14px; } .usage { margin: 14px auto 0; } .hero-call { margin-top: 10px; }
+.usage span { color: var(--ink-2); font-weight: 400; }
