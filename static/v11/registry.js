@@ -428,7 +428,7 @@ function renderPage() {
 }
 function sideCard(it) {
   const c = h('div', { class: 'v-sc ' + it.ar.cls, 'data-id': it.id, tabindex: 0 },
-    h('div', { class: 'sc-h' }, h('span', { class: 'sc-t' }, h('span', { class: 'sc-pl', text: it.ar.title }), h('b', { text: it.name }), h('span', { class: 'sc-src' + (it.v1 ? '' : ' new'), text: it.v1 ? 'from v1 · ' + it.v1 : 'new in v2' })), h('span', { class: 'sc-votes', 'data-votes': it.id }, ...voteBtns(it.id))),
+    h('div', { class: 'sc-h' }, h('span', { class: 'sc-t' }, h('span', { class: 'sc-pl', text: it.ar.title }), h('b', { text: it.name })), h('span', { class: 'sc-votes', 'data-votes': it.id }, ...voteBtns(it.id))),
     h('p', { class: 'sc-w', text: it.short }),
     h('div', { class: 'sc-more' }, h('p', { class: 'sc-n', text: it.what }), h('p', { class: 'sc-n sc-note', text: it.ex.specnote || it.ex.note }), h('a', { href: '#' + it.id, 'data-xref': it.id, class: 'sc-def', text: 'Definition →' }), ' ', h('a', { href: '#hub-' + it.id, 'data-xref': 'hub-' + it.id, class: 'sc-def', text: 'Seen it? Add a case →' })));
   return c;
@@ -578,7 +578,6 @@ function card(it, area) {
   d.append(h('details', { class: 'e-text e-open' },
     h('summary', { class: 'e-sum' },
       h('h3', { class: 'e-name', text: it.name }),
-      h('p', { class: 'e-origin' + (it.v1 ? '' : ' new'), text: it.v1 ? 'from v1 · ' + it.v1 : 'new in v2' }),
       h('p', { class: 'e-what', text: it.what })),
     h('div', { class: 'e-body' },
       h('blockquote', { class: 'e-q' + (it.ex.made ? ' made' : '') }, h('p', { class: 'e-qt' }, it.ex.pre, h('mark', { text: it.ex.mark }), it.ex.post), h('p', { class: 'e-src', text: it.ex.src || it.ex.sec })),
