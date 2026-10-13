@@ -116,13 +116,13 @@ const AREAS = [
   { n: 5, cls: 'a5', short: 'Rhetoric', title: 'Rhetoric in place of evidence', q: 'When a sentence sounds like a reason, a comparison, an interpretation, or evidence, is the content actually there?' },
 ];
 const ITEMS = [
-  { id: '1-1', area: 1, name: 'Unsupported Claims', what: 'A claim is stated as a result, and nothing in the paper backs it.',
+  { id: '1-1', area: 1, v1: 'Argument graph', name: 'Unsupported Claims', what: 'A claim is stated as a result, and nothing in the paper backs it.',
     ex: { spec: 'our method is robust to label noise', specnote: 'Every experiment uses clean labels. No noise study, no proof, no citation.', src: 'AI paper · SciSlopBench FA0083 · §3 Method', pre: '', mark: 'This achieves near-high-k robustness at near-low-k average cost.', post: '', note: 'No cost, latency or compute is measured anywhere in the paper.' },
     judge: ['Decide what support this claim needs: an experiment, a proof, or a citation.', 'Look for it in the body, the appendix, and the supplement.', 'A claim too vague to pin down is logged separately, not as unsupported.'],
     not: ['Marked as a hypothesis or future work.', 'Backed by a proof, a citation, or an appendix result.'],
     fix: ['Connect the real support, or shrink the claim to it.', 'Not a fix: unrelated citations, invented runs, deleting the contribution.'],
     borders: [['5-4', 'support is described, but wrongly'], ['1-2', 'support exists, claim exceeds it']] },
-  { id: '1-2', area: 1, name: 'Overstated Claims', what: 'Support exists, but the claim reaches past it in scope, strength, or certainty.',
+  { id: '1-2', area: 1, v1: 'Argument graph', name: 'Overstated Claims', what: 'Support exists, but the claim reaches past it in scope, strength, or certainty.',
     ex: { spec: 'Our method consistently outperforms baselines across domains', specnote: 'Gains appear only in the few-shot setting on CIFAR-10. One dataset, one condition.', src: 'AI paper · SciSlopBench FA0002 · §1 Introduction', pre: 'Task-dependent analysis: ', mark: 'Diffuse-dependency tasks (Variable Tracking) benefit substantially from adaptive sizing, while distributed-information tasks (Multi-Query NIAH) require higher budgets', post: ', revealing a structural limit on cache reduction.', note: 'Two tasks were run, one per “class”. The classes are never defined, and no other task in either class is tested.' },
     judge: ['Compare claim and support on four axes: scope, conditions, effect and direction, certainty.', 'Observed, statistical, or causal are three different claims.', 'A strong adjective by itself decides nothing.'],
     not: ['Scope clear from context.', 'A generalization stated as a hypothesis after the verified range.'],
@@ -196,25 +196,25 @@ const ITEMS = [
     not: ['A short caption whose meaning is clear from the legend and text.', 'A simplified overview whose detail is clearly located.'],
     fix: ['Explain the notation and tie it to the method.', 'Not a fix: a longer caption; deleting the figure.'] },
 
-  { id: '5-1', area: 5, name: 'Unexplained Importance', link: ['a concrete problem or gap', 'why it is worth studying'], what: 'Something is called important, but which problem, and why it matters, is never said.',
+  { id: '5-1', area: 5, v1: 'Argument graph', name: 'Unexplained Importance', link: ['a concrete problem or gap', 'why it is worth studying'], what: 'Something is called important, but which problem, and why it matters, is never said.',
     ex: { spec: 'Existing models face important challenges. Addressing these challenges is essential for future progress.', specnote: 'Which challenge? What fails, for whom? The rest of the paper gives only the architecture and the scores.', src: 'AI paper · SciSlopBench FA0280 · §1 Introduction', pre: 'However, this offline calibration requirement limits deployment flexibility: ', mark: 'the prior may not transfer across domains, prompt styles, or model updates.', post: '', note: 'This is the whole motivation for the paper’s second contribution. The transfer failure is never shown, on any domain or prompt.' },
     judge: ['Map: the thing called important → its concrete problem → the reason to study it.', 'A theoretical question counts as a reason; practical cost is not required.', '“Crucial” and “pivotal” decide nothing.'],
     not: ['A brief recall of a known problem, then a concrete question.', 'Motivation given by the body or the cited literature.'],
     fix: ['Say which question or constraint is addressed and why it matters.', 'If motivation already exists, just delete the stock line.', 'Not a fix: swapping adjectives; inventing numbers.'],
     borders: [['4-1', 'motivation exists elsewhere, the line is just empty'], ['3-1', 'the problem is clear, a design choice is not'], ['5-3', 'importance inferred from results']] },
-  { id: '5-2', area: 5, name: 'Unsupported Comparisons', link: ['what the compared method actually does', 'the difference claimed'], what: 'A difference from other methods is claimed, and the target is unclear or the difference is not true.',
+  { id: '5-2', area: 5, v1: 'Argument graph', name: 'Unsupported Comparisons', link: ['what the compared method actually does', 'the difference claimed'], what: 'A difference from other methods is claimed, and the target is unclear or the difference is not true.',
     ex: { spec: 'Unlike baselines A and B, which assign fixed weights to all inputs,', specnote: 'The paper’s own equations for A and B compute weights from the input too. The contrast does not hold.', src: 'AI paper · SciSlopBench FA0002 · §1 Introduction', pre: 'This is fundamentally different from attention-based methods like H2O, ', mark: 'which prune high-attention tokens', post: '; we prune tokens with low approximation error.', note: 'The paper’s own related work says H2O keeps the high-attention tokens and drops the rest. The contrast is with a method that does not exist.' },
     judge: ['Log the target, the compared property, and the claimed property; check each.', 'A structural difference is checked in the equations; a performance difference needs an evaluation.', 'The target may be named by citation, name, definition, or context.'],
     not: ['A structural difference confirmed by the equations.', 'A contrast with a standard setting that is clear from context.'],
     fix: ['Name the target and the property precisely, or withdraw the distinction and align the Abstract and conclusion.', 'Not a fix: deleting “unlike”; attaching unrelated citations.'],
     borders: [['1-4', 'the relation is never explained'], ['1-2', 'the difference holds but is inflated']] },
-  { id: '5-3', area: 5, name: 'Unsupported Interpretations', link: ['the observed result', 'what it is said to mean'], what: 'A result is given a meaning, a cause or a mechanism, that nothing in the paper supports.',
+  { id: '5-3', area: 5, v1: 'Argument graph', name: 'Unsupported Interpretations', link: ['the observed result', 'what it is said to mean'], what: 'A result is given a meaning, a cause or a mechanism, that nothing in the paper supports.',
     ex: { spec: 'demonstrating that the model learns to align semantic structure across languages.', specnote: 'The table shows +1.8. Nothing checks alignment or rules out other causes.', src: 'AI paper · SciSlopBench FA0083 · §4 Experiments', pre: 'LDA detection remains perfect (AUROC=1.0) against the adaptive attack, while the attack’s effectiveness is unchanged (ASR 40.68% → 42.37%). ', mark: 'This robustness stems from a fundamental trade-off: reducing the uniqueness weight makes triggers less detectable but also reduces their retrieval effectiveness.', post: '', note: 'The sentence before it says neither side moved: detection stayed perfect and the attack stayed as effective. The trade-off is asserted against the paper’s own table.' },
     judge: ['Separate the observation from the added interpretation.', 'What assumption or evidence does the step need, and is it anywhere in the paper?', 'Not measured directly is not a defect; sound inference is accepted.', 'Same standard for captions and conclusions.'],
     not: ['A summary within the observed range.', 'A mechanism backed by another analysis.', 'A possibility marked as unverified.'],
     fix: ['Limit the interpretation to what the results allow, or supply the support.', 'If it is withdrawn, fix the Abstract and Conclusion too.', 'Not a fix: “demonstrating” → “suggesting” with the same conclusion.'],
     borders: [['1-2', 'same property, inflated'], ['1-1', 'no link to results at all'], ['2-2', 'no joint reading of experiments']] },
-  { id: '5-4', area: 5, name: 'Misrepresented Evidence', link: ['the evidence as described', 'the actual source or experiments'], what: 'The paper says evidence exists, and the evidence does not say that.',
+  { id: '5-4', area: 5, v1: 'Argument graph', name: 'Misrepresented Evidence', link: ['the evidence as described', 'the actual source or experiments'], what: 'The paper says evidence exists, and the evidence does not say that.',
     ex: { spec: 'Prior studies established that update rule A converges under adaptive step sizes [12].', specnote: 'The theorem in [12] covers fixed step sizes only. Nothing extends it.', src: 'AI paper · SciSlopBench FA0280 · §4 Experiments', pre: 'All values are well below ', mark: 'the 0.3 threshold typically considered indicative of meaningful positional bias.', post: '', note: 'No source for the threshold, and none for who considers it. The paper’s central diagnostic rests on it.' },
     judge: ['Check four things against the material: existence, content, scope, consensus.', '“Extensive”, “numerous”, and citation counts are not the criterion.', 'Source unreachable means undecidable, not a defect.'],
     not: ['A citation that describes its source and conditions accurately.', 'A single survey backing a consensus statement.'],
@@ -364,7 +364,7 @@ function renderPage() {
 }
 function sideCard(it) {
   const c = h('div', { class: 'v-sc ' + it.ar.cls, 'data-id': it.id, tabindex: 0 },
-    h('div', { class: 'sc-h' }, h('span', { class: 'sc-t' }, h('span', { class: 'sc-pl', text: it.ar.title }), h('b', { text: it.name })), h('span', { class: 'sc-votes', 'data-votes': it.id }, ...voteBtns(it.id))),
+    h('div', { class: 'sc-h' }, h('span', { class: 'sc-t' }, h('span', { class: 'sc-pl', text: it.ar.title }), h('b', { text: it.name }), h('span', { class: 'sc-src' + (it.v1 ? '' : ' new'), text: it.v1 ? 'from v1 · ' + it.v1 : 'new in v2' })), h('span', { class: 'sc-votes', 'data-votes': it.id }, ...voteBtns(it.id))),
     h('p', { class: 'sc-w', text: it.short }),
     h('div', { class: 'sc-more' }, h('p', { class: 'sc-n', text: it.what }), h('p', { class: 'sc-n sc-note', text: it.ex.specnote || it.ex.note }), h('a', { href: '#' + it.id, 'data-xref': it.id, class: 'sc-def', text: 'Definition →' }), ' ', h('a', { href: '#hub-' + it.id, 'data-xref': 'hub-' + it.id, class: 'sc-def', text: 'Seen it? Add a case →' })));
   return c;
@@ -508,18 +508,21 @@ function excerpt(ex) { return h('div', { class: 'v-ex' + (ex.made ? ' made' : ''
 function bullets(cls, label, arr) { return h('div', { class: 'dl ' + cls }, h('span', { class: 'l', text: label }), h('ul', {}, ...arr.map(t => h('li', { text: t })))); }
 function card(it, area) {
   const d = h('article', { class: 'slop ' + area.cls, id: it.id });
-  d.append(h('figure', { class: 'v-pic' }, h('div', { class: 'v-pic-s', html: K.svg(PIC[it.id](), 'Illustration of ' + it.name) }), h('figcaption', { class: 'v-cap', text: CAP[it.id] })));
-  d.append(h('div', { class: 'v-head' }, h('span', { class: 'v-id', text: it.id }), h('h3', { text: it.name }), it.v1 ? h('span', { class: 'v1', text: 'v1 · ' + it.v1 }) : null));
-  d.append(h('p', { class: 'what', text: it.what }));
-  if (it.link) d.append(h('div', { class: 'v-link' }, h('span', { text: it.link[0] }), h('i', { text: '→' }), h('span', { text: it.link[1] })));
-  d.append(excerpt(it.ex));
-  d.append(h('details', { class: 'v-more' }, h('summary', {}, h('span', { text: 'How it is judged · not a defect · what counts as a fix' })),
-    h('div', { class: 'more-b' }, bullets('j', 'How it is judged', it.judge), bullets('n', 'Not a defect', it.not), bullets('f', 'What counts as a fix', it.fix),
-      it.borders ? h('div', { class: 'dl b' }, h('span', { class: 'l', text: 'Borders on' }), h('ul', { class: 'bl' }, ...it.borders.map(([id, why]) => h('li', { html: xref(id) + ' <span>' + esc(why) + '</span>' })))) : null)));
+  const more = [bullets('j', 'How it is judged', it.judge), bullets('n', 'Not a defect', it.not), bullets('f', 'What counts as a fix', it.fix),
+    it.link ? bullets('k', 'What must connect', [it.link[0] + ' → ' + it.link[1]]) : null,
+    it.borders ? h('div', { class: 'dl b' }, h('span', { class: 'l', text: 'Borders on' }), h('ul', { class: 'bl' }, ...it.borders.map(([id, why]) => h('li', { html: xref(id) + ' <span>' + esc(why) + '</span>' })))) : null];
+  d.append(h('div', { class: 'e-text' },
+    h('h3', { class: 'e-name', text: it.name }),
+    h('p', { class: 'e-origin' + (it.v1 ? '' : ' new'), text: it.v1 ? 'from v1 · ' + it.v1 : 'new in v2' }),
+    h('p', { class: 'e-what', text: it.what }),
+    h('blockquote', { class: 'e-q' + (it.ex.made ? ' made' : '') }, h('p', { class: 'e-qt' }, it.ex.pre, h('mark', { text: it.ex.mark }), it.ex.post), h('p', { class: 'e-src', text: it.ex.src || it.ex.sec })),
+    h('p', { class: 'e-note', text: it.ex.note }),
+    h('details', { class: 'v-more' }, h('summary', {}, h('span', { text: 'How it is judged, what is not a defect, what counts as a fix' })), h('div', { class: 'more-b' }, ...more))));
+  d.append(h('div', { class: 'e-pic', html: K.svg(PIC[it.id](), 'Illustration of ' + it.name) }));
   return d;
 }
 $('#areas').replaceChildren(...GROUPS.map(a => h('section', { class: 'v-area ' + a.cls, id: 'area-' + a.n, 'data-area': a.n },
-  h('div', { class: 'area-head' }, h('span', { class: 'tag', text: ITEMS.filter(i => i.g === a.n).length + ' items' }), h('h2', { text: a.title }), h('p', { class: 'aq', text: a.q })),
+  h('div', { class: 'area-head' }, h('h2', { text: a.title }), h('p', { class: 'aq', text: a.q })),
   h('div', { class: 'v-cards' }, ...ITEMS.filter(i => i.g === a.n).map(it => card(it, a))))));
 $('#cue-grid').replaceChildren(...CUES.map(([c, ex, ids]) => h('div', { class: 'cue' }, h('b', { text: c }), h('i', { text: ex }), h('span', { class: 'cue-to', html: ids.length ? '→ ' + ids.map(xref).join(' ') : '→ <span class="muted">no item · style only</span>' }))));
 $('#map-list').replaceChildren(...MAP.map(([id, v1]) => h('li', { html: `<span>${esc(v1)}</span><i>→</i>${xref(id)} <b>${esc(BY_ID[id].name)}</b>` })));
