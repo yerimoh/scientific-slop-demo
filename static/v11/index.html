@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slop registry · Science Slop Index</title>
+<meta name="description" content="SciSlop v1.1 working draft: what counts as scientific slop. Seventeen defects in five areas, each with a definition, an illustrative example, how it is judged, what is not a defect, and what counts as a fix.">
+<meta name="theme-color" content="#fbfaf8">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Science Slop Index">
+<meta property="og:title" content="What counts as slop · SciSlop v1.1 registry">
+<meta property="og:description" content="Seventeen defects in a paper's scientific reasoning, judged the same way whoever wrote the paper.">
+<meta property="og:image" content="https://scientific-slop-demo.onrender.com/static/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="32x32" href="../favicon-32.png">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<link rel="stylesheet" href="../app.css">
+<link rel="stylesheet" href="v11.css">
+<script>
+  // same theme key as the main app, applied before paint
+  try { const t = localStorage.getItem('ssi-theme'); if (t) document.documentElement.dataset.theme = JSON.parse(t); } catch (e) { try { const t = localStorage.getItem('ssi-theme'); if (t) document.documentElement.dataset.theme = t.replace(/"/g, ''); } catch (_) {} }
+</script>
+</head>
+<body>
+<header class="wrap top">
+  <a class="brand" href="../../"><span class="mark"><svg class="mark-svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false"> <defs><clipPath id="lens-clip-rb-a"><circle cx="40" cy="42" r="10.4"/></clipPath><radialGradient id="lrb-structure-a"><stop offset="0" stop-color="#b98aa3" stop-opacity=".95"/><stop offset=".55" stop-color="#b98aa3" stop-opacity=".7"/><stop offset="1" stop-color="#b98aa3" stop-opacity="0"/></radialGradient><radialGradient id="lrb-argument-a"><stop offset="0" stop-color="#e8a1a9" stop-opacity=".95"/><stop offset=".55" stop-color="#e8a1a9" stop-opacity=".7"/><stop offset="1" stop-color="#e8a1a9" stop-opacity="0"/></radialGradient><radialGradient id="lrb-artifacts-a"><stop offset="0" stop-color="#90aebb" stop-opacity=".95"/><stop offset=".55" stop-color="#90aebb" stop-opacity=".7"/><stop offset="1" stop-color="#90aebb" stop-opacity="0"/></radialGradient></defs> <path d="M20 6 H38 L48 16 V54 Q48 58 44 58 H20 Q16 58 16 54 V10 Q16 6 20 6 Z" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> <path d="M38 6 V16 H48" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> <path d="M24 20 H40" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> <path d="M24 27 H40" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> <path d="M24 34 H28" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/> <g clip-path="url(#lens-clip-rb-a)"> <circle cx="36" cy="39.5" r="9" fill="url(#lrb-structure-a)"/> <circle cx="44.5" cy="45.5" r="10" fill="url(#lrb-argument-a)"/> <circle cx="36.5" cy="48.5" r="8" fill="url(#lrb-artifacts-a)"/> <circle cx="36" cy="39.5" r="2.4" fill="#a3728c"/> <circle cx="44.5" cy="45.5" r="2.8" fill="#de6b77"/> <circle cx="36.5" cy="48.5" r="2" fill="#6f96a6"/> </g> <path d="M40.00 31.00 A11 11 0 0 1 49.53 47.50" fill="none" stroke="#a3728c" stroke-width="3.6" stroke-linecap="butt"/> <path d="M49.53 47.50 A11 11 0 0 1 30.47 47.50" fill="none" stroke="#de6b77" stroke-width="3.6" stroke-linecap="butt"/> <path d="M30.47 47.50 A11 11 0 0 1 40.00 31.00" fill="none" stroke="#6f96a6" stroke-width="3.6" stroke-linecap="butt"/> <path d="M48 50 L57 59" fill="none" stroke="currentColor" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/> </svg></span><span class="name">Science Slop Index</span></a>
+  <nav>
+    <a href="../../leaderboard">Leaderboard</a>
+    <a href="../../gallery">Gallery</a>
+    <a href="../../how">How it works</a>
+    <a href="./" class="active">Registry <span class="nav-v">v1.1</span></a>
+    <a href="../../propose">Propose</a>
+    <button class="icon-btn" id="theme" type="button" aria-label="Switch color theme" title="Switch theme">◐</button>
+  </nav>
+</header>
+
+<main>
+  <div class="hero-band reg-hero">
+    <div class="wrap landing">
+      <h1 class="hero">What counts as <em>slop</em>?</h1>
+      <p class="lede">The index reads three planes of a paper's reasoning. SciSlop v2 names what breaks in each: <span class="lede-structure">sections that do not build on one another</span>, <span class="lede-argument">claims and comparisons that are not argued</span>, and <span class="lede-artifacts">methods and evidence that cannot be inspected</span>. Seventeen defects, judged the same way whoever wrote the paper.</p>
+    </div>
+  </div>
+
+  <div class="wrap found-sec">
+    <h2 class="sec-h left">Four questions</h2>
+    <ol class="qlist" id="qtiles"></ol>
+  </div>
+
+  <div class="tabs-bar" id="tabs">
+    <div class="wrap v-tabs">
+      <button type="button" class="v-tab on" data-tab="paper">On a paper</button>
+      <button type="button" class="v-tab" data-tab="defs">Definitions</button>
+      <button type="button" class="v-tab" data-tab="found">The analyses</button>
+      <button type="button" class="v-tab" data-tab="cues">Cues</button>
+      <button type="button" class="v-tab" data-tab="hub">Your turn</button>
+    </div>
+  </div>
+
+  <!-- tab: hub (votes, cases, fix prompts) -->
+  <section id="tab-hub" class="tabp" hidden>
+    <div class="wrap">
+      <div class="hub-top">
+        <div>
+          <h2 class="sec-h left">Which of these have you actually suffered?</h2>
+        </div>
+        <p class="hub-status" id="hub-status"></p>
+      </div>
+      <ol class="hub" id="hub"></ol>
+    </div>
+  </section>
+
+  <!-- tab: specimen paper with the 17 examples marked -->
+  <section id="tab-paper" class="tabp">
+    <div class="wrap">
+      <div class="spec-top">
+        <div>
+          <h2 class="sec-h left">Seventeen slops on one page</h2>
+        </div>
+        <div class="v-legend" id="legend"></div>
+      </div>
+      <div class="specimen" id="specimen">
+        <div class="spec-side spec-l" id="side-l"></div>
+        <div class="spec-page-wrap"><div class="spec-page" id="spec-page"></div></div>
+        <div class="spec-side spec-r" id="side-r"></div>
+        <svg class="leaders" id="leaders" aria-hidden="true"></svg>
+      </div>
+      <div class="spec-list" id="spec-list"></div>
+    </div>
+  </section>
+
+  <!-- tab: definitions -->
+  <section id="tab-defs" class="tabp" hidden>
+    <div class="wrap">
+      <div class="reg-head">
+        <h2 class="sec-h left">The registry</h2>
+        <p class="sec-sub left">Each example is a real sentence from a paper in SciSlopBench (AI-written, marked by its FA number) or from one of its human anchors. Two items had no instance in the pairs we checked and show a constructed one.</p>
+      </div>
+      <div class="area-tiles" id="area-tiles"></div>
+      <div class="reg-tools" role="toolbar" aria-label="Filter the registry">
+        <div class="chips" id="area-chips"></div>
+        <button class="link-btn" id="expand" type="button">Show all details</button>
+      </div>
+      <div id="areas"></div>
+      <div class="rules-row">
+        <h3>Ground rules for every judgment</h3>
+        <div class="pgrid" id="principles-grid"></div>
+      </div>
+      <div class="map-row">
+        <h3>Where v1's six measures went</h3>
+        <ul class="map-list" id="map-list"></ul>
+        <p class="notice">Argument graph is split across the claim items of Area 1 and Area 5. Where a definition changed, v1 thresholds are not carried over.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- tab: findings -->
+  <section id="tab-found" class="tabp" hidden>
+    <div class="wrap">
+      <h2 class="sec-h left">The analyses</h2>
+      <div id="findings"></div>
+    </div>
+  </section>
+
+  <!-- tab: cues -->
+  <section id="tab-cues" class="tabp" hidden>
+    <div class="wrap">
+      <h2 class="sec-h left">Cues, not verdicts</h2>
+      <div class="cue-grid" id="cue-grid"></div>
+    </div>
+  </section>
+
+  <div class="wrap reg-sec reg-cta">
+    <h2 class="sec-h left">Seen a slop this registry misses?</h2>
+    <div class="reg-actions">
+      <a class="btn" href="#hub" data-xref="hub">Vote and add a case</a>
+      <a class="btn ghost" href="../../propose">Propose a pattern</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span><a href="https://arxiv.org/abs/2610.00531" target="_blank" rel="noopener"><i>Science or Slop?: Benchmarking and Mitigating Scientific Slop in AI-Generated Papers</i></a> · arXiv:2610.00531 · <a href="https://github.com/yerimoh/ScientificSlop" target="_blank" rel="noopener">Code</a> · <a href="https://huggingface.co/datasets/yerim0210/Scientific_Slop" target="_blank" rel="noopener">Benchmark</a></span>
+    <span>Questions or requests: <a href="mailto:yerim.oh@vision.snu.ac.kr">yerim.oh@vision.snu.ac.kr</a></span>
+  </div>
+</footer>
+<script type="module" src="registry.js"></script>
+</body>
+</html>

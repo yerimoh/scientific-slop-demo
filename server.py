@@ -1296,3 +1296,127 @@ async def favicon():
 @app.get("/r/{key}")
 async def index(key: Optional[str] = None):
     return FileResponse(os.path.join(HERE, "static", "index.html"))
+
+
+# ------------------------------------------------------------------ v1.1 slop hub: votes, cases, fix prompts (file-backed; demo scale)
+HUB_FILE = os.path.join(DATA, "hub.json")
+HUB_ITEMS = {"1-1", "1-2", "1-3", "1-4", "2-1", "2-2", "2-3", "3-1", "4-1", "4-2", "4-3", "4-4", "4-5", "5-1", "5-2", "5-3", "5-4"}
+HUB_HITS: dict = defaultdict(deque)
+_hub_lock = asyncio.Lock()
+
+
+def _hub_limit(request: Request, per_hour: int = 240):
+    ip, now = _client_ip(request), time.time()
+    q = HUB_HITS[ip]
+    while q and now - q[0] > 3600:
+        q.popleft()
+    if len(q) >= per_hour:
+        raise HTTPException(429, "Too many hub actions from one address. Try again later.")
+    q.append(now)
+
+
+def _hub_load() -> dict:
+    try:
+        with open(HUB_FILE) as f:
+            h = json.load(f)
+    except Exception:  # noqa: BLE001
+        h = {}
+    h.setdefault("votes", {}); h.setdefault("cases", []); h.setdefault("prompts", []); h.setdefault("prompt_ups", {})
+    return h
+
+
+def _hub_save(h: dict):
+    os.makedirs(DATA, exist_ok=True)
+    tmp = HUB_FILE + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(h, f)
+    os.replace(tmp, HUB_FILE)
+
+
+def _hub_public(h: dict, token: str = "") -> dict:
+    agg = {k: {"up": 0, "down": 0} for k in HUB_ITEMS}
+    for _t, votes in h["votes"].items():
+        for item, v in votes.items():
+            if item in agg and v in (1, -1):
+                agg[item]["up" if v == 1 else "down"] += 1
+    ups = defaultdict(int)
+    for _t, ids in h["prompt_ups"].items():
+        for pid in ids:
+            ups[pid] += 1
+    prompts = [{**p, "ups": ups.get(p["id"], 0), "mine": p["id"] in h["prompt_ups"].get(token, [])} for p in h["prompts"]]
+    return {"live": True, "items": agg, "mine": h["votes"].get(token, {}), "cases": list(reversed(h["cases"][-500:])),
+            "prompts": list(reversed(prompts[-500:]))}
+
+
+def _hub_str(body: dict, k: str, n: int) -> str:
+    return str(body.get(k) or "").strip()[:n]
+
+
+@app.get("/api/hub")
+async def hub_state(token: str = ""):
+    async with _hub_lock:
+        return _hub_public(_hub_load(), token[:64])
+
+
+@app.post("/api/hub/vote")
+async def hub_vote(request: Request, body: dict):
+    _hub_limit(request)
+    item, token = _hub_str(body, "item", 8), _hub_str(body, "token", 64)
+    v = body.get("v")
+    if item not in HUB_ITEMS or not token or v not in (1, -1, 0):
+        raise HTTPException(400, "item, token and v in {1, -1, 0} are required")
+    async with _hub_lock:
+        h = _hub_load(); mine = h["votes"].setdefault(token, {})
+        if v == 0:
+            mine.pop(item, None)
+        else:
+            mine[item] = v
+        _hub_save(h)
+        return _hub_public(h, token)
+
+
+@app.post("/api/hub/case")
+async def hub_case(request: Request, body: dict):
+    _hub_limit(request)
+    item = _hub_str(body, "item", 8)
+    case = {"id": _new_key(), "item": item, "where": _hub_str(body, "where", 300), "quote": _hub_str(body, "quote", 800),
+            "why": _hub_str(body, "why", 400), "by": _hub_str(body, "by", 60), "at": time.strftime("%Y-%m-%d %H:%M:%S"), "status": "pending"}
+    if item not in HUB_ITEMS or len(case["quote"]) < 10:
+        raise HTTPException(400, "Pick an item and quote at least ten characters of the passage.")
+    async with _hub_lock:
+        h = _hub_load(); h["cases"].append(case); _hub_save(h)
+    await _log_submission("hub_case", case)
+    if case["by"]:
+        _add_contributor(case["by"], "case")
+    return {"ok": True, "case": case}
+
+
+@app.post("/api/hub/prompt")
+async def hub_prompt(request: Request, body: dict):
+    _hub_limit(request)
+    item = _hub_str(body, "item", 8)
+    pr = {"id": _new_key(), "item": item, "text": _hub_str(body, "text", 4000), "by": _hub_str(body, "by", 60), "at": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if item not in HUB_ITEMS or len(pr["text"]) < 20:
+        raise HTTPException(400, "Pick an item and write at least twenty characters of prompt.")
+    async with _hub_lock:
+        h = _hub_load(); h["prompts"].append(pr); _hub_save(h)
+    await _log_submission("hub_prompt", pr)
+    if pr["by"]:
+        _add_contributor(pr["by"], "prompt")
+    return {"ok": True, "prompt": pr}
+
+
+@app.post("/api/hub/prompt_up")
+async def hub_prompt_up(request: Request, body: dict):
+    _hub_limit(request)
+    pid, token = _hub_str(body, "id", 32), _hub_str(body, "token", 64)
+    if not pid or not token:
+        raise HTTPException(400, "id and token are required")
+    async with _hub_lock:
+        h = _hub_load(); ids = h["prompt_ups"].setdefault(token, [])
+        if pid in ids:
+            ids.remove(pid)
+        else:
+            ids.append(pid)
+        _hub_save(h)
+        return _hub_public(h, token)
