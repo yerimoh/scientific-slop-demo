@@ -17,6 +17,10 @@
 /* ---------------------------------------------------------------- hero */
 .reg-hero .landing { padding: 48px 0 28px; }
 .reg-hero .lede { max-width: 720px; margin-bottom: 0; }
+.lede-a1, .lede-a2, .lede-a3, .lede-a4, .lede-a5 { font-weight: 600; padding: 0 3px; border-radius: 4px; white-space: nowrap; }
+.lede-a1 { color: var(--a1); background: var(--a1-band); } .lede-a2 { color: var(--a2); background: var(--a2-band); } .lede-a3 { color: var(--a3); background: var(--a3-band); }
+.lede-a4 { color: var(--a4); background: var(--a4-band); } .lede-a5 { color: var(--a5); background: var(--a5-band); }
+@media (max-width: 520px) { .lede-a1, .lede-a2, .lede-a3, .lede-a4, .lede-a5 { white-space: normal; } }
 
 /* ---------------------------------------------------------------- four questions */
 .found-sec { padding: 18px 24px 40px; }
@@ -91,6 +95,7 @@
 .mk { background: var(--mkc); color: inherit; border-radius: 2px; padding: 0 1px; cursor: pointer; outline: 2px solid transparent; outline-offset: 1px; transition: outline-color .15s; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .mk.a1 { --mkc: var(--a1-mk); } .mk.a2 { --mkc: var(--a2-mk); } .mk.a3 { --mkc: var(--a3-mk); } .mk.a4 { --mkc: var(--a4-mk); } .mk.a5 { --mkc: var(--a5-mk); }
 .mk.p-structure { --mkc: rgba(126, 78, 102, .36); } .mk.p-argument { --mkc: rgba(228, 149, 158, .45); } .mk.p-artifacts { --mkc: rgba(86, 113, 123, .32); }
+.mk.a1 { --mkc: var(--a1-mk); } .mk.a2 { --mkc: var(--a2-mk); } .mk.a3 { --mkc: var(--a3-mk); } .mk.a4 { --mkc: var(--a4-mk); } .mk.a5 { --mkc: var(--a5-mk); }
 .mk:hover, .mk.lit { outline-color: var(--red); }
 .spec-list { display: none; }
 .specimen.narrow { grid-template-columns: 1fr; }

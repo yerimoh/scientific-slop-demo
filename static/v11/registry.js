@@ -302,7 +302,7 @@ const PLANE_OF = { '2-1': 'structure', '2-2': 'structure', '2-3': 'structure', '
   '1-1': 'argument', '1-2': 'argument', '1-4': 'argument', '5-1': 'argument', '5-2': 'argument', '5-3': 'argument', '5-4': 'argument',
   '1-3': 'artifacts', '3-1': 'artifacts', '4-2': 'artifacts', '4-5': 'artifacts' };
 const PLANE_C = { structure: '#7E4E66', argument: '#E4959E', artifacts: '#56717B' };   // site planes: structure/artifacts in their deep shade so structure and argument separate
-for (const it of ITEMS) it.plane = PLANE_OF[it.id];
+for (const it of ITEMS) { it.plane = PLANE_OF[it.id]; it.ar = AREAS[it.area - 1]; }   // plane kept for the v1 map only; the page shows the five areas
 const SHORT = { '1-1': 'A claim with no evidence behind it.', '1-2': 'The claim goes further than the evidence.', '1-3': 'Results, but not one example shown.', '1-4': 'Cited, but never related to this paper.',
   '2-1': 'The key finding is missing from the abstract.', '2-2': 'Experiments never tied back to the question.', '2-3': 'Refers to something the reader cannot locate.', '3-1': 'A design choice with no reason given.',
   '4-1': 'Says nothing about this paper.', '4-2': 'A term that is never defined.', '4-3': 'Detail that no result depends on.', '4-4': 'The same content said twice.', '4-5': 'Figure arrows and colors never explained.',
@@ -321,12 +321,12 @@ function renderPage() {
     if (b.lines) out.push(h('div', { class: 'plines' + (b.small ? ' small' : ''), style: `height:${b.lines * (b.small ? 7 : 8.5)}px` }));
     return out;
   }).flat());
-  function seg(x) { if (typeof x === 'string') return x; if (x.anchor) return h('span', { class: 'pa', 'data-g': x.anchor, text: x.text }); if (x.ghost) return h('span', { class: 'pg', 'data-g': x.ghost, text: x.text }); const it = BY_ID[x.mark]; return h('mark', { class: 'mk p-' + it.plane, 'data-id': it.id, tabindex: 0, 'aria-label': it.name, text: it.ex.spec || it.ex.mark }); }
+  function seg(x) { if (typeof x === 'string') return x; if (x.anchor) return h('span', { class: 'pa', 'data-g': x.anchor, text: x.text }); if (x.ghost) return h('span', { class: 'pg', 'data-g': x.ghost, text: x.text }); const it = BY_ID[x.mark]; return h('mark', { class: 'mk ' + it.ar.cls, 'data-id': it.id, tabindex: 0, 'aria-label': it.name, text: it.ex.spec || it.ex.mark }); }
   $('#spec-page').replaceChildren(h('h3', { class: 'ptitle', text: PAGE.title }), h('p', { class: 'pauth', text: PAGE.authors }), h('div', { class: 'pcols' }, col(PAGE.left), col(PAGE.right)));
 }
 function sideCard(it) {
-  const c = h('div', { class: 'v-sc p-' + it.plane, 'data-id': it.id, tabindex: 0 },
-    h('div', { class: 'sc-h' }, h('span', { class: 'sc-t' }, h('span', { class: 'sc-pl', text: PLANES[it.plane].title }), h('b', { text: it.name })), h('span', { class: 'sc-votes', 'data-votes': it.id }, ...voteBtns(it.id))),
+  const c = h('div', { class: 'v-sc ' + it.ar.cls, 'data-id': it.id, tabindex: 0 },
+    h('div', { class: 'sc-h' }, h('span', { class: 'sc-t' }, h('span', { class: 'sc-pl', text: 'Area ' + it.area + ' · ' + it.ar.short }), h('b', { text: it.name })), h('span', { class: 'sc-votes', 'data-votes': it.id }, ...voteBtns(it.id))),
     h('p', { class: 'sc-w', text: it.short }),
     h('div', { class: 'sc-more' }, h('p', { class: 'sc-n', text: it.what }), h('p', { class: 'sc-n sc-note', text: it.ex.specnote || it.ex.note }), h('a', { href: '#' + it.id, 'data-xref': it.id, class: 'sc-def', text: 'Definition →' }), ' ', h('a', { href: '#hub-' + it.id, 'data-xref': 'hub-' + it.id, class: 'sc-def', text: 'Seen it? Add a case →' })));
   return c;
@@ -350,7 +350,7 @@ function layoutSpecimen() {
       const x0 = side === 'l' ? cr.right - sr.left : cr.left - sr.left, y0 = cr.top - sr.top + Math.min(16, cr.height / 2);
       const x1 = side === 'l' ? m.r.left - sr.left - 2 : m.r.right - sr.left + 2, y1 = m.r.top - sr.top + m.r.height / 2;
       const dx = (x1 - x0) / 2;
-      svg.insertAdjacentHTML('beforeend', `<path data-id="${m.id}" d="M${x0} ${y0} C${x0 + dx} ${y0} ${x1 - dx} ${y1} ${x1} ${y1}" class="ld" style="--lc:${PLANE_C[BY_ID[m.id].plane]}"/><circle cx="${x1}" cy="${y1}" r="2.6" style="fill:${PLANE_C[BY_ID[m.id].plane]}"/>`);
+      svg.insertAdjacentHTML('beforeend', `<path data-id="${m.id}" d="M${x0} ${y0} C${x0 + dx} ${y0} ${x1 - dx} ${y1} ${x1} ${y1}" class="ld" style="--lc:${AREA_C[BY_ID[m.id].area]}"/><circle cx="${x1}" cy="${y1}" r="2.6" style="fill:${PLANE_C[BY_ID[m.id].plane]}"/>`);
     });
     host.style.height = y + 'px';
   }
@@ -395,9 +395,9 @@ function showPop(id) {
   clearTimeout(popTimer);
   const it = BY_ID[id]; if (!it) return; const a = AREAS[it.area - 1];
   const mk = document.querySelector(`#spec-page .mk[data-id="${id}"]`); const wrap = $('.spec-page-wrap'); if (!mk || !wrap) return;
-  const p = popEl(); p.className = 'spec-pop p-' + it.plane; p.dataset.id = id;
+  const p = popEl(); p.className = 'spec-pop ' + it.ar.cls; p.dataset.id = id;
   p.replaceChildren(...[
-    h('div', { class: 'pop-h' }, h('b', { text: it.name }), h('span', { class: 'pop-area', text: PLANES[it.plane].title })),
+    h('div', { class: 'pop-h' }, h('b', { text: it.name }), h('span', { class: 'pop-area', text: 'Area ' + it.area + ' · ' + it.ar.title })),
     h('p', { class: 'pop-what', text: it.what }),
     it.link ? h('div', { class: 'v-link' }, h('span', { text: it.link[0] }), h('i', { text: '→' }), h('span', { text: it.link[1] })) : null,
     h('p', { class: 'pop-note', text: it.ex.specnote || it.ex.note }),
@@ -439,7 +439,7 @@ document.addEventListener('click', e => { if (popPinned && !e.target.closest('#s
 $('#specimen').addEventListener('mouseover', e => { const t = e.target.closest('.mk, .v-sc'); if (t) { litSpec(t.dataset.id, true); if (!popPinned) showPop(t.dataset.id); } });
 $('#specimen').addEventListener('mouseout', e => { const t = e.target.closest('.mk, .v-sc'); if (!t) return; if (!document.querySelector(`.v-sc.open[data-id="${t.dataset.id}"]`)) litSpec(t.dataset.id, false); if (!popPinned) { clearTimeout(popTimer); popTimer = setTimeout(hidePop, 160); } });
 $('#specimen').addEventListener('focusin', e => { const t = e.target.closest('.mk, .v-sc'); if (t) { litSpec(t.dataset.id, true); showPop(t.dataset.id); } });
-$('#legend').replaceChildren(...Object.entries(PLANES).map(([k, pl]) => h('span', { class: 'v-lg p-' + k, title: pl.q }, h('i'), pl.title)));
+$('#legend').replaceChildren(...AREAS.map(a => h('span', { class: 'v-lg ' + a.cls, title: a.q }, h('i'), a.n + ' · ' + a.short)));
 
 
 // ------------------------------------------------------------------ render the rest
