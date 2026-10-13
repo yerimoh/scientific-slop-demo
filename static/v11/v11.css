@@ -124,7 +124,7 @@
 .e-text { display: grid; gap: 10px; min-width: 0; }
 .e-name { margin: 0; font-size: 20px; letter-spacing: -.015em; color: var(--ac); }
 .e-what { margin: 0; font-size: 15.5px; color: var(--ink); line-height: 1.45; }
-.e-q { margin: 4px 0 0; padding: 0 0 0 16px; border-left: 3px solid var(--ac); }
+.e-q { margin: 2px 0 0; padding: 0 0 0 16px; border-left: 3px solid var(--ac); } .e-q + .e-q { margin-top: 0; }
 .e-qt { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 17px; line-height: 1.5; color: var(--ink); }
 .e-qt mark { background: var(--mkc, rgba(201,124,134,.42)); color: inherit; border-radius: 2px; padding: 0 2px; }
 .a1 .e-qt mark { background: var(--a1-mk); } .a2 .e-qt mark { background: var(--a2-mk); } .a3 .e-qt mark { background: var(--a3-mk); } .a4 .e-qt mark { background: var(--a4-mk); } .a5 .e-qt mark { background: var(--a5-mk); }
