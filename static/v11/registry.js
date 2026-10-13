@@ -302,7 +302,13 @@ const PLANE_OF = { '2-1': 'structure', '2-2': 'structure', '2-3': 'structure', '
   '1-1': 'argument', '1-2': 'argument', '1-4': 'argument', '5-1': 'argument', '5-2': 'argument', '5-3': 'argument', '5-4': 'argument',
   '1-3': 'artifacts', '3-1': 'artifacts', '4-2': 'artifacts', '4-5': 'artifacts' };
 const PLANE_C = { structure: '#7E4E66', argument: '#E4959E', artifacts: '#56717B' };   // site planes: structure/artifacts in their deep shade so structure and argument separate
-for (const it of ITEMS) { it.plane = PLANE_OF[it.id]; it.ar = AREAS[it.area - 1]; }   // plane kept for the v1 map only; the page shows the five areas
+// the page groups the seventeen items by the index's three planes; the 1-5 area numbers stay in the item ids
+const GROUPS = [
+  { n: 1, key: 'structure', cls: 'p-structure', title: 'Structure', q: 'Do the sections build on one another?' },
+  { n: 2, key: 'argument', cls: 'p-argument', title: 'Argument', q: 'Are the claims and citations argued?' },
+  { n: 3, key: 'artifacts', cls: 'p-artifacts', title: 'Artifacts', q: 'Can the method and the evidence be inspected?' },
+];
+for (const it of ITEMS) { it.plane = PLANE_OF[it.id]; it.ar = GROUPS.find(g => g.key === it.plane); it.g = it.ar.n; }
 const SHORT = { '1-1': 'A claim with no evidence behind it.', '1-2': 'The claim goes further than the evidence.', '1-3': 'Results, but not one example shown.', '1-4': 'Cited, but never related to this paper.',
   '2-1': 'The key finding is missing from the abstract.', '2-2': 'Experiments never tied back to the question.', '2-3': 'Refers to something the reader cannot locate.', '3-1': 'A design choice with no reason given.',
   '4-1': 'Says nothing about this paper.', '4-2': 'A term that is never defined.', '4-3': 'Detail that no result depends on.', '4-4': 'The same content said twice.', '4-5': 'Figure arrows and colors never explained.',
@@ -326,7 +332,7 @@ function renderPage() {
 }
 function sideCard(it) {
   const c = h('div', { class: 'v-sc ' + it.ar.cls, 'data-id': it.id, tabindex: 0 },
-    h('div', { class: 'sc-h' }, h('span', { class: 'sc-t' }, h('span', { class: 'sc-pl', text: 'Area ' + it.area + ' · ' + it.ar.short }), h('b', { text: it.name })), h('span', { class: 'sc-votes', 'data-votes': it.id }, ...voteBtns(it.id))),
+    h('div', { class: 'sc-h' }, h('span', { class: 'sc-t' }, h('span', { class: 'sc-pl', text: it.ar.title }), h('b', { text: it.name })), h('span', { class: 'sc-votes', 'data-votes': it.id }, ...voteBtns(it.id))),
     h('p', { class: 'sc-w', text: it.short }),
     h('div', { class: 'sc-more' }, h('p', { class: 'sc-n', text: it.what }), h('p', { class: 'sc-n sc-note', text: it.ex.specnote || it.ex.note }), h('a', { href: '#' + it.id, 'data-xref': it.id, class: 'sc-def', text: 'Definition →' }), ' ', h('a', { href: '#hub-' + it.id, 'data-xref': 'hub-' + it.id, class: 'sc-def', text: 'Seen it? Add a case →' })));
   return c;
@@ -350,7 +356,7 @@ function layoutSpecimen() {
       const x0 = side === 'l' ? cr.right - sr.left : cr.left - sr.left, y0 = cr.top - sr.top + Math.min(16, cr.height / 2);
       const x1 = side === 'l' ? m.r.left - sr.left - 2 : m.r.right - sr.left + 2, y1 = m.r.top - sr.top + m.r.height / 2;
       const dx = (x1 - x0) / 2;
-      svg.insertAdjacentHTML('beforeend', `<path data-id="${m.id}" d="M${x0} ${y0} C${x0 + dx} ${y0} ${x1 - dx} ${y1} ${x1} ${y1}" class="ld" style="--lc:${AREA_C[BY_ID[m.id].area]}"/><circle cx="${x1}" cy="${y1}" r="2.6" style="fill:${PLANE_C[BY_ID[m.id].plane]}"/>`);
+      svg.insertAdjacentHTML('beforeend', `<path data-id="${m.id}" d="M${x0} ${y0} C${x0 + dx} ${y0} ${x1 - dx} ${y1} ${x1} ${y1}" class="ld" style="--lc:${PLANE_C[BY_ID[m.id].plane]}"/><circle cx="${x1}" cy="${y1}" r="2.6" style="fill:${PLANE_C[BY_ID[m.id].plane]}"/>`);
     });
     host.style.height = y + 'px';
   }
@@ -393,11 +399,11 @@ let popPinned = null, popTimer = null;
 function popEl() { let p = $('#spec-pop'); if (!p) { p = h('div', { id: 'spec-pop', class: 'spec-pop', hidden: true }); $('.spec-page-wrap').append(p); p.addEventListener('mouseenter', () => clearTimeout(popTimer)); p.addEventListener('mouseleave', () => { if (!popPinned) hidePop(); }); } return p; }
 function showPop(id) {
   clearTimeout(popTimer);
-  const it = BY_ID[id]; if (!it) return; const a = AREAS[it.area - 1];
+  const it = BY_ID[id]; if (!it) return; const a = it.ar;
   const mk = document.querySelector(`#spec-page .mk[data-id="${id}"]`); const wrap = $('.spec-page-wrap'); if (!mk || !wrap) return;
   const p = popEl(); p.className = 'spec-pop ' + it.ar.cls; p.dataset.id = id;
   p.replaceChildren(...[
-    h('div', { class: 'pop-h' }, h('b', { text: it.name }), h('span', { class: 'pop-area', text: 'Area ' + it.area + ' · ' + it.ar.title })),
+    h('div', { class: 'pop-h' }, h('b', { text: it.name }), h('span', { class: 'pop-area', text: it.ar.title })),
     h('p', { class: 'pop-what', text: it.what }),
     it.link ? h('div', { class: 'v-link' }, h('span', { text: it.link[0] }), h('i', { text: '→' }), h('span', { text: it.link[1] })) : null,
     h('p', { class: 'pop-note', text: it.ex.specnote || it.ex.note }),
@@ -439,7 +445,7 @@ document.addEventListener('click', e => { if (popPinned && !e.target.closest('#s
 $('#specimen').addEventListener('mouseover', e => { const t = e.target.closest('.mk, .v-sc'); if (t) { litSpec(t.dataset.id, true); if (!popPinned) showPop(t.dataset.id); } });
 $('#specimen').addEventListener('mouseout', e => { const t = e.target.closest('.mk, .v-sc'); if (!t) return; if (!document.querySelector(`.v-sc.open[data-id="${t.dataset.id}"]`)) litSpec(t.dataset.id, false); if (!popPinned) { clearTimeout(popTimer); popTimer = setTimeout(hidePop, 160); } });
 $('#specimen').addEventListener('focusin', e => { const t = e.target.closest('.mk, .v-sc'); if (t) { litSpec(t.dataset.id, true); showPop(t.dataset.id); } });
-$('#legend').replaceChildren(...AREAS.map(a => h('span', { class: 'v-lg ' + a.cls, title: a.q }, h('i'), a.n + ' · ' + a.short)));
+$('#legend').replaceChildren(...GROUPS.map(a => h('span', { class: 'v-lg ' + a.cls, title: a.q }, h('i'), a.title)));
 
 
 // ------------------------------------------------------------------ render the rest
@@ -465,7 +471,7 @@ $('#findings').replaceChildren(...FINDINGS.map((f, i) => h('section', { class: '
     h('dl', { class: 'fd-dl' }, h('dt', { text: 'We compare' }), h('dd', { text: f.compare }), h('dt', { text: 'We measure' }), h('dd', { text: f.measure }), f.v1 ? h('dt', { text: 'v1 already showed' }) : null, f.v1 ? h('dd', { text: f.v1 }) : null)),
   h('div', { class: 'fd-c' }, h('div', { html: f.chart() }), f.cap ? h('p', { class: 'cap', text: f.cap }) : null))));
 $('#principles-grid').replaceChildren(...PRINCIPLES.map(([t, p]) => h('div', { class: 'pr' }, h('b', { text: t }), h('span', { text: p }))));
-$('#area-tiles').replaceChildren(...AREAS.map(a => h('a', { class: 'atile ' + a.cls, href: '#area-' + a.n }, h('span', { class: 'an', text: 'Area ' + a.n + ' · ' + ITEMS.filter(i => i.area === a.n).length + ' items' }), h('b', { text: a.title }), h('span', { class: 'aq', text: a.q }))));
+$('#area-tiles').replaceChildren(...GROUPS.map(a => h('a', { class: 'atile ' + a.cls, href: '#area-' + a.n }, h('span', { class: 'an', text: ITEMS.filter(i => i.g === a.n).length + ' items' }), h('b', { text: a.title }), h('span', { class: 'aq', text: a.q }))));
 function excerpt(ex) { return h('div', { class: 'v-ex' + (ex.made ? ' made' : '') }, h('div', { class: 'ex-h', text: ex.src || ex.sec }), h('p', { class: 'ex-t' }, ex.pre, h('mark', { text: ex.mark }), ex.post), h('p', { class: 'ex-n', text: ex.note })); }
 function bullets(cls, label, arr) { return h('div', { class: 'dl ' + cls }, h('span', { class: 'l', text: label }), h('ul', {}, ...arr.map(t => h('li', { text: t })))); }
 function card(it, area) {
@@ -480,9 +486,9 @@ function card(it, area) {
       it.borders ? h('div', { class: 'dl b' }, h('span', { class: 'l', text: 'Borders on' }), h('ul', { class: 'bl' }, ...it.borders.map(([id, why]) => h('li', { html: xref(id) + ' <span>' + esc(why) + '</span>' })))) : null)));
   return d;
 }
-$('#areas').replaceChildren(...AREAS.map(a => h('section', { class: 'v-area ' + a.cls, id: 'area-' + a.n, 'data-area': a.n },
-  h('div', { class: 'area-head' }, h('span', { class: 'tag', text: 'Area ' + a.n }), h('h2', { text: a.title }), h('p', { class: 'aq', text: a.q })),
-  h('div', { class: 'v-cards' }, ...ITEMS.filter(i => i.area === a.n).map(it => card(it, a))))));
+$('#areas').replaceChildren(...GROUPS.map(a => h('section', { class: 'v-area ' + a.cls, id: 'area-' + a.n, 'data-area': a.n },
+  h('div', { class: 'area-head' }, h('span', { class: 'tag', text: ITEMS.filter(i => i.g === a.n).length + ' items' }), h('h2', { text: a.title }), h('p', { class: 'aq', text: a.q })),
+  h('div', { class: 'v-cards' }, ...ITEMS.filter(i => i.g === a.n).map(it => card(it, a))))));
 $('#cue-grid').replaceChildren(...CUES.map(([c, ex, ids]) => h('div', { class: 'cue' }, h('b', { text: c }), h('i', { text: ex }), h('span', { class: 'cue-to', html: ids.length ? '→ ' + ids.map(xref).join(' ') : '→ <span class="muted">no item · style only</span>' }))));
 $('#map-list').replaceChildren(...MAP.map(([id, v1]) => h('li', { html: `<span>${esc(v1)}</span><i>→</i>${xref(id)} <b>${esc(BY_ID[id].name)}</b>` })));
 
@@ -654,7 +660,7 @@ function voteBtns(id) {
     h('button', { class: 'vb' + (mine === -1 ? ' on' : ''), type: 'button', title: 'Not a real problem', disabled: !hub.canWrite, onclick: e => { e.stopPropagation(); vote(id, -1); } }, '👎 ', h('span', { text: String(v.down) }))];
 }
 function hubRow(it, rank) {
-  const a = AREAS[it.area - 1]; const v = hub.votes[it.id] || { up: 0, down: 0 }; const mine = hub.mine[it.id] || 0;
+  const a = it.ar; const v = hub.votes[it.id] || { up: 0, down: 0 }; const mine = hub.mine[it.id] || 0;
   const cases = hub.cases.filter(c => c.item === it.id); const prompts = hub.prompts.filter(p => p.item === it.id).sort((x, y) => (hub.pups[y.id] || 0) - (hub.pups[x.id] || 0));
   const li = h('li', { class: 'hr ' + a.cls + (hubOpen.has(it.id) ? ' open' : ''), id: 'hub-' + it.id });
   const row = h('div', { class: 'hr-row' },
@@ -691,7 +697,7 @@ function showTab(name) {
 }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('.v-tab'); if (!b) return; history.replaceState({}, '', '#' + b.dataset.tab); showTab(b.dataset.tab); $('#tabs').scrollIntoView({ block: 'start' }); });
 const chips = $('#area-chips'); let area = 0;
-chips.append(h('button', { class: 'chip-b on', type: 'button', 'data-area': '0', text: 'All 17' }), ...AREAS.map(a => h('button', { class: 'chip-b ' + a.cls, type: 'button', 'data-area': a.n, title: a.title, text: a.n + ' · ' + a.short })));
+chips.append(h('button', { class: 'chip-b on', type: 'button', 'data-area': '0', text: 'All 17' }), ...GROUPS.map(a => h('button', { class: 'chip-b ' + a.cls, type: 'button', 'data-area': a.n, title: a.q, text: a.title })));
 function apply() { document.querySelectorAll('.v-area').forEach(s => s.hidden = area !== 0 && +s.dataset.area !== area); chips.querySelectorAll('.chip-b').forEach(b => b.classList.toggle('on', +b.dataset.area === area)); }
 chips.addEventListener('click', e => { const b = e.target.closest('.chip-b'); if (!b) return; area = +b.dataset.area; apply(); });
 const expand = $('#expand');
