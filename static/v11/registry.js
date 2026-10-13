@@ -575,14 +575,17 @@ function card(it, area) {
   const more = [bullets('j', 'How it is judged', it.judge), bullets('n', 'Not a defect', it.not), bullets('f', 'What counts as a fix', it.fix),
     it.link ? bullets('k', 'What must connect', [it.link[0] + ' → ' + it.link[1]]) : null,
     it.borders ? h('div', { class: 'dl b' }, h('span', { class: 'l', text: 'Borders on' }), h('ul', { class: 'bl' }, ...it.borders.map(([id, why]) => h('li', { html: xref(id) + ' <span>' + esc(why) + '</span>' })))) : null];
-  d.append(h('div', { class: 'e-text' },
-    h('h3', { class: 'e-name', text: it.name }),
-    h('p', { class: 'e-origin' + (it.v1 ? '' : ' new'), text: it.v1 ? 'from v1 · ' + it.v1 : 'new in v2' }),
-    h('p', { class: 'e-what', text: it.what }),
-    h('blockquote', { class: 'e-q' + (it.ex.made ? ' made' : '') }, h('p', { class: 'e-qt' }, it.ex.pre, h('mark', { text: it.ex.mark }), it.ex.post), h('p', { class: 'e-src', text: it.ex.src || it.ex.sec })),
-    it.ex2 ? h('blockquote', { class: 'e-q' }, h('p', { class: 'e-qt' }, it.ex2.pre, h('mark', { text: it.ex2.mark }), it.ex2.post), h('p', { class: 'e-src', text: it.ex2.src })) : null,
-    h('p', { class: 'e-note', text: it.ex.note }),
-    h('details', { class: 'v-more' }, h('summary', {}, h('span', { text: 'How it is judged, what is not a defect, what counts as a fix' })), h('div', { class: 'more-b' }, ...more))));
+  d.append(h('details', { class: 'e-text e-open' },
+    h('summary', { class: 'e-sum' },
+      h('h3', { class: 'e-name', text: it.name }),
+      h('p', { class: 'e-origin' + (it.v1 ? '' : ' new'), text: it.v1 ? 'from v1 · ' + it.v1 : 'new in v2' }),
+      h('p', { class: 'e-what', text: it.what })),
+    h('div', { class: 'e-body' },
+      h('blockquote', { class: 'e-q' + (it.ex.made ? ' made' : '') }, h('p', { class: 'e-qt' }, it.ex.pre, h('mark', { text: it.ex.mark }), it.ex.post), h('p', { class: 'e-src', text: it.ex.src || it.ex.sec })),
+      it.ex2 ? h('blockquote', { class: 'e-q' }, h('p', { class: 'e-qt' }, it.ex2.pre, h('mark', { text: it.ex2.mark }), it.ex2.post), h('p', { class: 'e-src', text: it.ex2.src })) : null,
+      h('p', { class: 'e-note', text: it.ex.note }),
+      h('details', { class: 'v-more' }, h('summary', {}, h('span', { text: 'How it is judged, what is not a defect, what counts as a fix' })), h('div', { class: 'more-b' }, ...more)),
+      h('div', { class: 'hubline' }))));
   d.append(h('div', { class: 'e-pic', html: K.svg(PIC[it.id](), 'Illustration of ' + it.name) }));
   return d;
 }
@@ -801,7 +804,7 @@ chips.append(h('button', { class: 'chip-b on', type: 'button', 'data-area': '0',
 function apply() { document.querySelectorAll('.v-area').forEach(s => s.hidden = area !== 0 && +s.dataset.area !== area); chips.querySelectorAll('.chip-b').forEach(b => b.classList.toggle('on', +b.dataset.area === area)); }
 chips.addEventListener('click', e => { const b = e.target.closest('.chip-b'); if (!b) return; area = +b.dataset.area; apply(); });
 const expand = $('#expand');
-expand.addEventListener('click', () => { const ms = [...document.querySelectorAll('.v-more')]; const open = ms.some(d => !d.open); ms.forEach(d => d.open = open); expand.textContent = open ? 'Hide details' : 'Show all details'; });
+expand.addEventListener('click', () => { const ms = [...document.querySelectorAll('.e-open')]; const open = ms.some(d => !d.open); ms.forEach(d => d.open = open); expand.textContent = open ? 'Hide all examples' : 'Show all examples'; });
 function openHash() {
   const id = decodeURIComponent(location.hash.slice(1));
   const alias = { def: 'defs', definitions: 'defs', paper: 'paper', analyses: 'found', findings: 'found', cue: 'cues', vote: 'hub', registry: 'defs' };
@@ -811,7 +814,7 @@ function openHash() {
   if (/^f\d$/.test(id)) { showTab('found'); const el = document.getElementById(id); if (el) { el.scrollIntoView({ block: 'start' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); } return; }
   if (/^area-\d$/.test(id)) { showTab('defs'); area = 0; apply(); const el = document.getElementById(id); if (el) el.scrollIntoView({ block: 'start' }); return; }
   const d = id && document.getElementById(id);
-  if (d && d.classList.contains('slop')) { showTab('defs'); area = 0; apply(); d.querySelector('.v-more').open = true; d.scrollIntoView({ block: 'start' }); d.classList.add('flash'); setTimeout(() => d.classList.remove('flash'), 1600); }
+  if (d && d.classList.contains('slop')) { showTab('defs'); area = 0; apply(); d.querySelector('.e-open').open = true; d.scrollIntoView({ block: 'start' }); d.classList.add('flash'); setTimeout(() => d.classList.remove('flash'), 1600); }
 }
 document.addEventListener('click', e => { const a = e.target.closest('a[data-xref], a.ql, a.atile'); if (!a) return; e.preventDefault(); history.pushState({}, '', a.getAttribute('href')); openHash(); });
 addEventListener('hashchange', openHash);
