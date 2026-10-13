@@ -458,7 +458,7 @@ const ROBOT = (x, y, col) => K.box(x - 3.4, y - 2.6, 6.8, 6, { fc: col, ec: col,
 const MINI_CAP = {"f1": "Human and AI papers, same 17 items, author hidden", "f2": "Slop against review scores, year by year and venue by venue", "f3": "One paper, one human review and one AI review", "f4": "Each review remark matched to the slop it points at"};
 const MINI = {
   f1: () => `<img src="img/q1.png" alt="An AI paper that looks polished next to a human paper full of red marks">`,
-  f2: () => `<img src="img/q2.png" alt="Clean and sloppy AI papers, reviewers' star ratings, and the scores plotted by year and by venue">`,
+  f2: () => `<img src="img/q2_v2.png" alt="Clean and sloppy AI papers, reviewers' star ratings, and the scores plotted by year and by venue">`,
   f3: () => `<img src="img/q3.png" alt="The same AI paper: the AI reviewer gives four stars, the human reviewer two">`,
   f4: () => `<img src="img/q4.png" alt="Slop types in an AI paper and the reviewer's remark for each">`,
 };
