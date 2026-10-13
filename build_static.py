@@ -111,12 +111,6 @@ async def main():
     if os.path.exists(v11):
         s = open(v11).read().replace('href="v11.css"', f'href="v11.css?v={ver}"').replace('src="registry.js"', f'src="registry.js?v={ver}"')
         open(v11, "w").write(s)
-    # /registry/ → the v1.1 slop registry page (served from static/v11, so its relative paths keep working)
-    os.makedirs(os.path.join(OUT, "registry"), exist_ok=True)
-    with open(os.path.join(OUT, "registry", "index.html"), "w") as f:
-        f.write(f'<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url={args.base}/static/v11/index.html">'
-                f'<link rel="canonical" href="{args.base}/static/v11/index.html"><title>Slop registry</title>'
-                f'<a href="{args.base}/static/v11/index.html">Slop registry</a>')
     open(os.path.join(OUT, ".nojekyll"), "w").close()
     print("done →", OUT)
 
