@@ -48,7 +48,6 @@ const inner = {
   chip: (s, col, o = {}) => ({ w: tw(s, FS - .3, !o.outline) + 5, h: 8, draw: (x, y, w) => K.chip(x, y, s, o.outline ? { fs: FS - .3, ec: col, lw: .9, w, h: 8 } : { fs: FS - .3, fc: col, ec: col, tc: '#fff', bold: true, w, h: 8 }) }),
   text: (lines, o = {}) => ({ w: Math.max(...lines.map(l => tw(l, FS - .3, o.bold0))) + 2, h: lines.length * 5 - 1.5, draw: (x, y, w) => lines.map((l, i) => K.text(x + w / 2, y + 2 + i * 5, l, { fs: FS - .3 - (o.mute1 && i ? .6 : 0), anchor: 'middle', bold: o.bold0 && i === 0, color: o.mute1 && i ? C.muted : C.ink })).join('') }),
   lines: (n = 3) => ({ w: 26, h: n * 3 - 2, draw: (x, y, w) => K.lines(x, y + .5, w, n, { gap: 3, last: .55 }) }),
-  flow: () => ({ w: 34, h: 8, draw: (x, y) => [0, 13, 26].map(dx => K.box(x + dx, y + 1, 8, 6, { fc: C.tint, ec: C.art, r: .8 })).join('') + K.arrow([x + 8, y + 4], [x + 13, y + 4], { color: C.art, lw: .9 }) + K.arrow([x + 21, y + 4], [x + 26, y + 4], { color: C.art, dashed: true, lw: .9 }) }),
   bars: () => ({ w: 36, h: 13.5, draw: (x, y) => [['L2', 55], ['L4', 39], ['L8', 69], ['L12', 66]].map(([l, v], i) => { const bad = i === 2, bh = v * .115, bx = x + 2 + i * 8.5; return K.box(bx, y + 9 - bh, 5.5, bh, { fc: bad ? C.bad : C.art, ec: bad ? C.bad : C.art, r: .5 }) + K.text(bx + 2.75, y + 11.8, l, { fs: FS - 1.1, anchor: 'middle', color: C.muted }) + (bad ? K.text(bx + 2.75, y + 9 - bh - 2.2, v, { fs: FS - 1, anchor: 'middle', color: C.bad, bold: true }) : ''); }).join('') }),
 };
 const E = {
@@ -69,46 +68,28 @@ const row = (els, gap = 2) => {
 };
 // one scene per item
 const PIC = {
-  '1-1': () => row([E.chip('reduces training time', C.arg), E.miss(C.arg), E.ask(['measured where?'])]),
-  '1-2': () => row([E.card('tested', inner.chip('1 of 3 datasets', C.arg, { outline: true })), E.miss(C.arg, { solid: true }), E.chip('all three datasets', C.arg)]),
-  '1-3': () => row([E.card('§4 Results', inner.text(['“sometimes reverses', 'the meaning”']), { lines: false }), E.miss(C.arg), E.ask(['one input?', 'one output?'])]),
-  '1-4': () => row([E.say('Method A · attention scores', C.arg), E.miss(C.arg), E.chip('ours · attention scores', C.arg)]),
-  '2-1': () => row([E.card('Abstract', inner.chip('gain on short inputs', C.struct, { outline: true })), E.miss(C.struct, { left: true }), E.card('§4 Results', inner.chip('drop on long inputs', C.struct))]),
-  '2-2': () => { const q = 'Does A help with little data?', qw = tw(q, FS - .2, true) + 6, labs = ['+3 @ 1k', '−A: gain lost', 'no gap @ 100k'], ws = labs.map(l => tw(l, FS - .5) + 5), total = ws.reduce((a, b) => a + b, 0) + 2 * 3; let x = 50 - total / 2, s = K.chip(50 - qw / 2, 2, q, { fc: C.struct, ec: C.struct, tc: '#fff', bold: true, fs: FS - .2, w: qw, h: 8 });
+  '1-1': () => row([E.chip('near-low-k cost', C.arg), E.miss(C.arg), E.ask(['measured where?'])]),
+  '1-2': () => row([E.card('tested', inner.chip('2 tasks: VT, MQ', C.arg, { outline: true })), E.miss(C.arg, { solid: true }), E.chip('all diffuse tasks', C.arg)]),
+  '1-3': () => row([E.card('§4 Results', inner.text(['20 poisoned demos', 'ASR 18%']), { lines: false }), E.miss(C.arg), E.ask(['one demonstration?', 'one target action?'])]),
+  '1-4': () => { const cw = tw('SparseVLM', FS - .3) + 6, ow = tw('ours', FS, true) + 8, gap = 22, total = cw + gap + ow, x0 = 50 - total / 2, xo = x0 + cw + gap;
+    return K.chip(x0, MID - 10.5, 'FEATHER', { fs: FS - .3, ec: C.arg, lw: .9, w: cw, h: 8 }) + K.chip(x0, MID - 1, 'SparseVLM', { fs: FS - .3, ec: C.arg, lw: .9, w: cw, h: 8 }) + K.text(x0 + cw / 2, MID + 10.3, '+ 6 more, listed', { fs: FS - .8, color: C.muted, anchor: 'middle' }) +
+      K.chip(xo, MID - 6.25, 'ours', { fc: C.arg, ec: C.arg, tc: '#fff', bold: true, w: ow, h: 9.5 }) +
+      K.arrow([x0 + cw, MID - 6.5], [xo - .5, MID - 3], { color: C.arg, dashed: true, rad: -.1 }) + K.arrow([x0 + cw, MID + 3], [xo - .5, MID], { color: C.arg, dashed: true, rad: .1 }) + K.cross(x0 + cw + gap / 2, MID - 5.5) + K.cross(x0 + cw + gap / 2, MID + 2.5); },
+  '2-1': () => row([E.card('Abstract', inner.chip('46% · 93% kept', C.struct, { outline: true })), E.miss(C.struct, { left: true }), E.card('§4 Results', inner.chip('MQ: 12.1 → 3.65', C.struct))]),
+  '2-2': () => { const q = 'Does A help with little data?', qw = tw(q, FS - .2, true) + 6, labs = ['+3.1 @ 1k', '−A: gain lost', 'gap→0 @ 100k'], ws = labs.map(l => tw(l, FS - .5) + 5), total = ws.reduce((a, b) => a + b, 0) + 2 * 3; let x = 50 - total / 2, s = K.chip(50 - qw / 2, 2, q, { fc: C.struct, ec: C.struct, tc: '#fff', bold: true, fs: FS - .2, w: qw, h: 8 });
     labs.forEach((l, i) => { const cx = x + ws[i] / 2; s += K.box(x, 19.5, ws[i], 8, { r: 1.6 }) + K.text(cx, 23.6, l, { fs: FS - .5, anchor: 'middle' }) + K.arrow([cx, 19.5], [50 + (i - 1) * 9, 10.2], { color: C.struct, dashed: true, rad: (i - 1) * -.1 }); x += ws[i] + 3; });
     return s + K.cross(50, 14.8); },
-  '2-3': () => row([E.card('§3 Method', inner.text(['loss L1 · loss L2']), { lines: false }), E.miss(C.struct, { left: true }), E.card('Table 2', inner.chip('without regularization', C.struct))]),
-  '3-1': () => row([E.chip('inputs > 512 excluded', C.art), E.miss(C.art), E.ask(['why?'])]),
-  '4-1': () => row([E.para('§1 Introduction', 'opens exciting new possibilities', C.ochre)]),
+  '2-3': () => row([E.card('§3 Method', inner.lines(3)), E.miss(C.struct, { left: true }), E.card('Table 3', inner.chip('Phase-0 analysis', C.struct))]),
+  '3-1': () => row([E.chip('layer 12 of 32', C.art), E.miss(C.art), E.ask(['why 12?'])]),
+  '4-1': () => row([E.para('§1 Introduction', 'this holds exciting promise …', C.ochre)]),
   '4-2': () => row([E.chip('retrieval rate', C.ochre), E.miss(C.ochre), E.ask(['= ?'])]),
-  '4-3': () => row([E.para('§3 Method', 'renamed temp folders · moved files', C.ochre, { box: true })]),
-  '4-4': () => row([E.card('same paragraph · above', inner.chip('A > B on both', C.ochre)), E.eq(), E.card('below', inner.chip('B < A on each', C.ochre))]),
-  '4-5': () => row([E.card('Figure 1', inner.flow(), { lines: false }), E.miss(C.art), E.ask(['solid vs dashed?'])]),
-  '5-1': () => row([E.chip('essential for progress', C.sage), E.miss(C.sage), E.ask(['which problem?', 'why?'])]),
-  '5-2': () => row([E.chip('A: fixed weights', C.sage), E.clash(), E.card('A, in its own paper', inner.text(['per-input weights']), { lines: false })]),
-  '5-3': () => row([E.card('Table 4', inner.text(['accuracy +2.0']), { lines: false }), E.miss(C.sage), E.say('better syntax understanding', C.sage)]),
-  '5-4': () => row([E.chip('[12]: adaptive steps converge', C.sage), E.clash(), E.card('[12] itself', inner.text(['fixed step only']), { lines: false })]),
-};
-
-// first-screen example per item: made up to show the pattern on its own; the real SciSlopBench sentence sits under "Real case"
-const TEACH = {
-  '1-1': { def: 'The paper makes a claim, and no experiment, proof, or source in the paper supports it.', parts: [['Claim', '"Our method reduces training time."'], ['In the paper', 'Only accuracy is reported. Training time is never measured or analysed.']], why: 'The claim is stated as a result, and nothing backs it.' },
-  '1-2': { def: 'The evidence exists, but the claim covers more cases, a larger effect, or more certainty than it supports.', parts: [['Result', 'Accuracy improves on one of three datasets.'], ['Claim', '"Our method improves accuracy across all three datasets."']], why: 'One dataset backs the claim; the sentence says three.' },
-  '1-3': { def: 'The paper reports something that happened, and shows no concrete case the reader needs to understand it.', parts: [['Reported', '"The model sometimes reverses the meaning of the input."'], ['Missing', 'One input, and the output it turned into.']], why: 'Without a case, the reader cannot tell what "reverses the meaning" looks like.' },
-  '1-4': { def: 'Relevant prior work is described, but how this paper’s contribution relates to it is never said.', parts: [['Prior work', '"Method A selects tokens by attention score."'], ['This paper', '"We select tokens by attention score."'], ['Missing', 'Whether A is used as is, or what was changed.']], why: 'Two sentences say the same thing, and the relation between them is left to the reader.' },
-  '2-1': { def: 'The abstract or introduction leaves out a main finding the reader needs to judge the outcome.', parts: [['Main finding', 'Gains on short inputs; a large drop on long inputs.'], ['Abstract', 'Reports the gain and never mentions the drop.']], why: 'A reader of the front matter never learns the bad news.' },
-  '2-2': { def: 'Separate experiments are reported, and no sentence says how their results together answer the question.', parts: [['Question', '"Does component A help when training data are scarce?"'], ['Results', '+3 points with 1k examples; the gain vanishes without A; no gap at 100k examples.'], ['Missing', 'One sentence: A helps only when data are scarce.']], why: 'Three numbers answer the question together, and the paper never puts them together.' },
-  '2-3': { def: 'A section depends on a method, definition, or result elsewhere in the paper, and the reader cannot tell which one.', parts: [['Method', 'Defines two losses, L1 and L2.'], ['Results table', 'A row named "without regularization".'], ['Missing', 'Which loss that row removes.']], why: 'Both sections hold the information; the correspondence between them does not exist.' },
-  '3-1': { def: 'A choice that affects the conclusions is made, and no reason for it is given.', parts: [['Goal', 'Evaluate a method for long documents.'], ['Setup', 'Documents longer than 512 tokens are excluded.'], ['Missing', 'Why, and what the cut does to the evaluation.']], why: 'The choice shapes the result, and the reader cannot judge it.' },
-  '4-1': { def: 'A sentence adds no specific information and does no explanatory or organising work.', parts: [['Sentence', '"Our innovative framework opens exciting new possibilities."'], ['Test', 'Delete it: no claim, evidence, or transition is lost.']], why: 'Nothing in the sentence is about this study.' },
-  '4-2': { def: 'A term the reader needs for the method or results is used, and its meaning is never given.', parts: [['Result', '"The retrieval rate is 14%."'], ['Missing', 'Whether that is the share of queries with a hit, or the share of relevant documents found.']], why: 'Two readings of the term give two different results.' },
-  '4-3': { def: 'Details are included that help no one understand, assess, or reproduce the study.', parts: [['Method', 'A long account of renaming temporary folders.'], ['Check', 'It changes no data, no selection, and no run.']], why: 'The detail costs reading time and buys nothing.' },
-  '4-4': { def: 'A passage repeats an earlier point, adds no information, and is not a needed recap.', parts: [['Earlier in the paragraph', '"A scores higher than B on both datasets."'], ['Later', '"On each of the two datasets, B receives a lower score than A."'], ['Added', 'Nothing.']], why: 'The same finding is said twice in one paragraph.' },
-  '4-5': { def: 'The figure, its caption, and the text leave essential symbols, values, or connections unexplained.', parts: [['Figure', 'Solid and dashed arrows mark different connections.'], ['Missing', 'Which is the data flow and which the training update, in legend, caption, or text.']], why: 'The reader cannot read the figure without guessing.' },
-  '5-1': { def: 'A problem is called important, and the paper never says what is unresolved or why it matters.', parts: [['Motivation, in full', '"Improving model adaptability is essential for future progress."'], ['Missing', 'Which adaptation problem, and what existing methods fail to do.']], why: 'Importance is asserted, not shown.' },
-  '5-2': { def: 'A difference from another method is claimed, and that method is not identified clearly or not described correctly.', parts: [['Claim', '"Method A uses fixed weights; ours adapts them to each input."'], ['Check', 'A also computes weights per input.']], why: 'The contrast rests on a description of A that is not true.' },
-  '5-3': { def: 'A result is reported, and then given an explanation or implication the evidence does not support.', parts: [['Observed', 'Accuracy rises by 2 points.'], ['Interpretation', '"The gain comes from better understanding of syntax."'], ['Missing', 'Any test of syntax, or anything that rules out other causes.']], why: 'The number is real; the story about it is never tested.' },
-  '5-4': { def: 'A source or experiment is described as supporting something it does not establish.', parts: [['The paper', '"Prior work proves convergence with adaptive step sizes [12]."'], ['What [12] shows', 'Convergence only with a fixed step size.']], why: 'The citation exists; the claim attributed to it does not.' },
+  '4-3': () => row([E.para('§4.1 Data', 'folder layout · renamed files · scratch dirs', C.ochre, { box: true })]),
+  '4-4': () => row([E.card('§4 · a line above', inner.chip('SRE, not attention', C.ochre)), E.eq(), E.card('§4 · two lines below', inner.chip('SRE, not attention', C.ochre))]),
+  '4-5': () => row([E.card('Figure 1', inner.bars(), { lines: false }), E.miss(C.art), E.ask(['L8 in the text?'])]),
+  '5-1': () => row([E.chip('limits deployment flexibility', C.sage), E.miss(C.sage), E.ask(['where', 'does it fail?'])]),
+  '5-2': () => row([E.chip('H2O prunes high-attn tokens', C.sage), E.clash(), E.card('H2O in §2', inner.text(['keeps them', 'same paper'], { bold0: true, mute1: true }), { lines: false })]),
+  '5-3': () => row([E.card('Table 4', inner.text(['AUROC 1.0 → 1.0', 'ASR 40.7 → 42.4']), { lines: false }), E.miss(C.sage), E.say('a fundamental trade-off', C.sage)]),
+  '5-4': () => row([E.chip('0.3, "typically considered"', C.sage), E.miss(C.sage), E.ask(['by whom?', '[ ? ]'])]),
 };
 // what the pattern looks like, one line under each scene
 const CAP = { '1-1': 'a claim with nothing behind it', '1-2': 'claim wider than its evidence', '1-3': 'numbers only, no example', '1-4': 'cited, related to nothing', '2-1': 'the bad news never reaches the front', '2-2': 'results never meet the question', '2-3': 'a name that points at nothing', '3-1': 'a choice with no reason', '4-1': 'delete it and nothing is lost', '4-2': 'a term with no meaning', '4-3': 'detail the reader never needs', '4-4': 'six places, one finding', '4-5': 'a result only the figure reports', '5-1': 'important, but never shown', '5-2': 'the contrast is not true', '5-3': 'nothing moved, yet it explains', '5-4': 'a source that is not there' };
@@ -526,20 +507,17 @@ $('#area-tiles').replaceChildren(...GROUPS.map(a => h('a', { class: 'atile ' + a
 function excerpt(ex) { return h('div', { class: 'v-ex' + (ex.made ? ' made' : '') }, h('div', { class: 'ex-h', text: ex.src || ex.sec }), h('p', { class: 'ex-t' }, ex.pre, h('mark', { text: ex.mark }), ex.post), h('p', { class: 'ex-n', text: ex.note })); }
 function bullets(cls, label, arr) { return h('div', { class: 'dl ' + cls }, h('span', { class: 'l', text: label }), h('ul', {}, ...arr.map(t => h('li', { text: t })))); }
 function card(it, area) {
-  const d = h('article', { class: 'slop ' + area.cls, id: it.id }), t = TEACH[it.id];
+  const d = h('article', { class: 'slop ' + area.cls, id: it.id });
   const more = [bullets('j', 'How it is judged', it.judge), bullets('n', 'Not a defect', it.not), bullets('f', 'What counts as a fix', it.fix),
     it.link ? bullets('k', 'What must connect', [it.link[0] + ' → ' + it.link[1]]) : null,
     it.borders ? h('div', { class: 'dl b' }, h('span', { class: 'l', text: 'Borders on' }), h('ul', { class: 'bl' }, ...it.borders.map(([id, why]) => h('li', { html: xref(id) + ' <span>' + esc(why) + '</span>' })))) : null];
-  const parts = h('dl', { class: 'e-parts' }, ...t.parts.flatMap(([l, x]) => { const q = x.startsWith('"'); return [h('dt', { text: l }), h('dd', { class: q ? 'q' : null, text: q ? '“' + x.slice(1, -1) + '”' : x })]; }));
   d.append(h('div', { class: 'e-text' },
     h('h3', { class: 'e-name', text: it.name }),
-    h('p', { class: 'e-what', text: t.def }),
-    parts,
-    h('p', { class: 'e-why', text: t.why }),
-    h('details', { class: 'v-more' }, h('summary', {}, h('span', { text: 'Real case from SciSlopBench, and how it is judged' })),
-      h('div', { class: 'more-b' },
-        h('blockquote', { class: 'e-q' + (it.ex.made ? ' made' : '') }, h('p', { class: 'e-qt' }, it.ex.pre, h('mark', { text: it.ex.mark }), it.ex.post), h('p', { class: 'e-src', text: it.ex.src || it.ex.sec }), h('p', { class: 'e-note', text: it.ex.note })),
-        ...more))));
+    h('p', { class: 'e-origin' + (it.v1 ? '' : ' new'), text: it.v1 ? 'from v1 · ' + it.v1 : 'new in v2' }),
+    h('p', { class: 'e-what', text: it.what }),
+    h('blockquote', { class: 'e-q' + (it.ex.made ? ' made' : '') }, h('p', { class: 'e-qt' }, it.ex.pre, h('mark', { text: it.ex.mark }), it.ex.post), h('p', { class: 'e-src', text: it.ex.src || it.ex.sec })),
+    h('p', { class: 'e-note', text: it.ex.note }),
+    h('details', { class: 'v-more' }, h('summary', {}, h('span', { text: 'How it is judged, what is not a defect, what counts as a fix' })), h('div', { class: 'more-b' }, ...more))));
   d.append(h('div', { class: 'e-pic', html: K.svg(PIC[it.id](), 'Illustration of ' + it.name) }));
   return d;
 }
