@@ -18,7 +18,7 @@ const C = { struct: '#95627A', arg: '#C97C86', art: '#5C717D', ochre: '#A2823A',
 const AREA_C = { 1: C.arg, 2: C.struct, 3: C.art, 4: C.ochre, 5: C.sage };
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const FS = 4.1, DASH = 'stroke-dasharray="2.2 1.6"';
-const tw = (s, fs = FS) => s.length * fs * 0.56 + 4;           // rough text width in viewBox units
+const tw = (s, fs = FS, bold) => { let w = 0; for (const ch of String(s)) w += /[iljtfr.,:;'’|!·\s()\[\]]/.test(ch) ? .3 : /[mwMW@]/.test(ch) ? .86 : /[A-Z0-9%§→–−"“”?+]/.test(ch) ? .64 : .55; return w * fs * (bold ? 1.06 : 1) + 1; }; // text width in viewBox units
 const K = {
   box: (x, y, w, h, o = {}) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${(o.r != null ? o.r : 1.4)}" fill="${o.fc || C.card}" stroke="${o.ec || C.hair}" stroke-width="${(o.lw != null ? o.lw : .8)}" ${o.dashed ? DASH : ''}/>`,
   text: (x, y, s, o = {}) => `<text x="${x}" y="${y}" font-size="${o.fs || FS}" fill="${o.color || C.ink}" text-anchor="${o.anchor || 'start'}" dominant-baseline="central" ${o.bold ? 'font-weight="700"' : ''} ${o.italic ? 'font-style="italic"' : ''}>${esc(s)}</text>`,
@@ -39,28 +39,60 @@ const K = {
   caption: s => K.text(50, 31.3, s, { fs: 4.3, color: C.bad, anchor: 'middle', italic: true, bold: true }),
   card: (x, y, w, h, title) => K.box(x, y, w, h, { r: 2 }) + (title ? K.text(x + 3, y + 3.8, title, { fs: FS - .5, color: C.muted, bold: true }) : ''),
   grid: (x, y, w, h, r, c, o = {}) => { let s = K.box(x, y, w, h, { fc: o.fc || C.tint, ec: o.ec || C.art }); for (let i = 1; i < r; i++) s += K.line(x, y + h * i / r, x + w, y + h * i / r, { color: o.ec || C.art, lw: .6 }); for (let j = 1; j < c; j++) s += K.line(x + w * j / c, y, x + w * j / c, y + h, { color: o.ec || C.art, lw: .6 }); return s; },
-  svg: (inner, label) => `<svg viewBox="0 0 100 35" role="img" aria-label="${esc(label)}" font-family="Inter, Lato, system-ui, sans-serif">${inner}</svg>`,
+  svg: (inner, label) => `<svg viewBox="0 0 100 28" role="img" aria-label="${esc(label)}" font-family="Inter, Lato, system-ui, sans-serif">${inner}</svg>`,
+};
+// scene grammar: every scene is a row of elements centred on MID; widths come from the text, so nothing overflows.
+const MID = 14;
+const el = (w, draw) => ({ w, draw });
+const inner = {
+  chip: (s, col, o = {}) => ({ w: tw(s, FS - .3, !o.outline) + 5, h: 8, draw: (x, y, w) => K.chip(x, y, s, o.outline ? { fs: FS - .3, ec: col, lw: .9, w, h: 8 } : { fs: FS - .3, fc: col, ec: col, tc: '#fff', bold: true, w, h: 8 }) }),
+  text: (lines, o = {}) => ({ w: Math.max(...lines.map(l => tw(l, FS - .3, o.bold0))) + 2, h: lines.length * 5 - 1.5, draw: (x, y, w) => lines.map((l, i) => K.text(x + w / 2, y + 2 + i * 5, l, { fs: FS - .3 - (o.mute1 && i ? .6 : 0), anchor: 'middle', bold: o.bold0 && i === 0, color: o.mute1 && i ? C.muted : C.ink })).join('') }),
+  lines: (n = 3) => ({ w: 26, h: n * 3 - 2, draw: (x, y, w) => K.lines(x, y + .5, w, n, { gap: 3, last: .55 }) }),
+  bars: () => ({ w: 36, h: 13.5, draw: (x, y) => [['L2', 55], ['L4', 39], ['L8', 69], ['L12', 66]].map(([l, v], i) => { const bad = i === 2, bh = v * .115, bx = x + 2 + i * 8.5; return K.box(bx, y + 9 - bh, 5.5, bh, { fc: bad ? C.bad : C.art, ec: bad ? C.bad : C.art, r: .5 }) + K.text(bx + 2.75, y + 11.8, l, { fs: FS - 1.1, anchor: 'middle', color: C.muted }) + (bad ? K.text(bx + 2.75, y + 9 - bh - 2.2, v, { fs: FS - 1, anchor: 'middle', color: C.bad, bold: true }) : ''); }).join('') }),
+};
+const E = {
+  chip: (s, col) => { const w = tw(s, FS, true) + 6; return el(w, x => K.chip(x, MID - 4.75, s, { fc: col, ec: col, tc: '#fff', bold: true, w, h: 9.5 })); },
+  say: (s, col) => { const w = tw(s, FS) + 6; return el(w, x => K.chip(x, MID - 4.75, s, { fc: C.card, ec: col, tc: C.ink, italic: true, w, h: 9.5, lw: .9 })); },
+  ask: lines => { const hh = lines.length > 1 ? 14 : 9.5, w = Math.max(...lines.map(l => tw(l, FS))) + 7; return el(w, x => K.box(x, MID - hh / 2, w, hh, { dashed: true, ec: C.muted, lw: .9, r: 1.8 }) + lines.map((l, i) => K.text(x + w / 2, MID + (i - (lines.length - 1) / 2) * 5, l, { color: C.muted, anchor: 'middle', italic: true })).join('')); },
+  card: (title, c, o = {}) => { const w = Math.max(c.w, tw(title, FS - .5, true) + 2) + 6, hh = 7 + c.h + (o.lines === false ? 3.5 : 5.5); return el(w, x => { const y = MID - hh / 2; return K.card(x, y, w, hh, title) + c.draw(x + 3, y + 7, w - 6) + (o.lines === false ? '' : K.lines(x + 3, y + hh - 3, w - 6, 1, { last: .55 })); }); },
+  para: (title, s, col, o = {}) => { const cw = tw(s, FS - .3, !o.box) + 5, w = cw + 22, hh = 23; return el(w, x => { const y = MID - hh / 2; return K.card(x, y, w, hh, title) + K.lines(x + 3, y + 7.5, w - 6, 1) + (o.box ? K.box(x + 3, y + 10, cw, 7.5, { fc: '#F6F1E6', ec: col }) + K.text(x + 3 + cw / 2, y + 13.85, s, { fs: FS - .3, anchor: 'middle' }) : K.chip(x + 3, y + 10, s, { fs: FS - .3, fc: col, ec: col, tc: '#fff', w: cw, h: 7.5 })) + K.lines(x + 3, y + 20, w - 6, 1, { last: .5 }) + K.cross(x + 3 + cw, y + 13.75, 3.2); }); },
+  miss: (col, o = {}) => el(17, x => (o.left ? K.arrow([x + 17, MID], [x, MID], { color: col, dashed: !o.solid }) : K.arrow([x, MID], [x + 17, MID], { color: col, dashed: !o.solid })) + K.cross(x + 8.5, MID)),
+  eq: () => el(15, x => K.line(x, MID, x + 15, MID, { lw: 1 }) + K.eq(x + 7.5, MID)),
+  clash: () => el(11, x => K.cross(x + 5.5, MID)),
+};
+const row = (els, gap = 2) => {
+  const total = els.reduce((a, e) => a + e.w, 0) + gap * (els.length - 1), k = Math.min(1, 95 / total);
+  let x = 50 - total / 2, s = '';
+  for (const e of els) { s += e.draw(x); x += e.w + gap; }
+  return k < 1 ? `<g transform="translate(50 ${MID}) scale(${k.toFixed(3)}) translate(-50 ${-MID})">${s}</g>` : s;
 };
 // one scene per item
 const PIC = {
-  '1-1': () => K.chip(3, 10.5, 'near-low-k cost', { fc: C.arg, ec: C.arg, tc: '#fff', bold: true, h: 9 }) + K.arrow([44, 15], [62, 15], { color: C.arg, dashed: true }) + K.box(63, 8, 34, 14, { dashed: true, ec: C.muted, lw: .9 }) + K.text(80, 15.2, 'measured where?', { color: C.muted, anchor: 'middle', italic: true, fs: FS - .6 }) + K.cross(53, 15) + K.caption('a claim with nothing behind it'),
-  '1-2': () => K.card(3, 5, 31, 20, 'tested') + K.chip(6, 12.5, '2 tasks: VT, MQ', { fs: FS - .8, ec: C.arg, lw: .9, w: 25 }) + K.line(37, 3, 37, 26, { color: C.bad, lw: 1, dashed: true }) + K.arrow([34, 15], [46, 15], { color: C.arg }) + K.chip(47, 8, 'all diffuse / distributed tasks', { fc: C.arg, ec: C.arg, tc: '#fff', bold: true, w: 50, h: 14, fs: FS - .9 }) + K.cross(37, 24.5) + K.caption('claim wider than its evidence'),
-  '1-3': () => K.grid(4, 7, 30, 18, 3, 3) + K.text(19, 4, '20 poisoned demos · ASR 18%', { fs: FS - .8, color: C.muted, anchor: 'middle', bold: true }) + K.arrow([35, 16], [56, 16], { color: C.arg, dashed: true }) + K.box(57, 8, 40, 16, { dashed: true, ec: C.muted, lw: .9 }) + K.text(77, 13.5, 'one demonstration?', { color: C.muted, anchor: 'middle', italic: true }) + K.text(77, 19, 'one target action?', { color: C.muted, anchor: 'middle', italic: true }) + K.cross(46, 16) + K.caption('numbers only, no example'),
-  '1-4': () => K.chip(3, 4, 'FEATHER', { ec: C.arg, lw: .9, w: 26 }) + K.chip(3, 13.5, 'SparseVLM', { ec: C.arg, lw: .9, w: 26 }) + K.text(16, 25.5, '+ 6 more, listed', { fs: FS - .6, color: C.muted, anchor: 'middle' }) + K.chip(70, 11, 'ours', { fc: C.arg, ec: C.arg, tc: '#fff', bold: true, w: 26, h: 9 }) + K.arrow([30, 8], [69, 14], { color: C.arg, dashed: true, rad: -.12 }) + K.arrow([30, 17.5], [69, 16.5], { color: C.arg, dashed: true, rad: .12 }) + K.cross(49, 9.5) + K.cross(49, 19.5) + K.caption('cited, related to nothing'),
-  '2-1': () => K.card(3, 4, 36, 22, 'Abstract') + K.chip(6, 11, '46% · 93% kept', { fs: FS - .5, ec: C.struct, lw: .9, w: 30 }) + K.lines(6, 21.5, 28, 1, { last: .6 }) + K.card(58, 4, 39, 22, '§4 Results') + K.chip(61, 11, 'MQ: 12.1 → 3.65', { fs: FS - .5, fc: C.struct, ec: C.struct, tc: '#fff', bold: true, w: 33 }) + K.lines(61, 21.5, 30, 1, { last: .6 }) + K.arrow([58, 15], [40, 15], { color: C.struct, dashed: true }) + K.cross(49, 15) + K.caption('the bad news never reaches the front'),
-  '2-2': () => K.chip(24, 3, 'Does A help with little data?', { fc: C.struct, ec: C.struct, tc: '#fff', bold: true, fs: FS - .4, h: 7.5 }) + [5, 37, 69].map((x, i) => K.card(x, 18, 26, 9) + K.text(x + 13, 22.7, ['+3.1 @ 1k', '−A: gain lost', 'gap→0 @ 100k'][i], { fs: FS - .7, anchor: 'middle' })).join('') + K.arrow([18, 18], [38, 10.5], { color: C.struct, dashed: true, rad: -.1 }) + K.arrow([50, 18], [50, 10.5], { color: C.struct, dashed: true }) + K.arrow([82, 18], [62, 10.5], { color: C.struct, dashed: true, rad: .1 }) + K.cross(50, 14) + K.caption('results never meet the question'),
-  '2-3': () => K.card(3, 4, 40, 22, '§3 Method') + K.lines(6, 11, 33, 4, { gap: 3.2, last: .5 }) + K.card(57, 4, 40, 22, 'Table 3') + K.chip(60, 11, 'Phase-0 analysis', { fs: FS - .4, fc: C.struct, ec: C.struct, tc: '#fff', bold: true, w: 34 }) + K.lines(60, 21.5, 30, 1, { last: .6 }) + K.arrow([57, 15], [44, 15], { color: C.struct, dashed: true }) + K.cross(50.5, 15) + K.caption('a name that points at nothing'),
-  '3-1': () => K.chip(3, 10.5, 'layer 12 of 32', { fc: C.art, ec: C.art, tc: '#fff', bold: true, h: 9 }) + K.arrow([42, 15], [62, 15], { color: C.art, dashed: true }) + K.box(63, 8, 34, 14, { dashed: true, ec: C.muted, lw: .9 }) + K.text(80, 15.2, 'why 12?', { color: C.muted, anchor: 'middle', italic: true, fs: 5 }) + K.cross(52, 15) + K.caption('a choice with no reason'),
-  '4-1': () => K.card(6, 3, 88, 24, '§1 Introduction') + K.lines(9, 10, 80, 1) + K.chip(9, 13, 'this holds exciting promise …', { fs: FS - .5, fc: C.ochre, ec: C.ochre, tc: '#fff', w: 72, h: 7 }) + K.lines(9, 23.5, 80, 1, { last: .5 }) + K.cross(87, 16.5) + K.caption('delete it and nothing is lost'),
-  '4-2': () => K.chip(3, 10.5, 'retrieval rate', { fc: C.ochre, ec: C.ochre, tc: '#fff', bold: true, h: 9 }) + K.arrow([40, 15], [62, 15], { color: C.ochre, dashed: true }) + K.box(63, 8, 34, 14, { dashed: true, ec: C.muted, lw: .9 }) + K.text(80, 15.2, '= ?', { color: C.muted, anchor: 'middle', italic: true, fs: 5.5 }) + K.cross(51, 15) + K.caption('a term with no meaning'),
-  '4-3': () => K.card(6, 3, 88, 24, '§4.1 Data') + K.lines(9, 10, 80, 1) + K.box(9, 13, 72, 8, { fc: '#F6F1E6', ec: C.ochre }) + K.text(45, 17.2, 'folder layout · renamed files · scratch dirs', { fs: FS - .6, anchor: 'middle', color: C.ink }) + K.lines(9, 24, 80, 1, { last: .5 }) + K.cross(87, 17) + K.caption('detail the reader never needs'),
-  '4-4': () => K.card(3, 4, 42, 22, '§4 · one line above') + K.chip(6, 11, 'SRE, not attention', { fs: FS - .5, fc: C.ochre, ec: C.ochre, tc: '#fff', w: 36 }) + K.lines(6, 21.5, 33, 1, { last: .6 }) + K.card(55, 4, 42, 22, '§4 · two lines below') + K.chip(58, 11, 'SRE, not attention', { fs: FS - .5, fc: C.ochre, ec: C.ochre, tc: '#fff', w: 36 }) + K.lines(58, 21.5, 33, 1, { last: .6 }) + K.line(45, 15, 55, 15, { lw: 1 }) + K.eq(50, 15) + K.caption('six places, one finding'),
-  '4-5': () => K.card(3, 3, 54, 24, 'Figure 1') + [['L2', 55], ['L4', 39], ['L8', 69], ['L12', 66]].map(([l, v], i) => K.box(9 + i * 11.5, 23 - v * .22, 7, v * .22, { fc: i === 2 ? C.bad : C.art, ec: i === 2 ? C.bad : C.art, r: .6 }) + K.text(12.5 + i * 11.5, 25.3, l, { fs: FS - 1, anchor: 'middle', color: C.muted })).join('') + K.text(32.5, 6.3, '69', { fs: FS - .8, anchor: 'middle', color: C.bad, bold: true }) + K.arrow([58, 9], [66, 9], { color: C.art, dashed: true }) + K.box(67, 3, 30, 12, { dashed: true, ec: C.muted, lw: .9 }) + K.text(82, 9.2, 'L8 in the text?', { color: C.muted, anchor: 'middle', italic: true, fs: FS - .3 }) + K.cross(62, 9) + K.caption('a result only the figure reports'),
-  '5-1': () => K.chip(3, 10.5, 'limits deployment flexibility', { fc: C.sage, ec: C.sage, tc: '#fff', bold: true, h: 9, fs: FS - .7, w: 52 }) + K.arrow([56, 15], [70, 15], { color: C.sage, dashed: true }) + K.box(71, 7, 26, 16, { dashed: true, ec: C.muted, lw: .9 }) + K.text(84, 12.5, 'where', { color: C.muted, anchor: 'middle', italic: true }) + K.text(84, 18, 'does it fail?', { color: C.muted, anchor: 'middle', italic: true }) + K.cross(63, 15) + K.caption('important, but never shown'),
-  '5-2': () => K.chip(3, 10.5, 'H2O prunes high-attention tokens', { fc: C.sage, ec: C.sage, tc: '#fff', bold: true, fs: FS - 1, h: 9, w: 56 }) + K.card(68, 5, 29, 20, 'H2O in §2') + K.text(82.5, 15, 'keeps them', { anchor: 'middle', fs: FS - .2, bold: true }) + K.text(82.5, 20.5, 'same paper', { anchor: 'middle', fs: FS - .9, color: C.muted }) + K.cross(63.5, 15) + K.caption('the contrast is not true'),
-  '5-3': () => K.card(3, 4, 40, 22, 'Table 4') + K.text(23, 12, 'AUROC 1.0 → 1.0', { anchor: 'middle', fs: FS - .5 }) + K.text(23, 18.5, 'ASR 40.7 → 42.4', { anchor: 'middle', fs: FS - .5 }) + K.arrow([44, 15], [58, 15], { color: C.sage, dashed: true }) + K.chip(58, 7, 'a fundamental trade-off', { fc: C.card, ec: C.sage, tc: C.ink, italic: true, w: 39, h: 16, fs: FS - 1, lw: .9 }) + K.cross(51, 15) + K.caption('nothing moved, yet it explains'),
-  '5-4': () => K.chip(3, 10.5, '0.3, "typically considered"', { fc: C.sage, ec: C.sage, tc: '#fff', bold: true, fs: FS - .9, h: 9, w: 52 }) + K.arrow([56, 15], [70, 15], { color: C.sage, dashed: true }) + K.box(71, 7, 26, 16, { dashed: true, ec: C.muted, lw: .9 }) + K.text(84, 12.5, 'by whom?', { color: C.muted, anchor: 'middle', italic: true, fs: FS - .3 }) + K.text(84, 18, '[ ? ]', { color: C.muted, anchor: 'middle', fs: FS }) + K.cross(63, 15) + K.caption('a source that is not there'),
+  '1-1': () => row([E.chip('near-low-k cost', C.arg), E.miss(C.arg), E.ask(['measured where?'])]),
+  '1-2': () => row([E.card('tested', inner.chip('2 tasks: VT, MQ', C.arg, { outline: true })), E.miss(C.arg, { solid: true }), E.chip('all diffuse tasks', C.arg)]),
+  '1-3': () => row([E.card('§4 Results', inner.text(['20 poisoned demos', 'ASR 18%']), { lines: false }), E.miss(C.arg), E.ask(['one demonstration?', 'one target action?'])]),
+  '1-4': () => { const cw = tw('SparseVLM', FS - .3) + 6, ow = tw('ours', FS, true) + 8, gap = 22, total = cw + gap + ow, x0 = 50 - total / 2, xo = x0 + cw + gap;
+    return K.chip(x0, MID - 10.5, 'FEATHER', { fs: FS - .3, ec: C.arg, lw: .9, w: cw, h: 8 }) + K.chip(x0, MID - 1, 'SparseVLM', { fs: FS - .3, ec: C.arg, lw: .9, w: cw, h: 8 }) + K.text(x0 + cw / 2, MID + 10.3, '+ 6 more, listed', { fs: FS - .8, color: C.muted, anchor: 'middle' }) +
+      K.chip(xo, MID - 6.25, 'ours', { fc: C.arg, ec: C.arg, tc: '#fff', bold: true, w: ow, h: 9.5 }) +
+      K.arrow([x0 + cw, MID - 6.5], [xo - .5, MID - 3], { color: C.arg, dashed: true, rad: -.1 }) + K.arrow([x0 + cw, MID + 3], [xo - .5, MID], { color: C.arg, dashed: true, rad: .1 }) + K.cross(x0 + cw + gap / 2, MID - 5.5) + K.cross(x0 + cw + gap / 2, MID + 2.5); },
+  '2-1': () => row([E.card('Abstract', inner.chip('46% · 93% kept', C.struct, { outline: true })), E.miss(C.struct, { left: true }), E.card('§4 Results', inner.chip('MQ: 12.1 → 3.65', C.struct))]),
+  '2-2': () => { const q = 'Does A help with little data?', qw = tw(q, FS - .2, true) + 6, labs = ['+3.1 @ 1k', '−A: gain lost', 'gap→0 @ 100k'], ws = labs.map(l => tw(l, FS - .5) + 5), total = ws.reduce((a, b) => a + b, 0) + 2 * 3; let x = 50 - total / 2, s = K.chip(50 - qw / 2, 2, q, { fc: C.struct, ec: C.struct, tc: '#fff', bold: true, fs: FS - .2, w: qw, h: 8 });
+    labs.forEach((l, i) => { const cx = x + ws[i] / 2; s += K.box(x, 19.5, ws[i], 8, { r: 1.6 }) + K.text(cx, 23.6, l, { fs: FS - .5, anchor: 'middle' }) + K.arrow([cx, 19.5], [50 + (i - 1) * 9, 10.2], { color: C.struct, dashed: true, rad: (i - 1) * -.1 }); x += ws[i] + 3; });
+    return s + K.cross(50, 14.8); },
+  '2-3': () => row([E.card('§3 Method', inner.lines(3)), E.miss(C.struct, { left: true }), E.card('Table 3', inner.chip('Phase-0 analysis', C.struct))]),
+  '3-1': () => row([E.chip('layer 12 of 32', C.art), E.miss(C.art), E.ask(['why 12?'])]),
+  '4-1': () => row([E.para('§1 Introduction', 'this holds exciting promise …', C.ochre)]),
+  '4-2': () => row([E.chip('retrieval rate', C.ochre), E.miss(C.ochre), E.ask(['= ?'])]),
+  '4-3': () => row([E.para('§4.1 Data', 'folder layout · renamed files · scratch dirs', C.ochre, { box: true })]),
+  '4-4': () => row([E.card('§4 · a line above', inner.chip('SRE, not attention', C.ochre)), E.eq(), E.card('§4 · two lines below', inner.chip('SRE, not attention', C.ochre))]),
+  '4-5': () => row([E.card('Figure 1', inner.bars(), { lines: false }), E.miss(C.art), E.ask(['L8 in the text?'])]),
+  '5-1': () => row([E.chip('limits deployment flexibility', C.sage), E.miss(C.sage), E.ask(['where', 'does it fail?'])]),
+  '5-2': () => row([E.chip('H2O prunes high-attn tokens', C.sage), E.clash(), E.card('H2O in §2', inner.text(['keeps them', 'same paper'], { bold0: true, mute1: true }), { lines: false })]),
+  '5-3': () => row([E.card('Table 4', inner.text(['AUROC 1.0 → 1.0', 'ASR 40.7 → 42.4']), { lines: false }), E.miss(C.sage), E.say('a fundamental trade-off', C.sage)]),
+  '5-4': () => row([E.chip('0.3, "typically considered"', C.sage), E.miss(C.sage), E.ask(['by whom?', '[ ? ]'])]),
 };
+// what the pattern looks like, one line under each scene
+const CAP = { '1-1': 'a claim with nothing behind it', '1-2': 'claim wider than its evidence', '1-3': 'numbers only, no example', '1-4': 'cited, related to nothing', '2-1': 'the bad news never reaches the front', '2-2': 'results never meet the question', '2-3': 'a name that points at nothing', '3-1': 'a choice with no reason', '4-1': 'delete it and nothing is lost', '4-2': 'a term with no meaning', '4-3': 'detail the reader never needs', '4-4': 'six places, one finding', '4-5': 'a result only the figure reports', '5-1': 'important, but never shown', '5-2': 'the contrast is not true', '5-3': 'nothing moved, yet it explains', '5-4': 'a source that is not there' };
 // hero: a paper spine with the five kinds of broken connection
 function heroSvg() {
   const secs = [['Abstract', 4], ['Introduction', 42], ['Method', 80], ['Experiments', 118], ['Conclusion', 156]];
@@ -476,7 +508,7 @@ function excerpt(ex) { return h('div', { class: 'v-ex' + (ex.made ? ' made' : ''
 function bullets(cls, label, arr) { return h('div', { class: 'dl ' + cls }, h('span', { class: 'l', text: label }), h('ul', {}, ...arr.map(t => h('li', { text: t })))); }
 function card(it, area) {
   const d = h('article', { class: 'slop ' + area.cls, id: it.id });
-  d.append(h('div', { class: 'v-pic', html: K.svg(PIC[it.id](), 'Illustration of ' + it.name) }));
+  d.append(h('figure', { class: 'v-pic' }, h('div', { class: 'v-pic-s', html: K.svg(PIC[it.id](), 'Illustration of ' + it.name) }), h('figcaption', { class: 'v-cap', text: CAP[it.id] })));
   d.append(h('div', { class: 'v-head' }, h('span', { class: 'v-id', text: it.id }), h('h3', { text: it.name }), it.v1 ? h('span', { class: 'v1', text: 'v1 · ' + it.v1 }) : null));
   d.append(h('p', { class: 'what', text: it.what }));
   if (it.link) d.append(h('div', { class: 'v-link' }, h('span', { text: it.link[0] }), h('i', { text: '→' }), h('span', { text: it.link[1] })));
