@@ -106,6 +106,11 @@ async def main():
     for name in ("index.html", "404.html"):
         with open(os.path.join(OUT, name), "w") as f:
             f.write(html)
+    # v1.1 registry page: cache-bust its own script and stylesheet like the main shell
+    v11 = os.path.join(OUT, "static", "v11", "index.html")
+    if os.path.exists(v11):
+        s = open(v11).read().replace('href="v11.css"', f'href="v11.css?v={ver}"').replace('src="registry.js"', f'src="registry.js?v={ver}"')
+        open(v11, "w").write(s)
     # /registry/ → the v1.1 slop registry page (served from static/v11, so its relative paths keep working)
     os.makedirs(os.path.join(OUT, "registry"), exist_ok=True)
     with open(os.path.join(OUT, "registry", "index.html"), "w") as f:

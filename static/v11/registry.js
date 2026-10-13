@@ -698,6 +698,8 @@ const expand = $('#expand');
 expand.addEventListener('click', () => { const ms = [...document.querySelectorAll('.v-more')]; const open = ms.some(d => !d.open); ms.forEach(d => d.open = open); expand.textContent = open ? 'Hide details' : 'Show all details'; });
 function openHash() {
   const id = decodeURIComponent(location.hash.slice(1));
+  const alias = { def: 'defs', definitions: 'defs', paper: 'paper', analyses: 'found', findings: 'found', cue: 'cues', vote: 'hub', registry: 'defs' };
+  if (alias[id]) { history.replaceState({}, '', '#' + alias[id]); showTab(alias[id]); $('#tabs').scrollIntoView({ block: 'start' }); return; }
   if (TABS.includes(id)) { showTab(id); if (id === 'hub') $('#tabs').scrollIntoView({ block: 'start' }); return; }
   if (/^hub-\d-\d$/.test(id)) { showTab('hub'); hubOpen.add(id.slice(4)); renderHub(); const el = document.getElementById(id); if (el) el.scrollIntoView({ block: 'start' }); return; }
   if (/^f\d$/.test(id)) { showTab('found'); const el = document.getElementById(id); if (el) { el.scrollIntoView({ block: 'start' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); } return; }
