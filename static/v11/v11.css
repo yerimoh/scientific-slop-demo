@@ -8,8 +8,8 @@
   --a5: #5f7f5e; --a5-band: #eef3ee; --a5-mk: rgba(95, 138, 98, .36);
   --paper: #fff; --paper-ink: #1b1b1b; --paper-line: #d8d5cf;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --a4: #b9a06a; --a4-band: #22201b; --a5: #8fa58c; --a5-band: #1d201c; } }
-:root[data-theme="dark"] { --a4: #b9a06a; --a4-band: #22201b; --a5: #8fa58c; --a5-band: #1d201c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --a4: #d8a657; --a4-band: #2b2719; --a5: #a9b665; --a5-band: #24271c; } }
+:root[data-theme="dark"] { --a4: #d8a657; --a4-band: #2b2719; --a5: #a9b665; --a5-band: #24271c; }
 .nav-v { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 5px; border: 1.2px solid currentColor; margin-left: 5px; vertical-align: 1px; }
 .p-structure { --ac: var(--structure-deep); --at: var(--structure-deep); --ab: var(--structure-band); --mkc: rgba(126, 78, 102, .36); } .p-argument { --ac: var(--argument); --at: var(--argument-deep); --ab: var(--argument-band); --mkc: rgba(228, 149, 158, .45); } .p-artifacts { --ac: var(--artifacts-deep); --at: var(--artifacts-deep); --ab: var(--artifacts-band); --mkc: rgba(86, 113, 123, .32); }
 .a1 { --ac: var(--a1); --ab: var(--a1-band); } .a2 { --ac: var(--a2); --ab: var(--a2-band); } .a3 { --ac: var(--a3); --ab: var(--a3-band); } .a4 { --ac: var(--a4); --ab: var(--a4-band); } .a5 { --ac: var(--a5); --ab: var(--a5-band); }
