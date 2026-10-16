@@ -27,24 +27,24 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0e0f11; --surface: #16171a; --surface-2: #1c1d21; --line: #26282c; --line-2: #34363b;
-    --ink: #ededeb; --ink-2: #b9bab7; --ink-3: #8a8b88; --ink-4: #63645f;
-    --structure: #a98199; --structure-deep: #cfa9bd; --structure-band: #1b171a; --structure-light: #3a2d35;
-    --argument: #d0848d; --argument-deep: #e3a1a8; --argument-band: #1e1718; --argument-light: #44302f;
-    --artifacts: #7f9eab; --artifacts-deep: #a9c3ce; --artifacts-band: #141a1c; --artifacts-light: #2b373c;
-    --red: #e2737c; --idx-1: #3d2a2d; --idx-2: #9c5560; --idx-3: #c9646e; --idx-4: #e2737c;
+    --bg: #0b0f14; --surface: #111720; --surface-2: #18202a; --line: #222c38; --line-2: #2f3b49;
+    --ink: #e6edf3; --ink-2: #aab6c3; --ink-3: #7d8a99; --ink-4: #566270;
+    --structure: #a98199; --structure-deep: #cfa9bd; --structure-band: #1a1822; --structure-light: #352c3d;
+    --argument: #d0848d; --argument-deep: #e3a1a8; --argument-band: #1d1820; --argument-light: #3e2e36;
+    --artifacts: #7f9fb8; --artifacts-deep: #a8c2d8; --artifacts-band: #121b25; --artifacts-light: #26364a;
+    --red: #e2737c; --idx-1: #352a33; --idx-2: #9c5560; --idx-3: #c9646e; --idx-4: #e2737c;
     --good: #79b889; --mark: rgba(208, 132, 141, .22);
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0e0f11; --surface: #16171a; --surface-2: #1c1d21; --line: #26282c; --line-2: #34363b;
-  --ink: #ededeb; --ink-2: #b9bab7; --ink-3: #8a8b88; --ink-4: #63645f;
-  --structure: #a98199; --structure-deep: #cfa9bd; --structure-band: #1b171a; --structure-light: #3a2d35;
-  --argument: #d0848d; --argument-deep: #e3a1a8; --argument-band: #1e1718; --argument-light: #44302f;
-  --artifacts: #7f9eab; --artifacts-deep: #a9c3ce; --artifacts-band: #141a1c; --artifacts-light: #2b373c;
-  --red: #e2737c; --idx-1: #3d2a2d; --idx-2: #9c5560; --idx-3: #c9646e; --idx-4: #e2737c;
+  --bg: #0b0f14; --surface: #111720; --surface-2: #18202a; --line: #222c38; --line-2: #2f3b49;
+  --ink: #e6edf3; --ink-2: #aab6c3; --ink-3: #7d8a99; --ink-4: #566270;
+  --structure: #a98199; --structure-deep: #cfa9bd; --structure-band: #1a1822; --structure-light: #352c3d;
+  --argument: #d0848d; --argument-deep: #e3a1a8; --argument-band: #1d1820; --argument-light: #3e2e36;
+  --artifacts: #7f9fb8; --artifacts-deep: #a8c2d8; --artifacts-band: #121b25; --artifacts-light: #26364a;
+  --red: #e2737c; --idx-1: #352a33; --idx-2: #9c5560; --idx-3: #c9646e; --idx-4: #e2737c;
   --good: #79b889; --mark: rgba(208, 132, 141, .22);
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
   color-scheme: dark;
@@ -1202,7 +1202,7 @@ button.sc-row:hover .sc-label { color: var(--ink); text-decoration: underline; t
 /* "slop" in the headline carries the three plane colours */
 h1.hero em { color: transparent; background: linear-gradient(90deg, var(--structure) 0%, var(--structure) 30%, var(--argument) 50%, var(--artifacts) 72%, var(--artifacts) 100%); -webkit-background-clip: text; background-clip: text; padding-right: .06em; }
 
-/* 2026-10-16 dark mode: neutral near-black, quieter hero glow, flatter dotted bands */
+/* 2026-10-16 dark mode: blue-gray slate, quieter hero glow, flatter dotted bands */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .hero-band::before { opacity: .14; filter: blur(72px); }
   :root:not([data-theme="light"]) .dots-band { background-color: var(--surface); background-image: radial-gradient(color-mix(in oklab, var(--line-2) 55%, transparent) 1px, transparent 1.2px); }
