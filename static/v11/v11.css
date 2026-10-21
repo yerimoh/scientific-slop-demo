@@ -270,37 +270,58 @@
 .e-origin { margin: 0; font-size: 11.5px; color: var(--ink-3); font-weight: 600; letter-spacing: .02em; } .e-origin.new { color: var(--red); }
 .sc-src { font-size: 10px; color: var(--ink-3); line-height: 1.2; font-weight: 600; } .sc-src.new { color: var(--red); }
 
-/* ---------------------------------------------------------------- how it is measured (per item, MEASURE in registry.js) */
-.ms { display: grid; gap: 12px; padding-top: 10px; font-size: 13px; }
-.ms-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.ms-steps li { display: grid; grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 10px; border-top: 1px solid var(--line); background: var(--surface); }
-.ms-steps li:first-child { border-top: 0; }
-.ms-n { width: 20px; height: 20px; border-radius: 50%; background: var(--ac); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
-.ms-t { display: grid; gap: 1px; min-width: 0; } .ms-t b { font-size: 13px; color: var(--ink); } .ms-t span { font-size: 12px; color: var(--ink-2); line-height: 1.4; }
-.ms-ex { display: grid; gap: 1px; min-width: 0; padding-left: 10px; border-left: 2px solid var(--line-2, var(--line)); }
-.ms-ex em { font-family: Georgia, "Times New Roman", serif; font-size: 13.5px; color: var(--ink); font-style: italic; }
-.ms-ex small { font-size: 11px; color: var(--ink-3); }
-.ms-v em { font-style: normal; font-weight: 700; font-family: inherit; letter-spacing: .04em; }
-.v-F { --vc: #b4495a; } .v-P { --vc: #4b7a5a; } .v-U { --vc: #a0742a; } .v-N { --vc: #7c7681; }
-:root[data-theme="dark"] .v-F, :root[data-theme="dark"] .v-P, :root[data-theme="dark"] .v-U, :root[data-theme="dark"] .v-N { --vc: var(--vcd); }
-.v-F { --vcd: #e08a98; } .v-P { --vcd: #8fc3a0; } .v-U { --vcd: #dcb063; } .v-N { --vcd: #a69da3; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .v-F, :root:not([data-theme="light"]) .v-P, :root:not([data-theme="light"]) .v-U, :root:not([data-theme="light"]) .v-N { --vc: var(--vcd); } }
-.ms-v em { color: var(--vc); }
-.ms-formulas { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; }
+/* ---------------------------------------------------------------- how it is measured (per item, MEASURE in registry.js + measure/<id>.json) */
+.ms { display: grid; gap: 14px; padding-top: 10px; font-size: 13px; }
+.ms-h { margin: 6px 0 -6px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); font-weight: 700; }
+.ms-loading { margin: 0; color: var(--ink-3); font-style: italic; }
+.ms-who { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ms-w { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--surface); min-width: 0; }
+.ms-w b { font-size: 13px; color: var(--ink); } .ms-w i { font-style: normal; font-size: 11.5px; color: var(--ac); margin-left: 6px; font-weight: 600; }
+.ms-w p { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-2); }
+.v-F { --vc: #b4495a; --vcd: #e08a98; } .v-P { --vc: #4b7a5a; --vcd: #8fc3a0; } .v-U { --vc: #a0742a; --vcd: #dcb063; } .v-N { --vc: #7c7681; --vcd: #a69da3; } .v-x { --vc: #9a9398; --vcd: #7a7378; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .v-F, :root:not([data-theme="light"]) .v-P, :root:not([data-theme="light"]) .v-U, :root:not([data-theme="light"]) .v-N, :root:not([data-theme="light"]) .v-x { --vc: var(--vcd); } }
+:root[data-theme="dark"] .v-F, :root[data-theme="dark"] .v-P, :root[data-theme="dark"] .v-U, :root[data-theme="dark"] .v-N, :root[data-theme="dark"] .v-x { --vc: var(--vcd); }
+.ms-vb { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: var(--vc); border: 1.5px solid var(--vc); border-radius: 4px; padding: 0 5px; line-height: 1.5; white-space: nowrap; }
+.ms-vb.big { font-size: 13px; padding: 2px 9px; }
+.ms-pick { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+.ms-chip { display: inline-flex; align-items: center; gap: 6px; font: 600 12px Inter, system-ui, sans-serif; padding: 4px 9px 4px 5px; border-radius: 7px; border: 1px solid var(--line-2, var(--line)); background: var(--surface); color: var(--ink-2); cursor: pointer; }
+.ms-chip:hover { border-color: var(--ink); } .ms-chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.ms-sel { font: 500 12px Inter, system-ui, sans-serif; padding: 5px 8px; border-radius: 7px; border: 1px solid var(--line-2, var(--line)); background: var(--surface); color: var(--ink-2); max-width: 100%; }
+.ms-trace { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ms-step { border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px 12px; background: var(--surface); display: grid; gap: 6px; transition: opacity .2s, border-color .2s; min-width: 0; }
+.ms-step.dim { opacity: .3; } .ms-step.now { border-color: var(--ac); box-shadow: 0 0 0 2px var(--ab); }
+.ms-sh { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .ms-sh b { font-size: 13.5px; color: var(--ink); }
+.ms-n { width: 20px; height: 20px; border-radius: 50%; background: var(--ac); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; flex: none; }
+.ms-whob { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; padding: 1px 7px; border-radius: 4px; margin-left: auto; }
+.ms-whob.llm { background: var(--ab); color: var(--ac); } .ms-whob.code { background: var(--surface-2); color: var(--ink-2); } .ms-whob.both { background: linear-gradient(90deg, var(--ab) 50%, var(--surface-2) 50%); color: var(--ink-2); }
+.ms-plain { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+.ms-asked { margin: 0; font-size: 12px; color: var(--ink-3); line-height: 1.5; font-style: italic; } .ms-asked span { font-style: normal; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 10px; color: var(--ac); }
+.ms-got { border-left: 3px solid var(--ac); padding: 2px 0 2px 10px; display: grid; gap: 6px; min-width: 0; }
+.ms-q { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+.ms-kv { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 10px; font-size: 12.5px; }
+.ms-kv dt { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--ink-3); padding-top: 2px; } .ms-kv dd { margin: 0; color: var(--ink); line-height: 1.45; min-width: 0; }
+.ms-kv code { font-size: 12px; background: var(--surface-2); padding: 0 4px; border-radius: 3px; } .ms-kv em { font-style: italic; }
+.ms-mats { display: grid; gap: 6px; } .ms-ml { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--ink-3); }
+.ms-mat { background: var(--surface-2); border-radius: 6px; padding: 6px 9px; min-width: 0; } .ms-mat p { margin: 2px 0 0; font-size: 12.5px; color: var(--ink); line-height: 1.45; }
+.ms-mid { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ac); font-weight: 600; }
+.ms-mat pre { margin: 4px 0 0; font-size: 11px; line-height: 1.4; overflow-x: auto; color: var(--ink-2); }
+.ms-none { margin: 0; font-size: 12.5px; color: var(--ink-2); font-style: italic; background: var(--surface-2); border-radius: 6px; padding: 6px 9px; }
+.ms-rule { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--ink); } .ms-rule code { font-size: 11.5px; background: var(--surface-2); padding: 0 5px; border-radius: 3px; font-weight: 700; }
+.ms-arr { color: var(--ink-3); } .ms-rules { margin: 0; font-size: 12px; color: var(--ink-3); line-height: 1.5; }
+.ms-votes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; } .ms-vote { display: inline-grid; gap: 2px; justify-items: center; } .ms-vote small { font-size: 10px; color: var(--ink-3); } .ms-vote.miss { opacity: .7; }
+.ms-why { margin: 0; font-size: 12px; color: var(--ink-2); }
+.ms-nav { display: flex; gap: 6px; margin-top: 8px; }
+.ms-nb { font: 600 12px Inter, system-ui, sans-serif; padding: 5px 11px; border-radius: 7px; border: 1px solid var(--ac); background: var(--ab); color: var(--ac); cursor: pointer; } .ms-nb:hover { background: var(--ac); color: #fff; } .ms-nb:disabled { opacity: .4; cursor: default; }
+.ms-boxes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
+.ms-box { border: 1px solid var(--vc); border-radius: 8px; padding: 8px 10px; min-width: 0; background: var(--surface); }
+.ms-bh { display: flex; align-items: baseline; justify-content: space-between; } .ms-bh b { color: var(--vc); font-size: 12px; letter-spacing: .05em; } .ms-bc { font-family: ui-monospace, Menlo, monospace; font-size: 20px; font-weight: 700; color: var(--vc); }
+.ms-box small { display: block; font-size: 11px; color: var(--ink-3); margin-bottom: 6px; }
+.ms-ids { display: flex; flex-wrap: wrap; gap: 3px; }
+.ms-idb { font: 500 10.5px ui-monospace, Menlo, monospace; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); cursor: pointer; } .ms-idb:hover { border-color: var(--vc); color: var(--vc); }
+.ms-formulas { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; margin-top: 10px; }
 .ms-f { display: inline-flex; align-items: center; gap: 8px; font-family: Georgia, "Times New Roman", serif; font-size: 15px; color: var(--ink); }
 .ms-fn { font-style: italic; } .ms-f i { font-style: normal; font-weight: 600; color: var(--vc); }
 .ms-frac { display: inline-grid; justify-items: center; line-height: 1.15; } .ms-frac > span { padding: 0 6px; } .ms-frac > span:first-child { border-bottom: 1px solid currentColor; }
-.ms-val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink-2); min-width: 7ch; } .ms-val b { color: var(--ac); font-size: 15px; }
-.ms-note { margin: -4px 0 0; font-size: 12px; color: var(--ink-3); }
-.ms-run { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
-.ms-play { font: 600 12.5px Inter, system-ui, sans-serif; padding: 5px 11px; border-radius: 7px; border: 1px solid var(--ac); background: var(--ab); color: var(--ac); cursor: pointer; white-space: nowrap; }
-.ms-play:hover { background: var(--ac); color: #fff; }
-.ms-dots { display: flex; flex-wrap: wrap; gap: 4px; }
-.ms-dot { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--line-2, var(--line)); background: var(--surface-2); padding: 0; cursor: pointer; transition: background .15s, transform .15s; }
-.ms-dot.on { background: var(--vc); border-color: var(--vc); } .ms-dot.now { transform: scale(1.35); box-shadow: 0 0 0 2px var(--surface); } .ms-dot:hover { border-color: var(--ink); }
-.ms-tally { display: flex; gap: 10px; font-size: 12px; }
-.ms-tally span { display: inline-flex; gap: 4px; align-items: baseline; color: var(--vc); } .ms-tally b { font-weight: 700; } .ms-tally i { font-style: normal; font-family: ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink); }
-.ms-cur { margin: 0; font-size: 13px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: baseline; min-height: 1.6em; }
-.ms-id { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--ink-3); }
-.ms-vb { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: var(--vc); border: 1px solid var(--vc); border-radius: 4px; padding: 0 5px; }
-@media (max-width: 600px) { .ms-steps li { grid-template-columns: 26px 1fr; } .ms-steps .ms-ex { grid-column: 2; } }
+.ms-val { font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink-2); } .ms-val b { color: var(--ac); font-size: 15px; }
+.ms-note { margin: 6px 0 0; font-size: 12px; color: var(--ink-3); line-height: 1.5; }
+@media (max-width: 700px) { .ms-who, .ms-boxes { grid-template-columns: 1fr 1fr; } } @media (max-width: 440px) { .ms-who, .ms-boxes { grid-template-columns: 1fr; } .ms-whob { margin-left: 0; } }

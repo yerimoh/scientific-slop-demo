@@ -1,0 +1,1296 @@
+{
+"meta": {
+"paper": "FA0280",
+"title": "AI paper · SciSlopBench FA0280 (deep-layer attention pruning for visual grounding)",
+"F": 2,
+"P": 9,
+"U": 11,
+"NA": 6,
+"n_runs": 3,
+"source": "v2/runs/v2_deep2/AI_FA0280/1-1.json"
+},
+"units": [
+{
+"id": "A04",
+"sids": [
+"A04",
+"S0.012",
+"S3.088",
+"S3.091"
+],
+"sec": "Abstract",
+"kind": "own_result",
+"text": "Our deep-layer attention pruning achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math] Pruner by +11.29 points while retaining 92% of no-pruning performance—all without offline calibration.",
+"claim": "Our deep-layer attention pruning achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math] Pruner by +11.29 points while retaining 92% of no-pruning performance—all without offline calibration.",
+"required": "Experimental results showing the grounding accuracy of the proposed method on RefCOCO benchmarks compared to D xxmathxx Pruner and no-pruning performance.",
+"has_cite": false,
+"pointed": [
+"S3.091",
+"S3.092",
+"S3.093",
+"T1",
+"T2"
+],
+"self_kept": [
+"S3.091"
+],
+"dropped": [],
+"material": [
+{
+"id": "S3.092",
+"sec": "Experiments",
+"text": "The improvement is consistent across all 8 benchmark splits, with gains ranging from +9.55 points (RefCOCO+ testB) to +13.64 points (RefCOCO+ val)."
+},
+{
+"id": "S3.093",
+"sec": "Experiments",
+"text": "Compared to the no-pruning upper bound (72.06%), our method retains 92.0% of the original performance while reducing visual tokens by 90%."
+},
+{
+"id": "T1",
+"sec": "table",
+"text": "[tab:main_results] caption: Main results on RefCOCO visual grounding benchmarks (10% token retention). Our method (L12 + MIS) achieves 66.32% average accuracy, surpassing D ^2 Pruner by +11.29 points ",
+"rows": [
+"columns: Method | RefCOCO | val | RefCOCO | testA | RefCOCO | testB | RefCOCO+ | val | RefCOCO+ | testA | RefCOCO+ | testB | RefCOCOg | val | RefCOCOg | test | ",
+"No Pruning (100%): 74.34 | 77.13 | 71.21 | 70.35 | 75.13 | 65.08 | 70.55 | 72.71 | 72.06",
+"FastV (L2): 35.63 | 40.09 | 32.05 | 30.80 | 34.19 | 27.74 | 34.44 | 35.83 | 33.85",
+"D ^2 Pruner (L2) ^: 57.04 | 61.76 | 54.13 | 50.57 | 56.72 | 47.86 | 55.70 | 56.49 | 55.03",
+"Ours (L12): 69.24 | 72.69 | 64.18 | 64.21 | 69.82 | 57.41 | 65.36 | 67.63 | 66.32"
+],
+"auto": true
+},
+{
+"id": "T2",
+"sec": "table",
+"text": "[tab:ablation] caption: Ablation study: Effect of ratio-based debiasing at different pruning layers. Ratio normalization uniformly degrades performance compared to raw attention. All methods use MIS s",
+"rows": [
+"columns: Configuration | RefCOCO | RefCOCO+ | RefCOCOg | Overall | vs Raw",
+"Raw MIS (L4): 41.10 | 35.87 | 39.35 | 38.70 | —",
+"Ratio (L4, K_s =3): 14.67 | 11.96 | 12.99 | 13.24 | -25.46",
+"Raw MIS (L12): 68.70 | 63.82 | 66.50 | 66.32 | —",
+"Ratio (L12, K_s =3): 56.62 | 52.87 | 54.29 | 54.63 | -11.69",
+"Ratio (L12, K_s =2): 63.00 | 59.15 | 61.16 | 61.10 | -5.22"
+],
+"auto": true
+}
+],
+"judge": {
+"decision": "supported",
+"established": "The method achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing D xxmathxx Pruner by +11.29 points while retaining 92% of no-pruning performance without offline calibration.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "material establishes the claim: The method achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing D xxmathxx Pruner by +11.29 points while"
+},
+{
+"id": "A02",
+"sids": [
+"A02",
+"S2.055",
+"S2.058",
+"S4.129"
+],
+"sec": "Abstract",
+"kind": "method_property",
+"text": "While prior methods like D [math] Pruner extract attention from shallow layers (L2) and apply offline debiasing, we show that attention at layer 12 of InternVL2.5-8B is semantically rich enough to directly guide token ",
+"claim": "Attention at layer 12 of InternVL2.5-8B is semantically rich enough to directly guide token selection without any debiasing.",
+"required": "Analysis showing the semantic richness of attention at layer 12 and its effectiveness in guiding token selection.",
+"has_cite": false,
+"pointed": [
+"S2.055",
+"S2.058",
+"S2.067",
+"S2.069"
+],
+"self_kept": [
+"S2.055",
+"S2.058"
+],
+"dropped": [],
+"material": [
+{
+"id": "S2.067",
+"sec": "Method",
+"text": "The effectiveness of deep-layer attention stems from the progressive refinement of attention patterns through the transformer stack."
+},
+{
+"id": "S2.069",
+"sec": "Method",
+"text": "By layer 12, the model has integrated sufficient context to produce attention patterns that genuinely reflect token relevance to the query, making explicit debiasing unnecessary."
+}
+],
+"judge": {
+"decision": "partially_supported",
+"established": "Attention at layer 12 is semantically rich and effective for token selection without debiasing.",
+"missing": "Specific analysis showing the semantic richness of layer 12 attention."
+},
+"rule": {
+"id": "R7",
+"text": "judge: partially supported",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['PASS', 'FAIL']"
+},
+{
+"id": "A03",
+"sids": [
+"A03",
+"S0.014"
+],
+"sec": "Abstract",
+"kind": "method_property",
+"text": "Diagnostic analysis reveals that shallow-layer attention lacks the positional bias assumed by debiasing approaches (Spearman [math] ), explaining why ratio-based normalization degrades rather than improves performance.",
+"claim": "Diagnostic analysis reveals that shallow-layer attention lacks the positional bias assumed by debiasing approaches (Spearman [math] ), explaining why ratio-based normalization degrades rather than improves performance.",
+"required": "Diagnostic analysis results showing the lack of positional bias in shallow-layer attention and the impact of ratio-based normalization.",
+"has_cite": false,
+"pointed": [
+"S2.050",
+"S3.109",
+"S3.110",
+"S3.111",
+"S3.112",
+"S3.113",
+"S3.114"
+],
+"self_kept": [],
+"dropped": [],
+"material": [
+{
+"id": "S2.050",
+"sec": "Method",
+"text": "Diagnostic analysis on 30 COCO images with 5 prompt templates revealed that shallow-layer attention in InternVL2.5-8B is highly prompt-stable (cosine similarity [math] across prompts) but exhibits weak position correlation (Spearman [math] , well below the 0.3 threshold for meaningful positional bias)."
+},
+{
+"id": "S3.109",
+"sec": "Experiments",
+"text": "Position correlation is uniformly weak ( [math] 0.17) at all layers, well below the 0.3 threshold for meaningful positional bias."
+},
+{
+"id": "S3.110",
+"sec": "Experiments",
+"text": "This explains why ratio-based debiasing fails."
+},
+{
+"id": "S3.111",
+"sec": "Experiments",
+"text": "Table xxrefxx presents diagnostic metrics from our Phase-0 analysis on 30 COCO images with 5 prompt templates (150 forward passes)."
+},
+{
+"id": "S3.112",
+"sec": "Experiments",
+"text": "The key finding is that position correlation (Spearman [math] between attention and token position) is uniformly weak across all layers, ranging from 0.143 to 0.179."
+},
+{
+"id": "S3.113",
+"sec": "Experiments",
+"text": "All values are well below the 0.3 threshold typically considered indicative of meaningful positional bias."
+},
+{
+"id": "S3.114",
+"sec": "Experiments",
+"text": "This explains why ratio-based debiasing fails: there is no position-specific bias to correct in InternVL2.5-8B's attention patterns."
+}
+],
+"judge": {
+"decision": "supported",
+"established": "Shallow-layer attention lacks positional bias, explaining why ratio-based normalization degrades performance.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "material establishes the claim: Shallow-layer attention lacks positional bias, explaining why ratio-based normalization degrades performance."
+},
+{
+"id": "S0.004",
+"sids": [
+"S0.004"
+],
+"sec": "Introduction",
+"kind": "background_fact",
+"text": "FastV [cite] , which prunes tokens based on shallow-layer attention, achieves only 33.85% grounding accuracy on RefCOCO benchmarks—less than half of the unpruned model's performance.",
+"claim": "FastV [cite] , which prunes tokens based on shallow-layer attention, achieves only 33.85% grounding accuracy on RefCOCO benchmarks—less than half of the unpruned model's performance.",
+"required": "Experimental results showing the grounding accuracy of FastV on RefCOCO benchmarks.",
+"has_cite": true,
+"pointed": [
+"S0.004"
+],
+"self_kept": [
+"S0.004"
+],
+"dropped": [],
+"material": [],
+"judge": null,
+"rule": {
+"id": "R1",
+"text": "background fact with a citation on the sentence",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "citation attached to the claim sentence counts as literature evidence (content accuracy is 5-4)"
+},
+{
+"id": "S0.005",
+"sids": [
+"S0.005"
+],
+"sec": "Introduction",
+"kind": "background_fact",
+"text": "D [math] Pruner [cite] addresses this by debiasing attention scores using an offline prior computed from 1000 COCO images, improving accuracy to 55.03%.",
+"claim": "D [math] Pruner [cite] addresses this by debiasing attention scores using an offline prior computed from 1000 COCO images, improving accuracy to 55.03%.",
+"required": "Experimental results showing the grounding accuracy of D xxmathxx Pruner on RefCOCO benchmarks.",
+"has_cite": true,
+"pointed": [
+"S0.005"
+],
+"self_kept": [
+"S0.005"
+],
+"dropped": [],
+"material": [],
+"judge": null,
+"rule": {
+"id": "R1",
+"text": "background fact with a citation on the sentence",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "citation attached to the claim sentence counts as literature evidence (content accuracy is 5-4)"
+},
+{
+"id": "S0.013",
+"sids": [
+"S0.013"
+],
+"sec": "Introduction",
+"kind": "method_property",
+"text": "We eliminate the need for offline calibration data, enabling simpler deployment without domain-specific priors.",
+"claim": "We eliminate the need for offline calibration data, enabling simpler deployment without domain-specific priors.",
+"required": "The method description, since this is a procedural property.",
+"has_cite": false,
+"pointed": [],
+"self_kept": [],
+"dropped": [
+{
+"id": "S0.013",
+"why": "the claim sentence itself"
+}
+],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "Claim restated without additional evidence.",
+"missing": "Method description or experimental evidence."
+},
+"rule": {
+"id": "R3",
+"text": "procedure or definition statement, not a claim needing evidence",
+"result": "NA"
+},
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"PASS"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "procedure or definition statement, not a claim needing evidence"
+},
+{
+"id": "S2.054",
+"sids": [
+"S2.054"
+],
+"sec": "Method",
+"kind": "background_fact",
+"text": "(Left) D [math] Pruner requires offline calibration on external data to compute bias priors before deployment.",
+"claim": "D [math] Pruner requires offline calibration on external data to compute bias priors before deployment.",
+"required": "The method description of D xxmathxx Pruner, since this is a procedural property.",
+"has_cite": false,
+"pointed": [],
+"self_kept": [],
+"dropped": [
+{
+"id": "S2.054",
+"why": "the claim sentence itself"
+}
+],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "Claim restated without additional evidence.",
+"missing": "Method description of D xxmathxx Pruner."
+},
+"rule": {
+"id": "R3",
+"text": "procedure or definition statement, not a claim needing evidence",
+"result": "NA"
+},
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "procedure or definition statement, not a claim needing evidence"
+},
+{
+"id": "S2.067",
+"sids": [
+"S2.067"
+],
+"sec": "Method",
+"kind": "method_property",
+"text": "The effectiveness of deep-layer attention stems from the progressive refinement of attention patterns through the transformer stack.",
+"claim": "The effectiveness of deep-layer attention stems from the progressive refinement of attention patterns through the transformer stack.",
+"required": "Analysis showing the progressive refinement of attention patterns through the transformer stack.",
+"has_cite": false,
+"pointed": [
+"S2.067"
+],
+"self_kept": [
+"S2.067"
+],
+"dropped": [],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "Claim restated without additional evidence.",
+"missing": "Analysis showing progressive refinement of attention patterns."
+},
+"rule": {
+"id": "R8c",
+"text": "judge: unsupported and no valid material",
+"result": "FAIL"
+},
+"runs": [
+"NOT_APPLICABLE"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)"
+},
+{
+"id": "S3.092",
+"sids": [
+"S3.092"
+],
+"sec": "Experiments",
+"kind": "own_result",
+"text": "The improvement is consistent across all 8 benchmark splits, with gains ranging from +9.55 points (RefCOCO+ testB) to +13.64 points (RefCOCO+ val).",
+"claim": "The improvement is consistent across all 8 benchmark splits, with gains ranging from +9.55 points (RefCOCO+ testB) to +13.64 points (RefCOCO+ val).",
+"required": "Experimental results showing the grounding accuracy of the proposed method on all 8 benchmark splits.",
+"has_cite": false,
+"pointed": [
+"S3.092"
+],
+"self_kept": [
+"S3.092"
+],
+"dropped": [],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "Claim restated without additional evidence.",
+"missing": "Experimental results showing performance gains across all 8 benchmark splits."
+},
+"rule": {
+"id": "R8c",
+"text": "judge: unsupported and no valid material",
+"result": "FAIL"
+},
+"runs": [
+"FAIL",
+"PASS",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['FAIL', 'PASS', 'FAIL']"
+},
+{
+"id": "S3.093",
+"sids": [
+"S3.093"
+],
+"sec": "Experiments",
+"kind": "own_result",
+"text": "Compared to the no-pruning upper bound (72.06%), our method retains 92.0% of the original performance while reducing visual tokens by 90%.",
+"claim": "Compared to the no-pruning upper bound (72.06%), our method retains 92.0% of the original performance while reducing visual tokens by 90%.",
+"required": "Experimental results showing the grounding accuracy of the proposed method compared to the no-pruning upper bound.",
+"has_cite": false,
+"pointed": [
+"S3.093",
+"T1"
+],
+"self_kept": [
+"S3.093"
+],
+"dropped": [],
+"material": [
+{
+"id": "T1",
+"sec": "table",
+"text": "[tab:main_results] caption: Main results on RefCOCO visual grounding benchmarks (10% token retention). Our method (L12 + MIS) achieves 66.32% average accuracy, surpassing D ^2 Pruner by +11.29 points ",
+"rows": [
+"columns: Method | RefCOCO | val | RefCOCO | testA | RefCOCO | testB | RefCOCO+ | val | RefCOCO+ | testA | RefCOCO+ | testB | RefCOCOg | val | RefCOCOg | test | ",
+"No Pruning (100%): 74.34 | 77.13 | 71.21 | 70.35 | 75.13 | 65.08 | 70.55 | 72.71 | 72.06",
+"FastV (L2): 35.63 | 40.09 | 32.05 | 30.80 | 34.19 | 27.74 | 34.44 | 35.83 | 33.85",
+"D ^2 Pruner (L2) ^: 57.04 | 61.76 | 54.13 | 50.57 | 56.72 | 47.86 | 55.70 | 56.49 | 55.03",
+"Ours (L12): 69.24 | 72.69 | 64.18 | 64.21 | 69.82 | 57.41 | 65.36 | 67.63 | 66.32"
+],
+"auto": true
+}
+],
+"judge": {
+"decision": "supported",
+"established": "The method retains 92.0% of the original performance while reducing visual tokens by 90% compared to the no-pruning upper bound.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "material establishes the claim: The method retains 92.0% of the original performance while reducing visual tokens by 90% compared to the no-pruning uppe"
+},
+{
+"id": "S3.094",
+"sids": [
+"S3.094"
+],
+"sec": "Experiments",
+"kind": "background_fact",
+"text": "In contrast, D [math] Pruner retains only 76.4% of no-pruning performance, and FastV retains just 47.0%.",
+"claim": "In contrast, D [math] Pruner retains only 76.4% of no-pruning performance, and FastV retains just 47.0%.",
+"required": "Experimental results showing the grounding accuracy of D xxmathxx Pruner and FastV compared to the no-pruning upper bound.",
+"has_cite": false,
+"pointed": [
+"S3.094"
+],
+"self_kept": [
+"S3.094"
+],
+"dropped": [],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "",
+"missing": "Experimental results showing the grounding accuracy of D xxmathxx Pruner and FastV compared to the no-pruning upper bound are not provided."
+},
+"rule": {
+"id": "R4",
+"text": "background fact with no material (attribution is 5-4)",
+"result": "NA"
+},
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "background assertion without supporting material (background_uncited; attribution/consensus problems are 5-4)"
+},
+{
+"id": "S3.098",
+"sids": [
+"S3.098"
+],
+"sec": "Experiments",
+"kind": "background_fact",
+"text": "Ratio normalization uniformly degrades performance compared to raw attention.",
+"claim": "Ratio normalization uniformly degrades performance compared to raw attention.",
+"required": "Experimental results showing the performance of ratio normalization compared to raw attention.",
+"has_cite": false,
+"pointed": [
+"T2"
+],
+"self_kept": [],
+"dropped": [
+{
+"id": "S3.098",
+"why": "the claim sentence itself"
+}
+],
+"material": [
+{
+"id": "T2",
+"sec": "table",
+"text": "[tab:ablation] caption: Ablation study: Effect of ratio-based debiasing at different pruning layers. Ratio normalization uniformly degrades performance compared to raw attention. All methods use MIS s",
+"rows": [
+"columns: Configuration | RefCOCO | RefCOCO+ | RefCOCOg | Overall | vs Raw",
+"Raw MIS (L4): 41.10 | 35.87 | 39.35 | 38.70 | —",
+"Ratio (L4, K_s =3): 14.67 | 11.96 | 12.99 | 13.24 | -25.46",
+"Raw MIS (L12): 68.70 | 63.82 | 66.50 | 66.32 | —",
+"Ratio (L12, K_s =3): 56.62 | 52.87 | 54.29 | 54.63 | -11.69",
+"Ratio (L12, K_s =2): 63.00 | 59.15 | 61.16 | 61.10 | -5.22"
+],
+"auto": false
+}
+],
+"judge": {
+"decision": "supported",
+"established": "Ratio normalization uniformly degrades performance compared to raw attention.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "material establishes the claim: Ratio normalization uniformly degrades performance compared to raw attention."
+},
+{
+"id": "S2.050",
+"sids": [
+"S2.050",
+"S3.109"
+],
+"sec": "Method",
+"kind": "background_fact",
+"text": "Diagnostic analysis on 30 COCO images with 5 prompt templates revealed that shallow-layer attention in InternVL2.5-8B is highly prompt-stable (cosine similarity [math] across prompts) but exhibits weak position correla",
+"claim": "Position correlation is uniformly weak ( [math] 0.17) at all layers, well below the 0.3 threshold for meaningful positional bias.",
+"required": "Diagnostic analysis results showing the position correlation at all layers.",
+"has_cite": false,
+"pointed": [
+"S2.050",
+"S3.109",
+"T3"
+],
+"self_kept": [
+"S2.050",
+"S3.109"
+],
+"dropped": [],
+"material": [
+{
+"id": "T3",
+"sec": "table",
+"text": "[tab:diagnostic] caption: Phase-0 diagnostic metrics across layers. Position correlation is uniformly weak ( 0.17) at all layers, well below the 0.3 threshold for meaningful positional bias. This expl",
+"rows": [
+"columns: Layer | Prompt Stability | Position Correlation | Entropy",
+"1: 0.997 | 0.143 | 5.90",
+"2: 0.995 | 0.155 | 5.55",
+"3: 0.997 | 0.175 | 4.71",
+"4: 0.997 | 0.176 | 4.85",
+"8: 0.979 | 0.179 | 5.81"
+],
+"auto": false
+}
+],
+"judge": {
+"decision": "supported",
+"established": "Position correlation is uniformly weak (xxmathxx 0.17) at all layers, well below the 0.3 threshold for meaningful positional bias.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)"
+},
+{
+"id": "S3.121",
+"sids": [
+"S3.121",
+"S3.125"
+],
+"sec": "Experiments",
+"kind": "own_result",
+"text": "Our method achieves 43% higher token-bbox IoU (0.212) than FastV (0.148), indicating better concentration of retained tokens around referred objects.",
+"claim": "Our method achieves 43% higher token-bbox IoU (0.212) than FastV (0.148), indicating better concentration of retained tokens around referred objects.",
+"required": "Experimental results showing the token-bbox IoU of the proposed method compared to FastV.",
+"has_cite": false,
+"pointed": [
+"S3.121",
+"S3.125"
+],
+"self_kept": [
+"S3.121",
+"S3.125"
+],
+"dropped": [],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "",
+"missing": "Experimental results showing the token-bbox IoU of the proposed method compared to FastV are not provided."
+},
+"rule": {
+"id": "R8c",
+"text": "judge: unsupported and no valid material",
+"result": "FAIL"
+},
+"runs": [
+"FAIL",
+"FAIL",
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['FAIL', 'FAIL', 'PASS']"
+},
+{
+"id": "S4.128",
+"sids": [
+"S4.128"
+],
+"sec": "Conclusion",
+"kind": "method_property",
+"text": "This eliminates the need for offline calibration data required by prior methods like D [math] Pruner, while achieving superior performance—66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math] Pruner",
+"claim": "This eliminates the need for offline calibration data required by prior methods like D [math] Pruner, while achieving superior performance—66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math] Pruner by +11.29 points.",
+"required": "The method description, since this is a procedural property.",
+"has_cite": false,
+"pointed": [],
+"self_kept": [],
+"dropped": [
+{
+"id": "S4.128",
+"why": "the claim sentence itself"
+}
+],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "",
+"missing": "The method description or experimental results showing the elimination of offline calibration data and superior performance are not provided."
+},
+"rule": {
+"id": "R8c",
+"text": "judge: unsupported and no valid material",
+"result": "FAIL"
+},
+"runs": [
+"NOT_APPLICABLE"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)"
+},
+{
+"id": "S2.036",
+"sids": [
+"S2.036"
+],
+"sec": "Method",
+"kind": "background_fact",
+"text": "Attention-based token pruning leverages the observation that attention weights from text tokens to visual tokens provide a natural importance signal.",
+"claim": "Attention-based token pruning leverages the observation that attention weights from text tokens to visual tokens provide a natural importance signal.",
+"required": "Empirical demonstration that attention weights correlate with token importance.",
+"has_cite": false,
+"pointed": [],
+"self_kept": [],
+"dropped": [
+{
+"id": "S2.036",
+"why": "the claim sentence itself"
+}
+],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "",
+"missing": "Empirical demonstration that attention weights correlate with token importance is not provided."
+},
+"rule": {
+"id": "R8c",
+"text": "judge: unsupported and no valid material",
+"result": "FAIL"
+},
+"runs": [
+"NOT_APPLICABLE"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)"
+},
+{
+"id": "S2.038",
+"sids": [
+"S2.038"
+],
+"sec": "Method",
+"kind": "method_property",
+"text": "Tokens with higher attention weights are considered more relevant to the current query and are retained, while low-attention tokens are pruned.",
+"claim": "Tokens with higher attention weights are considered more relevant to the current query and are retained, while low-attention tokens are pruned.",
+"required": "The method description, since this is a procedural property.",
+"has_cite": false,
+"pointed": [
+"S2.038"
+],
+"self_kept": [
+"S2.038"
+],
+"dropped": [],
+"material": [],
+"judge": {
+"decision": "supported",
+"established": "Tokens with higher attention weights are considered more relevant to the current query and are retained, while low-attention tokens are pruned.",
+"missing": ""
+},
+"rule": {
+"id": "R3",
+"text": "procedure or definition statement, not a claim needing evidence",
+"result": "NA"
+},
+"runs": [
+"NOT_APPLICABLE",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "procedure or definition statement, not a claim needing evidence"
+},
+{
+"id": "S2.039",
+"sids": [
+"S2.039"
+],
+"sec": "Method",
+"kind": "background_fact",
+"text": "Beyond simple top- [math] selection, D [math] Pruner [cite] introduces Maximal Independent Set (MIS) selection to ensure spatial diversity among retained tokens.",
+"claim": "Beyond simple top-[math] selection, D [math] Pruner introduces Maximal Independent Set (MIS) selection to ensure spatial diversity among retained tokens.",
+"required": "A citation to the original work introducing D xxmathxx Pruner.",
+"has_cite": true,
+"pointed": [],
+"self_kept": [],
+"dropped": [
+{
+"id": "S2.039",
+"why": "the claim sentence itself"
+}
+],
+"material": [],
+"judge": null,
+"rule": {
+"id": "R1",
+"text": "background fact with a citation on the sentence",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "citation attached to the claim sentence counts as literature evidence (content accuracy is 5-4)"
+},
+{
+"id": "S2.066",
+"sids": [
+"S2.066"
+],
+"sec": "Method",
+"kind": "method_property",
+"text": "This eliminates deployment friction and enables adaptation to new domains without recalibration.",
+"claim": "This eliminates deployment friction and enables adaptation to new domains without recalibration.",
+"required": "An experiment on a domain not used for calibration.",
+"has_cite": false,
+"pointed": [
+"S2.066"
+],
+"self_kept": [
+"S2.066"
+],
+"dropped": [],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "",
+"missing": "An experiment on a domain not used for calibration is not provided."
+},
+"rule": {
+"id": "R8c",
+"text": "judge: unsupported and no valid material",
+"result": "FAIL"
+},
+"runs": [
+"FAIL",
+"NOT_APPLICABLE",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "no material of the required kind: An experiment on a domain not used for calibration is not provided."
+},
+{
+"id": "S2.067",
+"sids": [
+"S2.067"
+],
+"sec": "Method",
+"kind": "background_fact",
+"text": "The effectiveness of deep-layer attention stems from the progressive refinement of attention patterns through the transformer stack.",
+"claim": "The effectiveness of deep-layer attention stems from the progressive refinement of attention patterns through the transformer stack.",
+"required": "A proof or detailed analysis of attention patterns across layers.",
+"has_cite": false,
+"pointed": [],
+"self_kept": [],
+"dropped": [
+{
+"id": "S2.067",
+"why": "the claim sentence itself"
+}
+],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "",
+"missing": "A proof or detailed analysis of attention patterns across layers is required but not provided."
+},
+"rule": {
+"id": "R4",
+"text": "background fact with no material (attribution is 5-4)",
+"result": "NA"
+},
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "background assertion without supporting material (background_uncited; attribution/consensus problems are 5-4)"
+},
+{
+"id": "S2.068",
+"sids": [
+"S2.068"
+],
+"sec": "Method",
+"kind": "background_fact",
+"text": "At shallow layers, attention is relatively uniform and less semantically meaningful.",
+"claim": "At shallow layers, attention is relatively uniform and less semantically meaningful.",
+"required": "An analysis of attention patterns at different layers.",
+"has_cite": false,
+"pointed": [],
+"self_kept": [],
+"dropped": [
+{
+"id": "S2.068",
+"why": "the claim sentence itself"
+}
+],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "",
+"missing": "An analysis of attention patterns at different layers is required but not provided."
+},
+"rule": {
+"id": "R4",
+"text": "background fact with no material (attribution is 5-4)",
+"result": "NA"
+},
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "background assertion without supporting material (background_uncited; attribution/consensus problems are 5-4)"
+},
+{
+"id": "S2.069",
+"sids": [
+"S2.069",
+"S3.103"
+],
+"sec": "Method",
+"kind": "background_fact",
+"text": "By layer 12, the model has integrated sufficient context to produce attention patterns that genuinely reflect token relevance to the query, making explicit debiasing unnecessary.",
+"claim": "By layer 12, the model has integrated sufficient context to produce attention patterns that genuinely reflect token relevance to the query, making explicit debiasing unnecessary.",
+"required": "An analysis of attention patterns at layer 12 compared to earlier layers.",
+"has_cite": false,
+"pointed": [
+"S2.069",
+"S3.103"
+],
+"self_kept": [
+"S2.069",
+"S3.103"
+],
+"dropped": [],
+"material": [],
+"judge": {
+"decision": "unsupported",
+"established": "",
+"missing": "An analysis of attention patterns at layer 12 compared to earlier layers is required but not provided."
+},
+"rule": {
+"id": "R4",
+"text": "background fact with no material (attribution is 5-4)",
+"result": "NA"
+},
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "background assertion without supporting material (background_uncited; attribution/consensus problems are 5-4)"
+},
+{
+"id": "S3.101",
+"sids": [
+"S3.101"
+],
+"sec": "Experiments",
+"kind": "background_fact",
+"text": "The ratio formula [math] degrades performance at every tested configuration.",
+"claim": "The ratio formula [math] degrades performance at every tested configuration.",
+"required": "The ablation study results showing performance with the ratio formula.",
+"has_cite": false,
+"pointed": [
+"T2"
+],
+"self_kept": [],
+"dropped": [
+{
+"id": "S3.101",
+"why": "the claim sentence itself"
+}
+],
+"material": [
+{
+"id": "T2",
+"sec": "table",
+"text": "[tab:ablation] caption: Ablation study: Effect of ratio-based debiasing at different pruning layers. Ratio normalization uniformly degrades performance compared to raw attention. All methods use MIS s",
+"rows": [
+"columns: Configuration | RefCOCO | RefCOCO+ | RefCOCOg | Overall | vs Raw",
+"Raw MIS (L4): 41.10 | 35.87 | 39.35 | 38.70 | —",
+"Ratio (L4, K_s =3): 14.67 | 11.96 | 12.99 | 13.24 | -25.46",
+"Raw MIS (L12): 68.70 | 63.82 | 66.50 | 66.32 | —",
+"Ratio (L12, K_s =3): 56.62 | 52.87 | 54.29 | 54.63 | -11.69",
+"Ratio (L12, K_s =2): 63.00 | 59.15 | 61.16 | 61.10 | -5.22"
+],
+"auto": false
+}
+],
+"judge": {
+"decision": "supported",
+"established": "The ratio formula degrades performance at every tested configuration.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)"
+},
+{
+"id": "S3.102",
+"sids": [
+"S3.102"
+],
+"sec": "Experiments",
+"kind": "background_fact",
+"text": "At layer 4, ratio debiasing causes catastrophic failure: 13.24% accuracy compared to 38.70% with raw attention (-25.46 points).",
+"claim": "At layer 4, ratio debiasing causes catastrophic failure: 13.24% accuracy compared to 38.70% with raw attention (-25.46 points).",
+"required": "The ablation study results showing performance at layer 4.",
+"has_cite": false,
+"pointed": [
+"S3.102",
+"T2"
+],
+"self_kept": [
+"S3.102"
+],
+"dropped": [],
+"material": [
+{
+"id": "T2",
+"sec": "table",
+"text": "[tab:ablation] caption: Ablation study: Effect of ratio-based debiasing at different pruning layers. Ratio normalization uniformly degrades performance compared to raw attention. All methods use MIS s",
+"rows": [
+"columns: Configuration | RefCOCO | RefCOCO+ | RefCOCOg | Overall | vs Raw",
+"Raw MIS (L4): 41.10 | 35.87 | 39.35 | 38.70 | —",
+"Ratio (L4, K_s =3): 14.67 | 11.96 | 12.99 | 13.24 | -25.46",
+"Raw MIS (L12): 68.70 | 63.82 | 66.50 | 66.32 | —",
+"Ratio (L12, K_s =3): 56.62 | 52.87 | 54.29 | 54.63 | -11.69",
+"Ratio (L12, K_s =2): 63.00 | 59.15 | 61.16 | 61.10 | -5.22"
+],
+"auto": false
+}
+],
+"judge": {
+"decision": "supported",
+"established": "At layer 4, ratio debiasing causes a significant drop in accuracy compared to raw attention.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)"
+},
+{
+"id": "S3.105",
+"sids": [
+"S3.105"
+],
+"sec": "Experiments",
+"kind": "background_fact",
+"text": "These results demonstrate that the ratio formula does not remove positional bias—it destroys useful saliency signal.",
+"claim": "These results demonstrate that the ratio formula does not remove positional bias—it destroys useful saliency signal.",
+"required": "The ablation study results showing performance with and without the ratio formula.",
+"has_cite": false,
+"pointed": [
+"T2"
+],
+"self_kept": [],
+"dropped": [
+{
+"id": "S3.105",
+"why": "the claim sentence itself"
+}
+],
+"material": [
+{
+"id": "T2",
+"sec": "table",
+"text": "[tab:ablation] caption: Ablation study: Effect of ratio-based debiasing at different pruning layers. Ratio normalization uniformly degrades performance compared to raw attention. All methods use MIS s",
+"rows": [
+"columns: Configuration | RefCOCO | RefCOCO+ | RefCOCOg | Overall | vs Raw",
+"Raw MIS (L4): 41.10 | 35.87 | 39.35 | 38.70 | —",
+"Ratio (L4, K_s =3): 14.67 | 11.96 | 12.99 | 13.24 | -25.46",
+"Raw MIS (L12): 68.70 | 63.82 | 66.50 | 66.32 | —",
+"Ratio (L12, K_s =3): 56.62 | 52.87 | 54.29 | 54.63 | -11.69",
+"Ratio (L12, K_s =2): 63.00 | 59.15 | 61.16 | 61.10 | -5.22"
+],
+"auto": false
+}
+],
+"judge": {
+"decision": "supported",
+"established": "The ratio formula does not remove positional bias and instead destroys useful saliency signal.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)"
+},
+{
+"id": "S3.110",
+"sids": [
+"S3.110"
+],
+"sec": "Experiments",
+"kind": "background_fact",
+"text": "This explains why ratio-based debiasing fails.",
+"claim": "This explains why ratio-based debiasing fails.",
+"required": "The diagnostic metrics table showing position correlation across layers.",
+"has_cite": false,
+"pointed": [
+"S3.112",
+"S3.113",
+"T3"
+],
+"self_kept": [],
+"dropped": [],
+"material": [
+{
+"id": "S3.112",
+"sec": "Experiments",
+"text": "The key finding is that position correlation (Spearman [math] between attention and token position) is uniformly weak across all layers, ranging from 0.143 to 0.179."
+},
+{
+"id": "S3.113",
+"sec": "Experiments",
+"text": "All values are well below the 0.3 threshold typically considered indicative of meaningful positional bias."
+},
+{
+"id": "T3",
+"sec": "table",
+"text": "[tab:diagnostic] caption: Phase-0 diagnostic metrics across layers. Position correlation is uniformly weak ( 0.17) at all layers, well below the 0.3 threshold for meaningful positional bias. This expl",
+"rows": [
+"columns: Layer | Prompt Stability | Position Correlation | Entropy",
+"1: 0.997 | 0.143 | 5.90",
+"2: 0.995 | 0.155 | 5.55",
+"3: 0.997 | 0.175 | 4.71",
+"4: 0.997 | 0.176 | 4.85",
+"8: 0.979 | 0.179 | 5.81"
+],
+"auto": false
+}
+],
+"judge": {
+"decision": "supported",
+"established": "Position correlation is uniformly weak across all layers, explaining why ratio-based debiasing fails.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "material establishes the claim: Position correlation is uniformly weak across all layers, explaining why ratio-based debiasing fails."
+},
+{
+"id": "S3.115",
+"sids": [
+"S3.115"
+],
+"sec": "Experiments",
+"kind": "background_fact",
+"text": "The shallow-layer attention is highly prompt-stable (cosine similarity [math] ), but this stability reflects consistent image-level saliency rather than positional artifacts.",
+"claim": "The shallow-layer attention is highly prompt-stable (cosine similarity [math] ), but this stability reflects consistent image-level saliency rather than positional artifacts.",
+"required": "The diagnostic metrics table showing prompt stability and position correlation.",
+"has_cite": false,
+"pointed": [
+"T3"
+],
+"self_kept": [],
+"dropped": [
+{
+"id": "S3.115",
+"why": "the claim sentence itself"
+}
+],
+"material": [
+{
+"id": "T3",
+"sec": "table",
+"text": "[tab:diagnostic] caption: Phase-0 diagnostic metrics across layers. Position correlation is uniformly weak ( 0.17) at all layers, well below the 0.3 threshold for meaningful positional bias. This expl",
+"rows": [
+"columns: Layer | Prompt Stability | Position Correlation | Entropy",
+"1: 0.997 | 0.143 | 5.90",
+"2: 0.995 | 0.155 | 5.55",
+"3: 0.997 | 0.175 | 4.71",
+"4: 0.997 | 0.176 | 4.85",
+"8: 0.979 | 0.179 | 5.81"
+],
+"auto": false
+}
+],
+"judge": {
+"decision": "supported",
+"established": "Shallow-layer attention is highly prompt-stable, reflecting consistent image-level saliency rather than positional artifacts.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"NOT_APPLICABLE"
+],
+"final": "UNRESOLVED",
+"final_reason": "material establishes the claim: Shallow-layer attention is highly prompt-stable, reflecting consistent image-level saliency rather than positional artif"
+},
+{
+"id": "S3.123",
+"sids": [
+"S3.123"
+],
+"sec": "Experiments",
+"kind": "background_fact",
+"text": "Importantly, raw attention without any debiasing (dashed line at 66.32%) consistently outperforms all ratio variants, confirming that debiasing is unnecessary when using deep-layer attention.",
+"claim": "Raw attention (dashed line) consistently outperforms all ratio variants.",
+"required": "The ablation study results showing performance with raw attention compared to ratio variants.",
+"has_cite": false,
+"pointed": [
+"S3.123",
+"T2"
+],
+"self_kept": [
+"S3.123"
+],
+"dropped": [],
+"material": [
+{
+"id": "T2",
+"sec": "table",
+"text": "[tab:ablation] caption: Ablation study: Effect of ratio-based debiasing at different pruning layers. Ratio normalization uniformly degrades performance compared to raw attention. All methods use MIS s",
+"rows": [
+"columns: Configuration | RefCOCO | RefCOCO+ | RefCOCOg | Overall | vs Raw",
+"Raw MIS (L4): 41.10 | 35.87 | 39.35 | 38.70 | —",
+"Ratio (L4, K_s =3): 14.67 | 11.96 | 12.99 | 13.24 | -25.46",
+"Raw MIS (L12): 68.70 | 63.82 | 66.50 | 66.32 | —",
+"Ratio (L12, K_s =3): 56.62 | 52.87 | 54.29 | 54.63 | -11.69",
+"Ratio (L12, K_s =2): 63.00 | 59.15 | 61.16 | 61.10 | -5.22"
+],
+"auto": false
+}
+],
+"judge": {
+"decision": "supported",
+"established": "Raw attention outperforms ratio variants as shown in T2.",
+"missing": ""
+},
+"rule": {
+"id": "R6",
+"text": "judge: supported",
+"result": "PASS"
+},
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "material establishes the claim: Raw attention outperforms ratio variants as shown in T2."
+}
+]
+}
