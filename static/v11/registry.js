@@ -68,7 +68,20 @@ const row = (els, gap = 2) => {
 };
 // one scene per item
 const PIC = {
-  '1-1': () => row([E.chip('near-low-k cost', C.arg), E.miss(C.arg), E.ask(['measured where?'])]),
+  '1-1': () => { // the measuring flow in miniature: claim → what would prove it → searched the paper, nothing → FAIL
+    const fs = 3.6, y = 11, hh = 9, g = 6;
+    const lab = (cx, t) => K.text(cx, 24.2, t, { fs: 3.2, color: C.muted, anchor: 'middle' });
+    const ar = (x0, x1) => K.arrow([x0, y], [x1, y], { color: C.muted, lw: .9 });
+    const w1 = tw('adapts to new domains', fs, true) + 6, w2 = tw('a domain test?', fs) + 6, w3 = 17, w4 = tw('FAIL', fs, true) + 7;
+    const total = w1 + w2 + w3 + w4 + 3 * g, k = Math.min(1, 96 / total);
+    let x = 50 - total / 2, s = '';
+    s += K.chip(x, y - hh / 2, 'adapts to new domains', { fs, fc: C.arg, ec: C.arg, tc: '#fff', bold: true, w: w1, h: hh }) + lab(x + w1 / 2, 'claim'); x += w1; s += ar(x + .8, x + g - .8); x += g;
+    s += K.box(x, y - hh / 2, w2, hh, { dashed: true, ec: C.muted, lw: .9, r: 1.8 }) + K.text(x + w2 / 2, y + .1, 'a domain test?', { fs, color: C.muted, anchor: 'middle', italic: true }) + lab(x + w2 / 2, 'needs'); x += w2; s += ar(x + .8, x + g - .8); x += g;
+    const ch = 15, cy = y - ch / 2;
+    s += K.card(x, cy, w3, ch) + K.lines(x + 2.5, cy + 3, w3 - 5, 2, { gap: 2.6, last: .6 }) + K.grid(x + 2.5, cy + 8.3, w3 - 5, 4.4, 2, 3) + K.cross(x + w3 - 2.2, cy + ch - 2.2, 3.3) + lab(x + w3 / 2, 'in the paper?'); x += w3; s += ar(x + .8, x + g - .8); x += g;
+    s += K.chip(x, y - hh / 2, 'FAIL', { fs, fc: C.bad, ec: C.bad, tc: '#fff', bold: true, w: w4, h: hh }) + lab(x + w4 / 2, 'verdict');
+    return k < 1 ? `<g transform="translate(50 13) scale(${k.toFixed(3)}) translate(-50 -13)">${s}</g>` : s;
+  },
   '1-2': () => row([E.card('tested', inner.chip('2 tasks: VT, MQ', C.arg, { outline: true })), E.miss(C.arg, { solid: true }), E.chip('all diffuse tasks', C.arg)]),
   '1-3': () => row([E.card('§4 Results', inner.text(['20 poisoned demos', 'ASR 18%']), { lines: false }), E.miss(C.arg), E.ask(['one demonstration?', 'one target action?'])]),
   '1-4': () => { const cw = tw('SparseVLM', FS - .3) + 6, ow = tw('ours', FS, true) + 8, gap = 22, total = cw + gap + ow, x0 = 50 - total / 2, xo = x0 + cw + gap;
