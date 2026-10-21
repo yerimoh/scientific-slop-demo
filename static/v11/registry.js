@@ -570,6 +570,63 @@ $('#principles-grid').replaceChildren(...PRINCIPLES.map(([t, p]) => h('div', { c
 $('#area-tiles').replaceChildren(...GROUPS.map(a => h('a', { class: 'atile ' + a.cls, href: '#area-' + a.n }, h('span', { class: 'an', text: ITEMS.filter(i => i.g === a.n).length + ' items' }), h('b', { text: a.title }), h('span', { class: 'aq', text: a.q }))));
 function excerpt(ex) { return h('div', { class: 'v-ex' + (ex.made ? ' made' : '') }, h('div', { class: 'ex-h', text: ex.src || ex.sec }), h('p', { class: 'ex-t' }, ex.pre, h('mark', { text: ex.mark }), ex.post), h('p', { class: 'ex-n', text: ex.note })); }
 function bullets(cls, label, arr) { return h('div', { class: 'dl ' + cls }, h('span', { class: 'l', text: label }), h('ul', {}, ...arr.map(t => h('li', { text: t })))); }
+// ------------------------------------------------------------------ how it is measured (v2 measurer, slop_v2/metrics.py). One worked claim + the real run on one paper.
+// SEQ = every unit of 1-1 on FA0280 (v2/runs/v2_deep2, 3-run consensus) in file order: [sentence id, F/P/U/N, claim].
+const MEASURE = {
+  '1-1': {
+    steps: [
+      ['Claim', 'A sentence states a result or a property as fact.', 'enables adaptation to new domains without recalibration', 'FA0280 · S2.066'],
+      ['Needs', 'The model writes what a careful reader would require.', 'an experiment on a domain not used for calibration', 'Qwen2.5-32B'],
+      ['Look', 'Tables, result sentences, method text, citations. The sentence itself and its restatements do not count.', 'nothing in the paper', 'code checks every id'],
+      ['Verdict', 'FAIL evidence missing · PASS evidence found · U the three runs disagree · NA not a claim (procedure, hypothesis, common knowledge).', 'FAIL', 'consensus of 3 runs'],
+    ],
+    formula: [['score', 'FAIL', 'FAIL + PASS'], ['coverage', 'FAIL + PASS', 'FAIL + PASS + U']],
+    note: 'U is left out of the score and reported as coverage. NA is not counted at all.',
+    paper: 'FA0280', unit: 'claims',
+    seq: [["A04","P","achieves 66.32% grounding accuracy on RefCOCO"],["A02","U","attention at layer 12 is semantically rich enough to guide selection"],["A03","P","shallow-layer attention lacks the positional bias assumed by prior work"],["S0.004","P","FastV [cite] achieves only 33.85% grounding accuracy"],["S0.005","P","D²Pruner [cite] debiases attention scores with an offline prior"],["S0.013","N","we eliminate the need for offline calibration data"],["S2.054","N","D²Pruner requires offline calibration on external data"],["S2.067","U","effectiveness stems from progressive refinement of attention"],["S3.092","U","the improvement is consistent across all 8 benchmark splits"],["S3.093","P","retains 92.0% of the no-pruning upper bound (72.06%)"],["S3.094","N","D²Pruner retains only 76.4%, FastV 47%"],["S3.098","P","ratio normalization uniformly degrades performance"],["S2.050","U","position correlation is uniformly weak (< 0.17) at all layers"],["S3.121","U","43% higher token-bbox IoU (0.212) than FastV (0.148)"],["S4.128","U","eliminates the need for offline calibration data required by prior methods"],["S2.036","U","attention weights from text to image tokens indicate relevance"],["S2.038","F","tokens with higher attention are more relevant to the query"],["S2.039","P","D²Pruner [cite] introduces Maximal Independent Set selection"],["S2.066","F","enables adaptation to new domains without recalibration"],["S2.067","N","effectiveness stems from progressive refinement of attention"],["S2.068","N","at shallow layers attention is relatively uniform"],["S2.069","N","by layer 12 the model has integrated sufficient context"],["S3.101","U","the ratio formula degrades performance at every configuration"],["S3.102","U","at layer 4, ratio debiasing causes catastrophic failure (13.24%)"],["S3.105","U","the ratio formula does not remove positional bias, it destroys signal"],["S3.110","P","this explains why ratio-based debiasing fails"],["S3.115","U","shallow-layer attention is highly prompt-stable"],["S3.123","P","raw attention consistently outperforms all ratio variants"]],
+  },
+};
+const VLAB = { F: 'FAIL', P: 'PASS', U: 'U', N: 'NA' };
+function measurePanel(it) {
+  const m = MEASURE[it.id];
+  const wrap = h('div', { class: 'ms' });
+  wrap.append(h('ol', { class: 'ms-steps' }, ...m.steps.map(([t, d, ex, src], i) => h('li', {},
+    h('span', { class: 'ms-n', text: String(i + 1) }),
+    h('div', { class: 'ms-t' }, h('b', { text: t }), h('span', { text: d })),
+    h('div', { class: 'ms-ex' + (i === 3 ? ' ms-v v-' + ex[0] : '') }, h('em', { text: ex }), h('small', { text: src }))))));
+  // formula with live numbers
+  const cnt = { F: 0, P: 0, U: 0, N: 0 };
+  const num = {}; const frac = (name, top, bot) => h('div', { class: 'ms-f' }, h('span', { class: 'ms-fn', text: name }), h('span', { text: '=' }),
+    h('span', { class: 'ms-frac' }, h('span', { html: top.replace(/\b(FAIL|PASS|U)\b/g, (k) => `<i class="v-${k[0]}">${k}</i>`) }), h('span', { html: bot.replace(/\b(FAIL|PASS|U)\b/g, (k) => `<i class="v-${k[0]}">${k}</i>`) })),
+    h('span', { text: '=' }), num[name] = h('span', { class: 'ms-val', text: '—' }));
+  const fr = h('div', { class: 'ms-formulas' }, ...m.formula.map(f => frac(...f)));
+  // live run
+  const dots = m.seq.map(([sid, v, txt], i) => h('button', { type: 'button', class: 'ms-dot', title: sid + ' · ' + VLAB[v] + ' · ' + txt, 'data-i': i }));
+  const tally = h('div', { class: 'ms-tally' }, ...['F', 'P', 'U', 'N'].map(k => h('span', { class: 'v-' + k }, h('b', { text: VLAB[k] }), cnt['el' + k] = h('i', { text: '0' }))));
+  const cur = h('p', { class: 'ms-cur', text: 'Press play: the measurer judges the ' + m.seq.length + ' ' + m.unit + ' of ' + m.paper + ' one by one, and the score is recomputed after each.' });
+  const play = h('button', { type: 'button', class: 'ms-play', text: '▶ Run on ' + m.paper });
+  let timer = null, upto = -1;
+  const show = (n) => {
+    upto = n; cnt.F = cnt.P = cnt.U = cnt.N = 0;
+    m.seq.forEach(([sid, v, txt], i) => { const on = i <= n; dots[i].className = 'ms-dot' + (on ? ' on v-' + v : '') + (i === n ? ' now' : ''); if (on) cnt[v]++; });
+    ['F', 'P', 'U', 'N'].forEach(k => cnt['el' + k].textContent = cnt[k]);
+    const D = cnt.F + cnt.P, N = D + cnt.U;
+    num.score.innerHTML = D ? `${cnt.F} / ${D} = <b>${(cnt.F / D).toFixed(2)}</b>` : '—';
+    num.coverage.innerHTML = N ? `${D} / ${N} = <b>${(D / N).toFixed(2)}</b>` : '—';
+    if (n >= 0) { const [sid, v, txt] = m.seq[n]; cur.replaceChildren(h('span', { class: 'ms-id', text: sid }), h('span', { class: 'ms-vb v-' + v, text: VLAB[v] }), h('span', { text: '“' + txt + '”' })); }
+  };
+  const stop = () => { clearInterval(timer); timer = null; play.textContent = '▶ Run on ' + m.paper; };
+  play.addEventListener('click', () => {
+    if (timer) { stop(); return; }
+    let i = upto >= m.seq.length - 1 ? -1 : upto; play.textContent = '❚❚ Pause';
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    timer = setInterval(() => { i++; show(i); if (i >= m.seq.length - 1) stop(); }, reduced ? 60 : 260);
+  });
+  dots.forEach(d => d.addEventListener('click', () => { stop(); show(+d.dataset.i); }));
+  wrap.append(fr, h('p', { class: 'ms-note', text: m.note }), h('div', { class: 'ms-run' }, play, h('div', { class: 'ms-dots' }, ...dots), tally), cur);
+  return wrap;
+}
+
 function card(it, area) {
   const d = h('article', { class: 'slop ' + area.cls, id: it.id });
   const more = [bullets('j', 'How it is judged', it.judge), bullets('n', 'Not a defect', it.not), bullets('f', 'What counts as a fix', it.fix),
@@ -583,7 +640,8 @@ function card(it, area) {
       h('blockquote', { class: 'e-q' + (it.ex.made ? ' made' : '') }, h('p', { class: 'e-qt' }, it.ex.pre, h('mark', { text: it.ex.mark }), it.ex.post), h('p', { class: 'e-src', text: it.ex.src || it.ex.sec })),
       it.ex2 ? h('blockquote', { class: 'e-q' }, h('p', { class: 'e-qt' }, it.ex2.pre, h('mark', { text: it.ex2.mark }), it.ex2.post), h('p', { class: 'e-src', text: it.ex2.src })) : null,
       h('p', { class: 'e-note', text: it.ex.note }),
-      h('details', { class: 'v-more' }, h('summary', {}, h('span', { text: 'How it is judged, what is not a defect, what counts as a fix' })), h('div', { class: 'more-b' }, ...more)),
+      MEASURE[it.id] ? h('details', { class: 'v-more ms-more' }, h('summary', {}, h('span', { text: 'How it is measured' })), measurePanel(it))
+        : h('details', { class: 'v-more' }, h('summary', {}, h('span', { text: 'How it is judged, what is not a defect, what counts as a fix' })), h('div', { class: 'more-b' }, ...more)),
       h('div', { class: 'hubline' }))));
   d.append(h('div', { class: 'e-pic', html: K.svg(PIC[it.id](), 'Illustration of ' + it.name) }));
   return d;

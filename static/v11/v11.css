@@ -269,3 +269,38 @@
 .over-label { position: absolute; background: #C8463C; color: #fff; font: italic 600 11px/1.3 var(--sans); padding: 3px 7px; border-radius: 5px; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
 .e-origin { margin: 0; font-size: 11.5px; color: var(--ink-3); font-weight: 600; letter-spacing: .02em; } .e-origin.new { color: var(--red); }
 .sc-src { font-size: 10px; color: var(--ink-3); line-height: 1.2; font-weight: 600; } .sc-src.new { color: var(--red); }
+
+/* ---------------------------------------------------------------- how it is measured (per item, MEASURE in registry.js) */
+.ms { display: grid; gap: 12px; padding-top: 10px; font-size: 13px; }
+.ms-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.ms-steps li { display: grid; grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 10px; border-top: 1px solid var(--line); background: var(--surface); }
+.ms-steps li:first-child { border-top: 0; }
+.ms-n { width: 20px; height: 20px; border-radius: 50%; background: var(--ac); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.ms-t { display: grid; gap: 1px; min-width: 0; } .ms-t b { font-size: 13px; color: var(--ink); } .ms-t span { font-size: 12px; color: var(--ink-2); line-height: 1.4; }
+.ms-ex { display: grid; gap: 1px; min-width: 0; padding-left: 10px; border-left: 2px solid var(--line-2, var(--line)); }
+.ms-ex em { font-family: Georgia, "Times New Roman", serif; font-size: 13.5px; color: var(--ink); font-style: italic; }
+.ms-ex small { font-size: 11px; color: var(--ink-3); }
+.ms-v em { font-style: normal; font-weight: 700; font-family: inherit; letter-spacing: .04em; }
+.v-F { --vc: #b4495a; } .v-P { --vc: #4b7a5a; } .v-U { --vc: #a0742a; } .v-N { --vc: #7c7681; }
+:root[data-theme="dark"] .v-F, :root[data-theme="dark"] .v-P, :root[data-theme="dark"] .v-U, :root[data-theme="dark"] .v-N { --vc: var(--vcd); }
+.v-F { --vcd: #e08a98; } .v-P { --vcd: #8fc3a0; } .v-U { --vcd: #dcb063; } .v-N { --vcd: #a69da3; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .v-F, :root:not([data-theme="light"]) .v-P, :root:not([data-theme="light"]) .v-U, :root:not([data-theme="light"]) .v-N { --vc: var(--vcd); } }
+.ms-v em { color: var(--vc); }
+.ms-formulas { display: flex; flex-wrap: wrap; gap: 10px 28px; align-items: center; }
+.ms-f { display: inline-flex; align-items: center; gap: 8px; font-family: Georgia, "Times New Roman", serif; font-size: 15px; color: var(--ink); }
+.ms-fn { font-style: italic; } .ms-f i { font-style: normal; font-weight: 600; color: var(--vc); }
+.ms-frac { display: inline-grid; justify-items: center; line-height: 1.15; } .ms-frac > span { padding: 0 6px; } .ms-frac > span:first-child { border-bottom: 1px solid currentColor; }
+.ms-val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink-2); min-width: 7ch; } .ms-val b { color: var(--ac); font-size: 15px; }
+.ms-note { margin: -4px 0 0; font-size: 12px; color: var(--ink-3); }
+.ms-run { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.ms-play { font: 600 12.5px Inter, system-ui, sans-serif; padding: 5px 11px; border-radius: 7px; border: 1px solid var(--ac); background: var(--ab); color: var(--ac); cursor: pointer; white-space: nowrap; }
+.ms-play:hover { background: var(--ac); color: #fff; }
+.ms-dots { display: flex; flex-wrap: wrap; gap: 4px; }
+.ms-dot { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--line-2, var(--line)); background: var(--surface-2); padding: 0; cursor: pointer; transition: background .15s, transform .15s; }
+.ms-dot.on { background: var(--vc); border-color: var(--vc); } .ms-dot.now { transform: scale(1.35); box-shadow: 0 0 0 2px var(--surface); } .ms-dot:hover { border-color: var(--ink); }
+.ms-tally { display: flex; gap: 10px; font-size: 12px; }
+.ms-tally span { display: inline-flex; gap: 4px; align-items: baseline; color: var(--vc); } .ms-tally b { font-weight: 700; } .ms-tally i { font-style: normal; font-family: ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink); }
+.ms-cur { margin: 0; font-size: 13px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: baseline; min-height: 1.6em; }
+.ms-id { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--ink-3); }
+.ms-vb { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; color: var(--vc); border: 1px solid var(--vc); border-radius: 4px; padding: 0 5px; }
+@media (max-width: 600px) { .ms-steps li { grid-template-columns: 26px 1fr; } .ms-steps .ms-ex { grid-column: 2; } }
