@@ -1,0 +1,141 @@
+{
+"meta": {
+"item": "4-1",
+"paper": "2405.20915",
+"side": "human paper",
+"title": "Fast yet Safe: early-exiting with risk control",
+"n_runs": 3,
+"F": 3,
+"P": 243,
+"U": 2,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 241,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/HU_2405.20915/4-1.json"
+},
+"units": [
+{
+"id": "S4.183",
+"sec": "Experiments",
+"kind": "candidate: no numbers, citations or paper-specific terms",
+"text": "This highlights the practical benefit of allocating more calibration samples: a larger sample size can aid to mitigate the price paid by a high-probability guarantee in terms of obtained inference speed-ups.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "carries information",
+"s2": "delete it: is anything lost?",
+"found": [],
+"found_note": "deletion: info",
+"judge_line": "Provides specific information about the practical benefit of allocating more calibration samples in the context of this…"
+},
+{
+"id": "S4.244",
+"sec": "Experiments",
+"kind": "candidate: no numbers, citations or paper-specific terms",
+"text": "This step can be performed in a single forward pass for all proposed tokens, necessitating less computations from the larger, more expensive model.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "carries a reading function",
+"s2": "delete it: is anything lost?",
+"found": [],
+"found_note": "deletion: guidance",
+"judge_line": "Provides necessary background for understanding the process of speculative decoding in large language models."
+},
+{
+"id": "S5.266",
+"sec": "Conclusion",
+"kind": "candidate: no numbers, citations or paper-specific terms",
+"text": "Their computational savings can reduce energy costs and the carbon footprint, as well as allow the model to be deployed on resource-constrained hardware.",
+"runs": [
+"FAIL",
+"PASS",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['FAIL', 'PASS', 'FAIL']",
+"s2": "delete it: is anything lost?",
+"found": [],
+"found_note": "deletion: no loss",
+"judge_line": "General statement about the benefits of computational savings; not specific to this research."
+},
+{
+"id": "S5.268",
+"sec": "Conclusion",
+"kind": "candidate: no numbers, citations or paper-specific terms",
+"text": "This facilitates safer model deployment in real-world applications and contributes to more responsible decision-making.",
+"runs": [
+"FAIL",
+"PASS",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['FAIL', 'PASS', 'FAIL']",
+"s2": "delete it: is anything lost?",
+"found": [],
+"found_note": "deletion: no loss",
+"judge_line": "General statement about safer model deployment and responsible decision-making; not specific to this research."
+},
+{
+"id": "S5.274",
+"sec": "Conclusion",
+"kind": "candidate: no numbers, citations or paper-specific terms",
+"text": "We are also grateful to the anonymous reviewers who helped improve the work with their constructive feedback.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "deletion loses nothing",
+"s2": "delete it: is anything lost?",
+"found": [],
+"found_note": "deletion: no loss",
+"judge_line": "Acknowledgment of reviewers; not specific to the research content."
+},
+{
+"id": "S5.275",
+"sec": "Conclusion",
+"kind": "candidate: no numbers, citations or paper-specific terms",
+"text": "This project was generously supported by the Bosch Center for Artificial Intelligence.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "deletion loses nothing",
+"s2": "delete it: is anything lost?",
+"found": [],
+"found_note": "deletion: no loss",
+"judge_line": "Acknowledgment of funding; not specific to the research content."
+},
+{
+"id": "S5.276",
+"sec": "Conclusion",
+"kind": "candidate: no numbers, citations or paper-specific terms",
+"text": "Eric Nalisnick did not utilize resources from Johns Hopkins University for this project.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "deletion loses nothing",
+"s2": "delete it: is anything lost?",
+"found": [],
+"found_note": "deletion: no loss",
+"judge_line": "Acknowledgment of resource usage; not specific to the research content."
+}
+]
+}

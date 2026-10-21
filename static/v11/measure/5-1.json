@@ -1,0 +1,123 @@
+{
+"meta": {
+"item": "5-1",
+"paper": "FA0083",
+"side": "AI paper",
+"title": "Query-OOD Escalation for agent memory defense",
+"n_runs": 3,
+"F": 1,
+"P": 4,
+"U": 0,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0083/5-1.json"
+},
+"units": [
+{
+"id": "A01",
+"sec": "Abstract",
+"kind": "presented as worth studying",
+"text": "Computational overhead of consensus-based validation in A-MemGuard",
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "concrete problem and reason stated",
+"s2": "problem stated in: A01, S0.007, S1.027",
+"found": [
+"A01",
+"S0.007",
+"S1.027"
+],
+"found_note": "why: “Cost scales linearly with the number of retrieved entries, making it computationally expensive”",
+"judge_line": "judge: concrete problem yes · reason yes"
+},
+{
+"id": "A02",
+"sec": "Abstract",
+"kind": "presented as worth studying",
+"text": "Detection of adversarial queries before they reach the agent",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "concrete problem and reason stated",
+"s2": "problem stated in: A02, S0.010, S0.011",
+"found": [
+"A02",
+"S0.010",
+"S0.011"
+],
+"found_note": "why: “Triggered queries become out-of-distribution relative to benign queries, creating a detectable sign…”",
+"judge_line": "judge: concrete problem yes · reason yes"
+},
+{
+"id": "A02",
+"sec": "Abstract",
+"kind": "presented as worth studying",
+"text": "Exploiting the uniqueness objective of AgentPoison to detect adversarial queries",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "concrete problem and reason stated",
+"s2": "problem stated in: A02, S0.009, S0.010",
+"found": [
+"A02",
+"S0.009",
+"S0.010"
+],
+"found_note": "why: “Triggered queries become out-of-distribution relative to benign queries, creating a detectable sign…”",
+"judge_line": "judge: concrete problem yes · reason yes"
+},
+{
+"id": "A03",
+"sec": "Abstract",
+"kind": "presented as worth studying",
+"text": "Selective defense routing using QOE",
+"runs": [
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "neither the concrete problem nor the reason to study it is stated",
+"s2": "problem stated in: A03, S0.012, S0.014",
+"found": [
+"A03",
+"S0.012",
+"S0.014"
+],
+"found_note": "no reason why it matters",
+"judge_line": "judge: concrete problem no · reason no"
+},
+{
+"id": "A05",
+"sec": "Abstract",
+"kind": "presented as worth studying",
+"text": "Robustness against adaptive attackers who reduce trigger uniqueness",
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "concrete problem and reason stated",
+"s2": "problem stated in: A05, S0.019",
+"found": [
+"A05",
+"S0.019"
+],
+"found_note": "why: “Adaptive attackers can reduce trigger uniqueness, affecting the detection and retrieval effectivene…”",
+"judge_line": "judge: concrete problem yes · reason yes"
+}
+]
+}

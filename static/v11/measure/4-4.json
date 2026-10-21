@@ -1,0 +1,573 @@
+{
+"meta": {
+"item": "4-4",
+"paper": "FA0280",
+"side": "AI paper",
+"title": "deep-layer attention pruning for visual grounding",
+"n_runs": 3,
+"F": 4,
+"P": 95,
+"U": 5,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 75,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0280/4-4.json"
+},
+"units": [
+{
+"id": "S0.007",
+"sec": "Intro",
+"kind": "similarity 0.988",
+"text": "We present a simpler solution: use attention from deeper layers.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds summary_function",
+"s2": "earlier A01: “We present a simple solution: use attention from deeper layers.”",
+"found": [
+"A01"
+],
+"found_note": "later sentence adds: summary function",
+"judge_line": "Sentence S0.007 is part of the contribution list in the introduction, summarizing the main idea."
+},
+{
+"id": "S0.010",
+"sec": "Intro",
+"kind": "similarity 0.789",
+"text": "Instead, attention patterns at deeper layers (e.g., layer 12 of 32) are semantically richer and directly usable for token selection without any debiasing.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds summary_function",
+"s2": "earlier A02: “While prior methods like D [math] Pruner extract attention from shallow layers (L2) and apply offline debiasi…”",
+"found": [
+"A02"
+],
+"found_note": "later sentence adds: summary function",
+"judge_line": "Sentence S0.010 provides a more detailed explanation of the semantic richness of deeper layers."
+},
+{
+"id": "S0.012",
+"sec": "Intro",
+"kind": "similarity 1.0",
+"text": "We demonstrate that deep-layer attention pruning achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing the state-of-the-art D [math] Pruner by +11.29 points while retaining 92% of no-pruning performance.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds summary_function",
+"s2": "earlier A04: “Our deep-layer attention pruning achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math…”",
+"found": [
+"A04"
+],
+"found_note": "later sentence adds: summary function",
+"judge_line": "Sentence S0.012 is part of the contribution list in the introduction, summarizing the performance improvement."
+},
+{
+"id": "S0.014",
+"sec": "Intro",
+"kind": "similarity 1.0",
+"text": "We provide diagnostic analysis showing that shallow-layer attention lacks the positional bias assumed by prior debiasing approaches, explaining why ratio-based normalization degrades rather than improves performance.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds summary_function",
+"s2": "earlier A03: “Diagnostic analysis reveals that shallow-layer attention lacks the positional bias assumed by debiasing appro…”",
+"found": [
+"A03"
+],
+"found_note": "later sentence adds: summary function",
+"judge_line": "Sentence S0.014 is part of the contribution list in the introduction, summarizing the diagnostic analysis."
+},
+{
+"id": "S2.033",
+"sec": "Method",
+"kind": "similarity 0.781",
+"text": "Vision-language models process images by encoding them into sequences of visual tokens through a vision encoder, typically a Vision Transformer (ViT) [cite] .",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds needed_reminder",
+"s2": "earlier S0.000: “Vision-language models (VLMs) have achieved remarkable progress on multimodal understanding tasks by processi…”",
+"found": [
+"S0.000"
+],
+"found_note": "later sentence adds: needed reminder",
+"judge_line": "Sentence S2.033 provides a short recall of the VLM processing method needed for the method section."
+},
+{
+"id": "S2.036",
+"sec": "Method",
+"kind": "similarity 0.763",
+"text": "Attention-based token pruning leverages the observation that attention weights from text tokens to visual tokens provide a natural importance signal.",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "loose paraphrase judged as adding nothing; needs a human look",
+"s2": "earlier S1.023: “Attention weights provide a natural signal for token importance, as they reflect how much the model attends t…”",
+"found": [
+"S1.023"
+],
+"found_note": "later sentence adds: nothing",
+"judge_line": "Sentence S2.036 repeats the content of S1.023 without new information."
+},
+{
+"id": "S2.039",
+"sec": "Method",
+"kind": "similarity 0.758",
+"text": "Beyond simple top- [math] selection, D [math] Pruner [cite] introduces Maximal Independent Set (MIS) selection to ensure spatial diversity among retained tokens.",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "loose paraphrase judged as adding nothing; needs a human look",
+"s2": "earlier S1.024: “D [math] Pruner [cite] advances this approach by introducing debiased importance scoring with Maximal Indepen…”",
+"found": [
+"S1.024"
+],
+"found_note": "later sentence adds: nothing",
+"judge_line": "Sentence S2.039 repeats the content of S1.024 without new information."
+},
+{
+"id": "S2.043",
+"sec": "Method",
+"kind": "similarity 1.0",
+"text": "Prior work has identified that attention-based pruning can fail catastrophically on spatially-sensitive tasks like visual grounding, even when it succeeds on coarse-grained VQA [cite] .",
+"runs": [
+"PASS",
+"PASS",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['PASS', 'PASS', 'FAIL']",
+"s2": "earlier S0.003: “Existing pruning methods face a fundamental challenge: attention-based importance scoring, while computationa…”",
+"found": [
+"S0.003"
+],
+"found_note": "later sentence adds: interpretation",
+"judge_line": "Sentence S2.043 provides a more detailed explanation of the failure on spatially-sensitive tasks."
+},
+{
+"id": "S2.045",
+"sec": "Method",
+"kind": "similarity 0.805",
+"text": "D [math] Pruner addresses this by computing an offline bias prior: averaging attention maps over 1000 COCO images with a generic prompt, then dividing per-instance attention by this prior before token selection.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds interpretation",
+"s2": "earlier S0.005: “D [math] Pruner [cite] addresses this by debiasing attention scores using an offline prior computed from 1000…”",
+"found": [
+"S0.005"
+],
+"found_note": "later sentence adds: interpretation",
+"judge_line": "Sentence S2.045 provides a more detailed explanation of the debiasing approach."
+},
+{
+"id": "S2.050",
+"sec": "Method",
+"kind": "similarity 1.0",
+"text": "Diagnostic analysis on 30 COCO images with 5 prompt templates revealed that shallow-layer attention in InternVL2.5-8B is highly prompt-stable (cosine similarity [math] across prompts) but exhibits weak position correla",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds interpretation",
+"s2": "earlier S0.009: “Diagnostic analysis reveals that shallow-layer attention in InternVL2.5-8B exhibits weak position correlation…”",
+"found": [
+"S0.009"
+],
+"found_note": "later sentence adds: interpretation",
+"judge_line": "Sentence S2.050 provides a more detailed explanation of the diagnostic analysis."
+},
+{
+"id": "S2.054",
+"sec": "Method",
+"kind": "similarity 1.0",
+"text": "(Left) D [math] Pruner requires offline calibration on external data to compute bias priors before deployment.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "repeats without new information or function",
+"s2": "earlier S1.025: “However, D [math] Pruner requires offline calibration on external data to compute bias priors, limiting deplo…”",
+"found": [
+"S1.025"
+],
+"found_note": "later sentence adds: nothing",
+"judge_line": "Sentence S2.054 repeats the content of S1.025 without new information."
+},
+{
+"id": "S2.057",
+"sec": "Method",
+"kind": "similarity 0.841",
+"text": "While D [math] Pruner and FastV [cite] extract attention from shallow layers (L2), we found that attention patterns at deeper layers are semantically richer and do not require debiasing.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "repeats without new information or function",
+"s2": "earlier A02: “While prior methods like D [math] Pruner extract attention from shallow layers (L2) and apply offline debiasi…”",
+"found": [
+"A02"
+],
+"found_note": "later sentence adds: nothing",
+"judge_line": "Sentence S2.057 repeats the content of A02 without new information."
+},
+{
+"id": "S2.060",
+"sec": "Method",
+"kind": "similarity 0.774",
+"text": "During the forward pass, extract text-to-vision attention [math] at layer 12, averaged across heads.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds info",
+"s2": "earlier S2.037: “Specifically, for an input sequence containing [math] visual tokens, we extract the attention weights [math]…”",
+"found": [
+"S2.037"
+],
+"found_note": "later sentence adds: info",
+"judge_line": "Sentence S2.060 specifies the layer and the averaging process."
+},
+{
+"id": "S2.065",
+"sec": "Method",
+"kind": "similarity 0.824",
+"text": "While D [math] Pruner requires an offline calibration phase to compute bias priors from external data, our method operates fully online using only the current input's attention patterns.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "repeats without new information or function",
+"s2": "earlier S1.025: “However, D [math] Pruner requires offline calibration on external data to compute bias priors, limiting deplo…”",
+"found": [
+"S1.025"
+],
+"found_note": "later sentence adds: nothing",
+"judge_line": "Sentence S2.065 repeats the content of S1.025 without new information."
+},
+{
+"id": "S2.068",
+"sec": "Method",
+"kind": "similarity 0.765",
+"text": "At shallow layers, attention is relatively uniform and less semantically meaningful.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds interpretation",
+"s2": "earlier S2.057: “While D [math] Pruner and FastV [cite] extract attention from shallow layers (L2), we found that attention pa…”",
+"found": [
+"S2.057"
+],
+"found_note": "later sentence adds: interpretation",
+"judge_line": "Sentence S2.068 provides a more detailed explanation of the attention patterns at shallow layers."
+},
+{
+"id": "S3.081",
+"sec": "Experiments",
+"kind": "similarity 0.771",
+"text": "We compare against: (1) No Pruning: full model with 100% visual tokens as the upper bound; (2) FastV [cite] : attention-based pruning at layer 2 using top- [math] selection; (3) D [math] Pruner [cite] : state-of-",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds summary_function",
+"s2": "earlier S2.045: “D [math] Pruner addresses this by computing an offline bias prior: averaging attention maps over 1000 COCO im…”",
+"found": [
+"S2.045"
+],
+"found_note": "later sentence adds: summary function",
+"judge_line": "Sentence S3.081 is part of the experiment section opening, summarizing the methods to be compared."
+},
+{
+"id": "S3.091",
+"sec": "Experiments",
+"kind": "similarity 0.904",
+"text": "Our deep-layer attention pruning achieves 66.32% average grounding accuracy, surpassing D [math] Pruner (55.03%) by +11.29 points while eliminating the need for offline calibration.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds info",
+"s2": "earlier A04: “Our deep-layer attention pruning achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math…”",
+"found": [
+"A04"
+],
+"found_note": "later sentence adds: info",
+"judge_line": "Sentence S3.091 is part of the experiment section, summarizing the performance improvement."
+},
+{
+"id": "S3.098",
+"sec": "Experiments",
+"kind": "similarity 0.804",
+"text": "Ratio normalization uniformly degrades performance compared to raw attention.",
+"runs": [
+"PASS",
+"FAIL",
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['PASS', 'FAIL', 'PASS']",
+"s2": "earlier A03: “Diagnostic analysis reveals that shallow-layer attention lacks the positional bias assumed by debiasing appro…”",
+"found": [
+"A03"
+],
+"found_note": "later sentence adds: interpretation",
+"judge_line": "Sentence S3.098 provides a more detailed explanation of the ratio normalization effect."
+},
+{
+"id": "S3.105",
+"sec": "Experiments",
+"kind": "similarity 1.0",
+"text": "These results demonstrate that the ratio formula does not remove positional bias—it destroys useful saliency signal.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "repeats without new information or function",
+"s2": "earlier S2.051: “Consequently, the ratio formula in Equation [ref] does not remove positional bias—it destroys useful saliency…”",
+"found": [
+"S2.051"
+],
+"found_note": "later sentence adds: nothing",
+"judge_line": "Sentence S3.105 repeats the content of S2.051 without new information."
+},
+{
+"id": "S3.109",
+"sec": "Experiments",
+"kind": "similarity 1.0",
+"text": "Position correlation is uniformly weak ( [math] 0.17) at all layers, well below the 0.3 threshold for meaningful positional bias.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds interpretation",
+"s2": "earlier S2.050: “Diagnostic analysis on 30 COCO images with 5 prompt templates revealed that shallow-layer attention in Intern…”",
+"found": [
+"S2.050"
+],
+"found_note": "later sentence adds: interpretation",
+"judge_line": "Sentence S3.109 provides a more detailed explanation of the position correlation."
+},
+{
+"id": "S3.111",
+"sec": "Experiments",
+"kind": "similarity 1.0",
+"text": "Table [ref] presents diagnostic metrics from our Phase-0 analysis on 30 COCO images with 5 prompt templates (150 forward passes).",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds info",
+"s2": "earlier S2.050: “Diagnostic analysis on 30 COCO images with 5 prompt templates revealed that shallow-layer attention in Intern…”",
+"found": [
+"S2.050"
+],
+"found_note": "later sentence adds: info",
+"judge_line": "Sentence S3.111 provides additional information about the diagnostic metrics."
+},
+{
+"id": "S3.114",
+"sec": "Experiments",
+"kind": "similarity 0.755",
+"text": "This explains why ratio-based debiasing fails: there is no position-specific bias to correct in InternVL2.5-8B's attention patterns.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds interpretation",
+"s2": "earlier S2.056: “The failure of ratio-based debiasing led us to a simpler insight: the problem is not bias in attention, but u…”",
+"found": [
+"S2.056"
+],
+"found_note": "later sentence adds: interpretation",
+"judge_line": "Sentence S3.114 provides a more detailed explanation of the debiasing failure."
+},
+{
+"id": "S3.122",
+"sec": "Experiments",
+"kind": "similarity 0.845",
+"text": "Figure [ref] shows that ratio-based debiasing is sensitive to the choice of shallow layer [math] , with performance varying by 6.47 points across configurations.",
+"runs": [
+"FAIL",
+"FAIL",
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['FAIL', 'FAIL', 'PASS']",
+"s2": "earlier S3.118: “Sensitivity of ratio-based debiasing to shallow layer choice ( [math] ).”",
+"found": [
+"S3.118"
+],
+"found_note": "later sentence adds: nothing",
+"judge_line": "Sentence S3.122 repeats the content of S3.118 without new information."
+},
+{
+"id": "S3.125",
+"sec": "Experiments",
+"kind": "similarity 1.0",
+"text": "Our method achieves 43% higher token-bbox IoU (0.212) compared to FastV (0.148) and 20% higher than D [math] Pruner (0.177).",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds info",
+"s2": "earlier S3.121: “Our method achieves 43% higher token-bbox IoU (0.212) than FastV (0.148), indicating better concentration of…”",
+"found": [
+"S3.121"
+],
+"found_note": "later sentence adds: info",
+"judge_line": "Sentence S3.125 provides additional information about the comparison with D [math] Pruner."
+},
+{
+"id": "S3.126",
+"sec": "Experiments",
+"kind": "similarity 0.848",
+"text": "This indicates that deep-layer attention produces more semantically focused token selection, with retained tokens better concentrated around the referred objects.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds interpretation",
+"s2": "earlier S0.010: “Instead, attention patterns at deeper layers (e.g., layer 12 of 32) are semantically richer and directly usab…”",
+"found": [
+"S0.010"
+],
+"found_note": "later sentence adds: interpretation",
+"judge_line": "Sentence S3.126 provides a more detailed explanation of the deep-layer attention effect."
+},
+{
+"id": "S4.127",
+"sec": "Conclusion",
+"kind": "similarity 0.88",
+"text": "We presented a simple yet effective approach to visual token pruning in vision-language models: using attention from deeper layers (L12) rather than shallow layers (L2).",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds summary_function",
+"s2": "earlier A00: “Visual token pruning is essential for efficient vision-language model inference, yet existing attention-based…”",
+"found": [
+"A00"
+],
+"found_note": "later sentence adds: summary function",
+"judge_line": "Sentence S4.127 is part of the conclusion, summarizing the approach."
+},
+{
+"id": "S4.128",
+"sec": "Conclusion",
+"kind": "similarity 1.0",
+"text": "This eliminates the need for offline calibration data required by prior methods like D [math] Pruner, while achieving superior performance—66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math] Pruner",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds summary_function",
+"s2": "earlier A04: “Our deep-layer attention pruning achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math…”",
+"found": [
+"A04"
+],
+"found_note": "later sentence adds: summary function",
+"judge_line": "Sentence S4.128 is part of the conclusion, summarizing the performance improvement."
+},
+{
+"id": "S4.129",
+"sec": "Conclusion",
+"kind": "similarity 1.0",
+"text": "Our diagnostic analysis reveals that shallow-layer attention in InternVL2.5-8B lacks the positional bias assumed by debiasing approaches, explaining why ratio-based normalization degrades rather than improves performance",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds summary_function",
+"s2": "earlier S0.009: “Diagnostic analysis reveals that shallow-layer attention in InternVL2.5-8B exhibits weak position correlation…”",
+"found": [
+"S0.009"
+],
+"found_note": "later sentence adds: summary function",
+"judge_line": "Sentence S4.129 is part of the conclusion, summarizing the diagnostic analysis."
+},
+{
+"id": "S4.130",
+"sec": "Conclusion",
+"kind": "similarity 0.876",
+"text": "The key insight is that the solution to attention-based pruning is simpler than previously thought: deeper layers produce semantically richer attention patterns that do not require debiasing.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "adds summary_function",
+"s2": "earlier S0.008: “Our key insight is that the problem with attention-based pruning is not positional bias requiring correction,…”",
+"found": [
+"S0.008"
+],
+"found_note": "later sentence adds: summary function",
+"judge_line": "Sentence S4.130 is part of the conclusion, summarizing the key insight."
+}
+]
+}

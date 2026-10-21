@@ -1,0 +1,123 @@
+{
+"meta": {
+"item": "5-3",
+"paper": "FA0083",
+"side": "AI paper",
+"title": "Query-OOD Escalation for agent memory defense",
+"n_runs": 3,
+"F": 3,
+"P": 0,
+"U": 3,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0083/5-3.json"
+},
+"units": [
+{
+"id": "S3.104",
+"sec": "S3 Experiments (Experiments)",
+"kind": "mechanism",
+"text": "Simple metrics like centroid cosine distance fail entirely (AUROC [math] 0.56) because the trigger perturbation is nearly orthogonal to the benign centroid direction.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "interpretation presented as established without analysis, argument or citation",
+"s2": "observation: T1 · reads it as: Simple metrics like centroid cosine distance fail due to the trigger perturbation being nearly orth…",
+"found": [],
+"found_note": "",
+"judge_line": "judge: consistent with the observation · support: no support"
+},
+{
+"id": "S3.111",
+"sec": "S3 Experiments (Experiments)",
+"kind": "cause",
+"text": "Note: [math] provides no ASR [math] improvement over [math] due to low retrieval rate ( [math] 14%).",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "interpretation presented as established without analysis, argument or citation",
+"s2": "observation: T2 · reads it as: The low retrieval rate of LLaMA-3.1-8B-Instruct limits the effectiveness of consensus-based validat…",
+"found": [],
+"found_note": "",
+"judge_line": "judge: consistent with the observation · support: no support"
+},
+{
+"id": "S3.117",
+"sec": "S3 Experiments (Experiments)",
+"kind": "mechanism",
+"text": "The visualization in Figure [ref] confirms the clear geometric separation between benign and triggered embeddings that enables this detection.",
+"runs": [
+"PASS",
+"FAIL",
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['PASS', 'FAIL', 'PASS']",
+"s2": "observation: F2 · reads it as: The clear geometric separation between benign and triggered embeddings, as visualized, enables effe…",
+"found": [],
+"found_note": "",
+"judge_line": "judge: consistent with the observation · support: no support"
+},
+{
+"id": "S3.127",
+"sec": "S3 Experiments (Experiments)",
+"kind": "mechanism",
+"text": "This robustness stems from a fundamental trade-off: reducing the uniqueness weight makes triggers less detectable but also reduces their retrieval effectiveness.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "interpretation presented as established without analysis, argument or citation",
+"s2": "observation: T3 · reads it as: Reducing the uniqueness weight makes triggers less detectable but also reduces their retrieval effe…",
+"found": [],
+"found_note": "",
+"judge_line": "judge: consistent with the observation · support: no support"
+},
+{
+"id": "S3.132",
+"sec": "S3 Experiments (Experiments)",
+"kind": "implication",
+"text": "Embedding-space methods (especially LDA) significantly outperform text-level perplexity detection, confirming the geometric nature of the trigger signature.",
+"runs": [
+"PASS",
+"PASS",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['PASS', 'PASS', 'FAIL']",
+"s2": "observation: T4 · reads it as: The superior performance of embedding-space methods over text-level perplexity detection confirms t…",
+"found": [],
+"found_note": "",
+"judge_line": "judge: consistent with the observation · support: no support"
+},
+{
+"id": "S3.135",
+"sec": "S3 Experiments (Experiments)",
+"kind": "implication",
+"text": "This confirms that the trigger signature is fundamentally geometric in the embedding space rather than a superficial text-level artifact.",
+"runs": [
+"PASS",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['PASS', 'FAIL']",
+"s2": "observation: T4 · reads it as: The trigger signature is fundamentally geometric in the embedding space, not a superficial text-lev…",
+"found": [],
+"found_note": "",
+"judge_line": "judge: consistent with the observation · support: no support"
+}
+]
+}

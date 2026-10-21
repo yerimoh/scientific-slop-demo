@@ -1,0 +1,79 @@
+{
+"meta": {
+"item": "2-2",
+"paper": "FA0280",
+"side": "AI paper",
+"title": "deep-layer attention pruning for visual grounding",
+"n_runs": 3,
+"F": 0,
+"P": 2,
+"U": 1,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0280/2-2.json"
+},
+"units": [
+{
+"id": "T1+T2",
+"sec": "Research question",
+"kind": "",
+"text": "Does deep-layer attention improve grounding accuracy compared to shallow-layer attention with and without debiasing?",
+"runs": [
+"PASS",
+"PASS",
+"UNRESOLVED"
+],
+"final": "PASS",
+"final_reason": "runs disagree: ['PASS', 'PASS', 'UNRESOLVED']",
+"s2": "results to read together: T1, T2",
+"found": [
+"S3.091",
+"S3.101"
+],
+"found_note": "joint sentence: specific",
+"judge_line": "judge: The sentences reference specific results showing the superiority of deep-layer attention and the negative impact of rat…"
+},
+{
+"id": "T2+F2",
+"sec": "Research question",
+"kind": "",
+"text": "How does the effectiveness of ratio-based debiasing vary with the choice of shallow layer?",
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "joint interpretation stated with reference to the outcomes",
+"s2": "results to read together: T2, F2",
+"found": [
+"S3.122",
+"S3.123"
+],
+"found_note": "joint sentence: specific",
+"judge_line": "judge: The sentences reference specific results indicating the sensitivity of ratio-based debiasing to the choice of shallow l…"
+},
+{
+"id": "F2+S3.124",
+"sec": "Research question",
+"kind": "",
+"text": "Is there a significant difference in the spatial concentration of retained tokens between deep-layer and shallow-layer attention methods?",
+"runs": [
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)",
+"s2": "results to read together: S3.124, F2",
+"found": [
+"S3.125",
+"S3.126"
+],
+"found_note": "joint sentence: specific",
+"judge_line": "judge: The sentences reference specific results indicating higher token-bbox IoU for deep-layer attention, showing better spat…"
+}
+]
+}

@@ -1,0 +1,117 @@
+{
+"meta": {
+"item": "2-1",
+"paper": "FA0012",
+"side": "AI paper",
+"title": "delta-map belief tracking",
+"n_runs": 3,
+"F": 1,
+"P": 3,
+"U": 1,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0012/2-1.json"
+},
+"units": [
+{
+"id": "S3.081+S3.104",
+"sec": "Body finding",
+"kind": "central finding",
+"text": "Delta-map updates achieve equivalent false-belief identification performance to full regeneration (F1 = 0.479 vs 0.477) while producing 52--63% smaller structured outputs.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "conveyed in abstract/introduction",
+"s2": "shown in: S3.081, S3.104",
+"found": [
+"A04",
+"S0.010"
+],
+"found_note": "word overlap with abstract/intro: 0.83",
+"judge_line": "judge: meaning conveyed · condition: no condition"
+},
+{
+"id": "S3.079",
+"sec": "Body finding",
+"kind": "central finding",
+"text": "Providing prior map context with explicit preserve/overwrite rules improves false-belief identification F1 by +16.7 percentage points over scratch regeneration.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "conveyed in abstract/introduction",
+"s2": "shown in: S3.079",
+"found": [
+"A03",
+"S0.009"
+],
+"found_note": "word overlap with abstract/intro: 1.0",
+"judge_line": "judge: meaning conveyed · condition: no condition"
+},
+{
+"id": "S3.084",
+"sec": "Body finding",
+"kind": "central finding",
+"text": "Delta-map updates uniquely preserve low orientation inertia (0.220), matching the baseline (0.222), while full regeneration shows elevated orientation inertia (0.320).",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "finding not conveyed in abstract/introduction",
+"s2": "shown in: S3.084",
+"found": [],
+"found_note": "word overlap with abstract/intro: 0.33",
+"judge_line": "judge: meaning not conveyed · condition: no condition"
+},
+{
+"id": "S3.093",
+"sec": "Body finding",
+"kind": "central finding",
+"text": "Delta-map updates achieve the highest overall cognitive map accuracy (0.236), outperforming both full regeneration (0.225) and scratch regeneration (0.219).",
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "conveyed in abstract/introduction",
+"s2": "shown in: S3.093",
+"found": [
+"A04"
+],
+"found_note": "word overlap with abstract/intro: 0.4",
+"judge_line": "judge: meaning conveyed · condition: no condition"
+},
+{
+"id": "S3.102",
+"sec": "Body finding",
+"kind": "central finding",
+"text": "During exploration, only 32.8% of objects are updated per step on average, confirming the sparse evidence premise.",
+"runs": [
+"PASS",
+"FAIL",
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['PASS', 'FAIL', 'PASS']",
+"s2": "shown in: S3.102",
+"found": [
+"A05",
+"S0.011"
+],
+"found_note": "word overlap with abstract/intro: 0.55",
+"judge_line": "judge: meaning conveyed · condition: no condition"
+}
+]
+}

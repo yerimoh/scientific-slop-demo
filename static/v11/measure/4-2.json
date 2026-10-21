@@ -1,0 +1,353 @@
+{
+"meta": {
+"item": "4-2",
+"paper": "FA0280",
+"side": "AI paper",
+"title": "deep-layer attention pruning for visual grounding",
+"n_runs": 3,
+"F": 2,
+"P": 4,
+"U": 1,
+"NA": 12,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0280/4-2.json"
+},
+"units": [
+{
+"id": "vision-language",
+"sec": "A00",
+"kind": "standard term",
+"text": "Visual token pruning is essential for efficient vision-language model inference, yet existing attention-based methods either fail catastrophically on spatially-sensitive tasks or require offline calibration data.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 4× · first in A00",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "L2",
+"sec": "A02",
+"kind": "standard term",
+"text": "While prior methods like D [math] Pruner extract attention from shallow layers (L2) and apply offline debiasing, we show that attention at layer 12 of InternVL2.5-8B is semantically rich enough to directly guide token",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 3× · first in A02",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "shallow-layer",
+"sec": "A03",
+"kind": "standard term",
+"text": "Diagnostic analysis reveals that shallow-layer attention lacks the positional bias assumed by debiasing approaches (Spearman [math] ), explaining why ratio-based normalization degrades rather than improves performance.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"PASS"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 10× · first in A03",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "why ratio",
+"sec": "A03",
+"kind": "undefined",
+"text": "Diagnostic analysis reveals that shallow-layer attention lacks the positional bias assumed by debiasing approaches (Spearman [math] ), explaining why ratio-based normalization degrades rather than improves performance.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "meaning cannot be recovered from the paper",
+"s2": "used 6× · first in A03",
+"found": [],
+"found_note": "meaning: The term 'why ratio-based normalization' refers to the explanation for the degradation in performan…",
+"judge_line": "meaning cannot be recovered from the paper"
+},
+{
+"id": "no-pruning",
+"sec": "A04",
+"kind": "standard term",
+"text": "Our deep-layer attention pruning achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math] Pruner by +11.29 points while retaining 92% of no-pruning performance—all without offline calibration.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"PASS"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 4× · first in A04",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "deep-layer",
+"sec": "A04",
+"kind": "standard term",
+"text": "Our deep-layer attention pruning achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing D [math] Pruner by +11.29 points while retaining 92% of no-pruning performance—all without offline calibration.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"PASS"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 9× · first in A04",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "state-of-the",
+"sec": "S0.012",
+"kind": "standard term",
+"text": "We demonstrate that deep-layer attention pruning achieves 66.32% grounding accuracy on RefCOCO benchmarks, surpassing the state-of-the-art D [math] Pruner by +11.29 points while retaining 92% of no-pruning performance.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 3× · first in S0.012",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "MIS",
+"sec": "S1.024",
+"kind": "",
+"text": "D [math] Pruner [cite] advances this approach by introducing debiased importance scoring with Maximal Independent Set (MIS) for diversity-aware token selection.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "parenthetical expansion: Maximal Independent Set",
+"s2": "used 10× · first in S1.024",
+"found": [
+"S1.024"
+],
+"found_note": "",
+"judge_line": "parenthetical expansion: Maximal Independent Set"
+},
+{
+"id": "IO-aware",
+"sec": "S1.030",
+"kind": "standard term",
+"text": "FlashAttention [cite] reduces memory overhead through IO-aware computation, while attention sink mechanisms [cite] enable efficient streaming inference.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 1× · first in S1.030",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "already-selected",
+"sec": "S2.041",
+"kind": "standard term",
+"text": "Starting from high-importance “pivot” tokens, MIS iteratively adds tokens that are not adjacent to already-selected tokens, ensuring the retained set covers diverse image regions rather than clustering around a single",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 2× · first in S2.041",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "per-instance",
+"sec": "S2.045",
+"kind": "standard term",
+"text": "D [math] Pruner addresses this by computing an offline bias prior: averaging attention maps over 1000 COCO images with a generic prompt, then dividing per-instance attention by this prior before token selection.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 2× · first in S2.045",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "prompt-stable",
+"sec": "S2.050",
+"kind": "defined here",
+"text": "Diagnostic analysis on 30 COCO images with 5 prompt templates revealed that shallow-layer attention in InternVL2.5-8B is highly prompt-stable (cosine similarity [math] across prompts) but exhibits weak position correla",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "defined: highly consistent across different prompts",
+"s2": "used 2× · first in S2.050",
+"found": [
+"S2.050"
+],
+"found_note": "meaning: highly consistent across different prompts",
+"judge_line": "defined: highly consistent across different prompts"
+},
+{
+"id": "L12",
+"sec": "S2.055",
+"kind": "standard term",
+"text": "(Right) Our method uses deep-layer (L12) attention directly during inference, eliminating offline calibration while achieving superior performance through semantically richer attention patterns.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 3× · first in S2.055",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "of ratio",
+"sec": "S2.056",
+"kind": "undefined",
+"text": "The failure of ratio-based debiasing led us to a simpler insight: the problem is not bias in attention, but using attention from the wrong layer.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "meaning cannot be recovered from the paper",
+"s2": "used 3× · first in S2.056",
+"found": [],
+"found_note": "meaning: The term 'of ratio-based debiasing' refers to the failure of debiasing methods that use ratios, but…",
+"judge_line": "meaning cannot be recovered from the paper"
+},
+{
+"id": "attention score",
+"sec": "S2.061",
+"kind": "standard term",
+"text": "Select pivot tokens: the top [math] tokens by attention score, where [math] is the target number of retained tokens.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 2× · first in S2.061",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "A100-80GB",
+"sec": "S3.085",
+"kind": "standard term",
+"text": "Experiments were conducted on 4 [math] A100-80GB GPUs with deterministic decoding.",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "standard term or name for the target reader",
+"s2": "used 1× · first in S3.085",
+"found": [],
+"found_note": "",
+"judge_line": "standard term or name for the target reader"
+},
+{
+"id": "Phase-0",
+"sec": "S3.108",
+"kind": "defined here",
+"text": "Phase-0 diagnostic metrics across layers.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "defined: initial diagnostic analysis phase",
+"s2": "used 2× · first in S3.108",
+"found": [
+"S3.111"
+],
+"found_note": "meaning: initial diagnostic analysis phase",
+"judge_line": "defined: initial diagnostic analysis phase"
+},
+{
+"id": "token-bbox",
+"sec": "S3.121",
+"kind": "defined here",
+"text": "Our method achieves 43% higher token-bbox IoU (0.212) than FastV (0.148), indicating better concentration of retained tokens around referred objects.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "defined: intersection-over-union between the predicted and ground-truth bounding boxes",
+"s2": "used 2× · first in S3.121",
+"found": [
+"S3.121"
+],
+"found_note": "meaning: intersection-over-union between the predicted and ground-truth bounding boxes",
+"judge_line": "defined: intersection-over-union between the predicted and ground-truth bounding boxes"
+},
+{
+"id": "maximal independent set",
+"sec": "S1.024",
+"kind": "",
+"text": "D [math] Pruner [cite] advances this approach by introducing debiased importance scoring with Maximal Independent Set (MIS) for diversity-aware token selection.",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "not judged",
+"s2": "used 2× · first in S1.024",
+"found": [],
+"found_note": "",
+"judge_line": "not judged"
+}
+]
+}

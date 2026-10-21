@@ -1,0 +1,80 @@
+{
+"meta": {
+"item": "4-5",
+"paper": "FA0025",
+"side": "AI paper",
+"title": "RC-Jot: risk-controlled early exit for diffusion LMs",
+"n_runs": 3,
+"F": 1,
+"P": 1,
+"U": 1,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0025/4-5.json"
+},
+"units": [
+{
+"id": "F1",
+"sec": "fig:framework",
+"kind": "purpose: method overview",
+"text": "Overview of RC-Jot: Risk-Controlled Early Exit for Diffusion Language Models. The calibration phase (left) uses held-out data to compute empirical risk [math] for each threshold [math] and selects",
+"runs": [
+"UNRESOLVED",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "one weak signal only (1 comparison(s) hard to inspect); needs a human look",
+"s2": "referenced by: S2.063",
+"found": [
+"S2.063"
+],
+"found_note": "unexplained structure: 0 · figure-only numbers: 0 · caption conflicts: 0 · uninspectable comparisons: 1",
+"judge_line": "The comparison between the naive empirical threshold and the UCB-HB bound is not fully inspectable as the exact values…"
+},
+{
+"id": "F2",
+"sec": "fig:monotonicity",
+"kind": "purpose: result",
+"text": "Risk curves showing [math] with 95% confidence intervals. GSM8K (left) exhibits perfect monotonicity ( [math] ), while HumanEval (right) shows minor violations within confidence intervals ( xxmath",
+"runs": [
+"PASS",
+"UNRESOLVED",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "elements, numbers and comparisons interpretable",
+"s2": "referenced by: S3.101, S3.105",
+"found": [
+"S3.101",
+"S3.105"
+],
+"found_note": "unexplained structure: 0 · figure-only numbers: 0 · caption conflicts: 0 · uninspectable comparisons: 0",
+"judge_line": ""
+},
+{
+"id": "F3",
+"sec": "fig:pareto",
+"kind": "purpose: ?",
+"text": "Risk-speed Pareto frontier comparing calibration methods. UCB-HB (green) achieves the best balance between guarantee strength and speedup, while Naive (blue) shows high violation rates at aggressive t",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "no judgement returned",
+"s2": "referenced by: S3.111",
+"found": [
+"S3.111"
+],
+"found_note": "unexplained structure: 0 · figure-only numbers: 0 · caption conflicts: 0 · uninspectable comparisons: 0",
+"judge_line": ""
+}
+]
+}

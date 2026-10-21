@@ -1,0 +1,161 @@
+{
+"meta": {
+"item": "3-1",
+"paper": "FA0083",
+"side": "AI paper",
+"title": "Query-OOD Escalation for agent memory defense",
+"n_runs": 3,
+"F": 4,
+"P": 3,
+"U": 1,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0083/3-1.json"
+},
+"units": [
+{
+"id": "S3.090",
+"sec": "S3 Experiments (Experiments)",
+"kind": "data / splits / sizes · central",
+"text": "We evaluate on 2,290 queries split into 70% development and 30% test sets.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "the text only states the setting; no reason why this value/choice",
+"s2": "choice: 2,290 queries split into 70% development and 30% test sets",
+"found": [],
+"found_note": "no reason sentence",
+"judge_line": "judge: describes only"
+},
+{
+"id": "S3.091",
+"sec": "S3 Experiments (Experiments)",
+"kind": "data / splits / sizes · central",
+"text": "For the detection gate, we use 1,602 benign dev queries to estimate the benign distribution and 229 triggered dev queries for LDA training.",
+"runs": [
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "the text only states the setting; no reason why this value/choice",
+"s2": "choice: 1,602 benign dev queries to estimate the benign distribution and 229 triggered dev queries for LDA training",
+"found": [],
+"found_note": "no reason sentence",
+"judge_line": "judge: describes only"
+},
+{
+"id": "S3.094",
+"sec": "S3 Experiments (Experiments)",
+"kind": "baseline · central",
+"text": "We compare against A-MemGuard [cite] with [math] (default) and [math] (high-cost) settings.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "baseline, metric or backbone with a source",
+"s2": "choice: Comparison against A-MemGuard with k=4 (default) and k=8 (high-cost) settings",
+"found": [
+"T2"
+],
+"found_note": "reason (cited standard): “We compare against A-MemGuard [cite] with [math] (default) and [math] (high-cost) settings.”",
+"judge_line": "judge: specific reason"
+},
+{
+"id": "S3.107",
+"sec": "S3 Experiments (Experiments)",
+"kind": "hyperparameter or key value · central",
+"text": "We evaluate A-MemGuard baselines and both QOE variants with a 5% target FPR threshold.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "argument given: We evaluate A-MemGuard baselines and both QOE variants with a 5% target FPR threshold.",
+"s2": "choice: Target false positive rate (FPR) of 5%",
+"found": [
+"T2"
+],
+"found_note": "reason (argument): “We evaluate A-MemGuard baselines and both QOE variants with a 5% target FPR threshold.”",
+"judge_line": "judge: specific reason"
+},
+{
+"id": "S3.087",
+"sec": "S3 Experiments (Experiments)",
+"kind": "hyperparameter or key value · central",
+"text": "The attack optimizes a 5-token trigger sequence (“\\#\\#elle cracking up”) via gradient-guided beam search over 200 iterations.",
+"runs": [
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "the text only states the setting; no reason why this value/choice",
+"s2": "choice: 5-token trigger sequence",
+"found": [],
+"found_note": "no reason sentence",
+"judge_line": "judge: describes only"
+},
+{
+"id": "S3.088",
+"sec": "S3 Experiments (Experiments)",
+"kind": "hyperparameter or key value · central",
+"text": "We inject 20 poisoned demonstrations into the StrategyQA knowledge base (9,251 entries total).",
+"runs": [
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "the text only states the setting; no reason why this value/choice",
+"s2": "choice: 20 poisoned demonstrations injected into the StrategyQA knowledge base",
+"found": [],
+"found_note": "no reason sentence",
+"judge_line": "judge: describes only"
+},
+{
+"id": "S3.092",
+"sec": "S3 Experiments (Experiments)",
+"kind": "metric or criterion · central",
+"text": "We report Attack Success Rate at action level (ASR [math] ) and task level (ASR [math] ), benign accuracy (ACC), and escalation/flag rates.",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "baseline/metric/backbone choice without a stated reason; standard comparisons are not failed by rule, needs a human look",
+"s2": "choice: Metrics: Attack Success Rate (ASR) at action level (ASR_a) and task level (ASR_t), benign accuracy (ACC), and escalatio…",
+"found": [
+"T2"
+],
+"found_note": "no reason sentence",
+"judge_line": "judge: describes only"
+},
+{
+"id": "S3.084",
+"sec": "S3 Experiments (Experiments)",
+"kind": "backbone · central",
+"text": "We use LLaMA-3.1-8B-Instruct [cite] as the backbone LLM with vLLM for efficient inference.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "baseline, metric or backbone with a source",
+"s2": "choice: LLaMA-3.1-8B-Instruct as the backbone LLM with vLLM for efficient inference",
+"found": [],
+"found_note": "no reason sentence",
+"judge_line": "judge: describes only"
+}
+]
+}

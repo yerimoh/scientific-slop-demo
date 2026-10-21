@@ -1,0 +1,136 @@
+{
+"meta": {
+"item": "2-4",
+"paper": "FA0002",
+"side": "AI paper",
+"title": "SRE-adaptive KV cache sizing",
+"n_runs": 3,
+"F": 0,
+"P": 6,
+"U": 0,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0002/2-4.json"
+},
+"units": [
+{
+"id": "F1:p1",
+"sec": "Figure F1",
+"kind": "proposition",
+"text": "The sliding window size is 128 tokens.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "consistent with the text",
+"s2": "transcribed from the figure by Qwen2.5-VL",
+"found": [
+"S2.054"
+],
+"found_note": "text: consistent",
+"judge_line": ""
+},
+{
+"id": "F1:p2",
+"sec": "Figure F1",
+"kind": "proposition",
+"text": "The sparse cache retains the top-λ tokens by SRE score.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "consistent with the text",
+"s2": "transcribed from the figure by Qwen2.5-VL",
+"found": [
+"S2.063"
+],
+"found_note": "text: consistent",
+"judge_line": ""
+},
+{
+"id": "F1:p3",
+"sec": "Figure F1",
+"kind": "proposition",
+"text": "The linear attention state is updated with tokens that have low SRE scores.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "consistent with the text",
+"s2": "transcribed from the figure by Qwen2.5-VL",
+"found": [
+"S2.063"
+],
+"found_note": "text: consistent",
+"judge_line": ""
+},
+{
+"id": "F1:p4",
+"sec": "Figure F1",
+"kind": "proposition",
+"text": "The cache size is dynamically adjusted to capture 90% of the SRE mass.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "consistent with the text",
+"s2": "transcribed from the figure by Qwen2.5-VL",
+"found": [
+"S2.068",
+"S2.073"
+],
+"found_note": "text: consistent",
+"judge_line": ""
+},
+{
+"id": "F1:p5",
+"sec": "Figure F1",
+"kind": "proposition",
+"text": "The eligible set includes the previous cache plus evicted window tokens.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "consistent with the text",
+"s2": "transcribed from the figure by Qwen2.5-VL",
+"found": [
+"S2.080"
+],
+"found_note": "text: consistent",
+"judge_line": ""
+},
+{
+"id": "F1:p6",
+"sec": "Figure F1",
+"kind": "proposition",
+"text": "The combined attention output is normalized by combined denominators.",
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "consistent with the text",
+"s2": "transcribed from the figure by Qwen2.5-VL",
+"found": [
+"S2.055"
+],
+"found_note": "text: consistent",
+"judge_line": ""
+}
+]
+}

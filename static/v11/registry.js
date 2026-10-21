@@ -67,42 +67,43 @@ const row = (els, gap = 2) => {
   return k < 1 ? `<g transform="translate(50 ${MID}) scale(${k.toFixed(3)}) translate(-50 ${-MID})">${s}</g>` : s;
 };
 // one scene per item
+const PIC_LABELS = ['claim', 'needs', 'in the paper?', 'verdict'];
+// every item's pictogram is the measuring flow in miniature: unit chip → the question the measurer asks → what the paper
+// holds (✗ nothing · > reaches past it · = the same again · ≠ contradicts) → verdict. Words come from the card's own example.
+const flowPic = (a, b, mark, verdict, labels, o = {}) => {
+  const fs = 3.6, y = 11, hh = 9, g = 6, col = o.col || C.arg;
+  const lab = (cx, t) => K.text(cx, 24.2, t, { fs: 3.2, color: C.muted, anchor: 'middle' });
+  const ar = (x0, x1) => K.arrow([x0, y], [x1, y], { color: C.muted, lw: .9 });
+  const badge = (x, yy) => mark === 'x' ? K.cross(x, yy, 3.3) : `<circle cx="${x}" cy="${yy}" r="3.3" fill="${C.bad}" stroke="#fff" stroke-width=".6"/>` + K.text(x, yy + .1, { gt: '>', eq: '=', ne: '=' }[mark], { fs: 5.2, color: '#fff', anchor: 'middle', bold: true }) + (mark === 'ne' ? `<line x1="${x - 1.4}" y1="${yy + 2.1}" x2="${x + 1.4}" y2="${yy - 2.1}" stroke="#fff" stroke-width=".9" stroke-linecap="round"/>` : '');
+  const w1 = tw(a, fs, true) + 6, w2 = tw(b, fs) + 6, w3 = 17, w4 = tw(verdict, fs, true) + 7;
+  const total = w1 + w2 + w3 + w4 + 3 * g, k = Math.min(1, 96 / total);
+  let x = 50 - total / 2, s = '';
+  s += K.chip(x, y - hh / 2, a, { fs, fc: col, ec: col, tc: '#fff', bold: true, w: w1, h: hh }) + lab(x + w1 / 2, labels[0]); x += w1; s += ar(x + .8, x + g - .8); x += g;
+  s += K.box(x, y - hh / 2, w2, hh, { dashed: true, ec: C.muted, lw: .9, r: 1.8 }) + K.text(x + w2 / 2, y + .1, b, { fs, color: C.muted, anchor: 'middle', italic: true }) + lab(x + w2 / 2, labels[1]); x += w2; s += ar(x + .8, x + g - .8); x += g;
+  const ch = 15, cy = y - ch / 2;
+  s += K.card(x, cy, w3, ch) + (o.fig ? K.box(x + 2.5, cy + 3, w3 - 5, 6.5, { fc: C.tint, ec: C.art }) + K.line(x + 3.5, cy + 8, x + w3 - 3.5, cy + 4.5, { color: C.art, lw: .8 }) + K.lines(x + 2.5, cy + 11.5, w3 - 5, 1, { last: .7 }) : K.lines(x + 2.5, cy + 3, w3 - 5, 2, { gap: 2.6, last: .6 }) + K.grid(x + 2.5, cy + 8.3, w3 - 5, 4.4, 2, 3)) + badge(x + w3 - 2.2, cy + ch - 2.2) + lab(x + w3 / 2, labels[2]); x += w3; s += ar(x + .8, x + g - .8); x += g;
+  s += K.chip(x, y - hh / 2, verdict, { fs, fc: C.bad, ec: C.bad, tc: '#fff', bold: true, w: w4, h: hh }) + lab(x + w4 / 2, labels[3]);
+  return k < 1 ? `<g transform="translate(50 13) scale(${k.toFixed(3)}) translate(-50 -13)">${s}</g>` : s;
+};
 const PIC = {
-  '1-1': () => { // the measuring flow in miniature: claim → what would prove it → searched the paper, nothing → FAIL
-    const fs = 3.6, y = 11, hh = 9, g = 6;
-    const lab = (cx, t) => K.text(cx, 24.2, t, { fs: 3.2, color: C.muted, anchor: 'middle' });
-    const ar = (x0, x1) => K.arrow([x0, y], [x1, y], { color: C.muted, lw: .9 });
-    const w1 = tw('adapts to new domains', fs, true) + 6, w2 = tw('a domain test?', fs) + 6, w3 = 17, w4 = tw('FAIL', fs, true) + 7;
-    const total = w1 + w2 + w3 + w4 + 3 * g, k = Math.min(1, 96 / total);
-    let x = 50 - total / 2, s = '';
-    s += K.chip(x, y - hh / 2, 'adapts to new domains', { fs, fc: C.arg, ec: C.arg, tc: '#fff', bold: true, w: w1, h: hh }) + lab(x + w1 / 2, 'claim'); x += w1; s += ar(x + .8, x + g - .8); x += g;
-    s += K.box(x, y - hh / 2, w2, hh, { dashed: true, ec: C.muted, lw: .9, r: 1.8 }) + K.text(x + w2 / 2, y + .1, 'a domain test?', { fs, color: C.muted, anchor: 'middle', italic: true }) + lab(x + w2 / 2, 'needs'); x += w2; s += ar(x + .8, x + g - .8); x += g;
-    const ch = 15, cy = y - ch / 2;
-    s += K.card(x, cy, w3, ch) + K.lines(x + 2.5, cy + 3, w3 - 5, 2, { gap: 2.6, last: .6 }) + K.grid(x + 2.5, cy + 8.3, w3 - 5, 4.4, 2, 3) + K.cross(x + w3 - 2.2, cy + ch - 2.2, 3.3) + lab(x + w3 / 2, 'in the paper?'); x += w3; s += ar(x + .8, x + g - .8); x += g;
-    s += K.chip(x, y - hh / 2, 'FAIL', { fs, fc: C.bad, ec: C.bad, tc: '#fff', bold: true, w: w4, h: hh }) + lab(x + w4 / 2, 'verdict');
-    return k < 1 ? `<g transform="translate(50 13) scale(${k.toFixed(3)}) translate(-50 -13)">${s}</g>` : s;
-  },
-  '1-2': () => row([E.card('tested', inner.chip('2 tasks: VT, MQ', C.arg, { outline: true })), E.miss(C.arg, { solid: true }), E.chip('all diffuse tasks', C.arg)]),
-  '1-3': () => row([E.card('§4 Results', inner.text(['20 poisoned demos', 'ASR 18%']), { lines: false }), E.miss(C.arg), E.ask(['one demonstration?', 'one target action?'])]),
-  '1-4': () => { const cw = tw('SparseVLM', FS - .3) + 6, ow = tw('ours', FS, true) + 8, gap = 22, total = cw + gap + ow, x0 = 50 - total / 2, xo = x0 + cw + gap;
-    return K.chip(x0, MID - 10.5, 'FEATHER', { fs: FS - .3, ec: C.arg, lw: .9, w: cw, h: 8 }) + K.chip(x0, MID - 1, 'SparseVLM', { fs: FS - .3, ec: C.arg, lw: .9, w: cw, h: 8 }) + K.text(x0 + cw / 2, MID + 10.3, '+ 6 more, listed', { fs: FS - .8, color: C.muted, anchor: 'middle' }) +
-      K.chip(xo, MID - 6.25, 'ours', { fc: C.arg, ec: C.arg, tc: '#fff', bold: true, w: ow, h: 9.5 }) +
-      K.arrow([x0 + cw, MID - 6.5], [xo - .5, MID - 3], { color: C.arg, dashed: true, rad: -.1 }) + K.arrow([x0 + cw, MID + 3], [xo - .5, MID], { color: C.arg, dashed: true, rad: .1 }) + K.cross(x0 + cw + gap / 2, MID - 5.5) + K.cross(x0 + cw + gap / 2, MID + 2.5); },
-  '2-1': () => row([E.card('Abstract', inner.chip('46% · 93% kept', C.struct, { outline: true })), E.miss(C.struct, { left: true }), E.card('§4 Results', inner.chip('MQ: 12.1 → 3.65', C.struct))]),
-  '2-2': () => { const q = 'Does A help with little data?', qw = tw(q, FS - .2, true) + 6, labs = ['+3.1 @ 1k', '−A: gain lost', 'gap→0 @ 100k'], ws = labs.map(l => tw(l, FS - .5) + 5), total = ws.reduce((a, b) => a + b, 0) + 2 * 3; let x = 50 - total / 2, s = K.chip(50 - qw / 2, 2, q, { fc: C.struct, ec: C.struct, tc: '#fff', bold: true, fs: FS - .2, w: qw, h: 8 });
-    labs.forEach((l, i) => { const cx = x + ws[i] / 2; s += K.box(x, 19.5, ws[i], 8, { r: 1.6 }) + K.text(cx, 23.6, l, { fs: FS - .5, anchor: 'middle' }) + K.arrow([cx, 19.5], [50 + (i - 1) * 9, 10.2], { color: C.struct, dashed: true, rad: (i - 1) * -.1 }); x += ws[i] + 3; });
-    return s + K.cross(50, 14.8); },
-  '2-3': () => row([E.card('§3 Method', inner.lines(3)), E.miss(C.struct, { left: true }), E.card('Table 3', inner.chip('Phase-0 analysis', C.struct))]),
-  '3-1': () => row([E.chip('layer 12 of 32', C.art), E.miss(C.art), E.ask(['why 12?'])]),
-  '4-1': () => row([E.para('§1 Introduction', 'this holds exciting promise …', C.struct)]),
-  '4-2': () => row([E.chip('retrieval rate', C.art), E.miss(C.art), E.ask(['= ?'])]),
-  '4-3': () => row([E.para('§4.1 Data', 'folder layout · renamed files · scratch dirs', C.struct, { box: true })]),
-  '4-4': () => row([E.card('§4 · a line above', inner.chip('SRE, not attention', C.struct)), E.eq(), E.card('§4 · two lines below', inner.chip('SRE, not attention', C.struct))]),
-  '4-5': () => row([E.card('Figure 1', inner.bars(), { lines: false }), E.miss(C.art), E.ask(['L8 in the text?'])]),
-  '5-1': () => row([E.chip('limits deployment flexibility', C.arg), E.miss(C.arg), E.ask(['where', 'does it fail?'])]),
-  '5-2': () => row([E.chip('H2O prunes high-attn tokens', C.arg), E.clash(), E.card('H2O in §2', inner.text(['keeps them', 'same paper'], { bold0: true, mute1: true }), { lines: false })]),
-  '5-3': () => row([E.card('Table 4', inner.text(['AUROC 1.0 → 1.0', 'ASR 40.7 → 42.4']), { lines: false }), E.miss(C.arg), E.say('a fundamental trade-off', C.arg)]),
-  '5-4': () => row([E.chip('0.3, "typically considered"', C.arg), E.miss(C.arg), E.ask(['by whom?', '[ ? ]'])]),
+  '1-1': () => flowPic('adapts to new domains', 'a domain test?', 'x', 'FAIL', PIC_LABELS),
+  '1-2': () => flowPic('all diffuse tasks', 'evidence: 2 tasks', 'gt', 'FAIL', ['claim', 'covers', 'reaches past?', 'verdict']),
+  '1-3': () => flowPic('poisoned demos', 'one shown?', 'x', 'FAIL', ['statement', 'reader asks', 'example?', 'verdict']),
+  '1-4': () => flowPic('FEATHER [cite]', 'relation to us?', 'x', 'FAIL', ['cited work', 'role', 'relation?', 'verdict']),
+  '2-1': () => flowPic('12.10 → 3.65 on MQ', 'in the abstract?', 'x', 'FAIL', ['finding', 'shown in', 'up front?', 'verdict'], { col: C.struct }),
+  '2-2': () => flowPic('does A help?', '3 results, read together?', 'x', 'FAIL', ['question', 'results', 'joint sentence?', 'verdict'], { col: C.struct }),
+  '2-3': () => flowPic('ASR_a', 'defined where?', 'x', 'FAIL', ['name', 'where', 'defined?', 'verdict'], { col: C.struct }),
+  '2-4': () => flowPic('figure: 12 layers', 'text: 8 layers', 'ne', 'FAIL', ['figure says', 'text says', 'match?', 'verdict'], { col: C.struct, fig: true }),
+  '3-1': () => flowPic('layer 12', 'why 12, not 8?', 'x', 'FAIL', ['choice', 'kind', 'reason?', 'verdict'], { col: C.art }),
+  '4-1': () => flowPic('exciting promise', 'delete it: lost?', 'x', 'FAIL', ['sentence', 'delete it', 'lost?', 'verdict'], { col: C.ochre }),
+  '4-2': () => flowPic('retrieval rate', 'a definition?', 'x', 'FAIL', ['term', 'used', 'defined?', 'verdict'], { col: C.ochre }),
+  '4-3': () => flowPic('we renamed the file', 'any reader need?', 'x', 'FAIL', ['sentence', 'role', 'any role?', 'verdict'], { col: C.ochre }),
+  '4-4': () => flowPic('requires calibration', 'earlier: S1.025', 'eq', 'FAIL', ['sentence', 'earlier twin', 'adds?', 'verdict'], { col: C.ochre }),
+  '4-5': () => flowPic('dashed line', 'explained where?', 'x', 'FAIL', ['figure', 'transcribed', 'explained?', 'verdict'], { col: C.ochre, fig: true }),
+  '5-1': () => flowPic('a critical problem', 'why it matters?', 'x', 'FAIL', ['presented', 'problem', 'why?', 'verdict'], { col: C.sage }),
+  '5-2': () => flowPic('unlike H2O, which prunes', 'H2O keeps them', 'ne', 'FAIL', ['contrast', 'target says', 'difference?', 'verdict'], { col: C.sage }),
+  '5-3': () => flowPic('because orthogonal', 'any analysis?', 'x', 'FAIL', ['interpretation', 'observation', 'support?', 'verdict'], { col: C.sage }),
+  '5-4': () => flowPic('typically 0.3', 'a source?', 'x', 'FAIL', ['describes', 'checked against', 'match?', 'verdict'], { col: C.sage }),
 };
 // what the pattern looks like, one line under each scene
 const CAP = { '1-1': 'a claim with nothing behind it', '1-2': 'claim wider than its evidence', '1-3': 'numbers only, no example', '1-4': 'cited, related to nothing', '2-1': 'the bad news never reaches the front', '2-2': 'results never meet the question', '2-3': 'a name that points at nothing', '3-1': 'a choice with no reason', '4-1': 'delete it and nothing is lost', '4-2': 'a term with no meaning', '4-3': 'detail the reader never needs', '4-4': 'six places, one finding', '4-5': 'a result only the figure reports', '5-1': 'important, but never shown', '5-2': 'the contrast is not true', '5-3': 'nothing moved, yet it explains', '5-4': 'a source that is not there' };
@@ -584,33 +585,155 @@ $('#area-tiles').replaceChildren(...GROUPS.map(a => h('a', { class: 'atile ' + a
 function excerpt(ex) { return h('div', { class: 'v-ex' + (ex.made ? ' made' : '') }, h('div', { class: 'ex-h', text: ex.src || ex.sec }), h('p', { class: 'ex-t' }, ex.pre, h('mark', { text: ex.mark }), ex.post), h('p', { class: 'ex-n', text: ex.note })); }
 function bullets(cls, label, arr) { return h('div', { class: 'dl ' + cls }, h('span', { class: 'l', text: label }), h('ul', {}, ...arr.map(t => h('li', { text: t })))); }
 // ------------------------------------------------------------------ how it is measured (v2 measurer, slop_v2/metrics.py)
-// Flow animation over the real run: measure/<id>.json holds every unit of one paper with the model's outputs at each stage.
+// Flow animation over a real run. measure/<id>.json (built by v2/slop_v2/build_measure_json.py) holds one paper's units in a
+// common shape: s1 the unit, s2 the question the model answers, s3 what was found + the judge's answer, s4 the verdict.
+// MEASURE[id] gives the four box titles, the "how?" bullets per box and one closing line. Keep the wording label-short.
+const Q = 'Qwen', CD = 'code', QC = 'Qwen + code', QV = 'Qwen-VL';
 const MEASURE = {
   '1-1': { unit: 'claim', units: 'claims',
-    stages: [['Claim', 'the paper says', 'paper'], ['Needs', 'what would prove it?', 'Qwen'], ['Found', 'is it in the paper?', 'Qwen + code'], ['Verdict', '3 runs vote', 'code']],
-    line: 'Qwen2.5-32B does the reading. Code checks every id it names, applies the rules, and counts. Three runs vote; when they disagree the claim stays open (U).',
-    cases: [['FAIL', 'S2.066'], ['PASS', 'A04'], ['UNRESOLVED', 'S3.092'], ['NOT_APPLICABLE', 'S0.013']],
+    stages: [['Claim', 'the paper says', 'paper'], ['Needs', 'what would prove it?', Q], ['Found', 'is it in the paper?', QC], ['Verdict', '3 runs vote', CD]],
     how: [
-      ['How the claims are found', [
-        ['code', 'The paper is cut into numbered sentences (A04, S2.066) and each table into rows (T1).'],
-        ['Qwen', 'Reads the whole paper and lists every sentence that states a result or a property as fact.'],
-        ['Qwen', 'Tags each one: own result · method property · fact about prior work.'],
-        ['code', 'The same claim repeated in the abstract, intro and conclusion counts once.'],
-        ['code', 'Procedures (“we compute…”), hypotheses and common knowledge are not claims → NA.']]],
-      ['How the needed evidence is named', [
-        ['Qwen', 'For each claim, writes in one sentence what a careful reader would require: an experiment, a measurement, a proof, the method description, or a citation.'],
-        ['Qwen', 'Is never asked “is this sentence bad?”. It only says what would prove the claim.']]],
-      ['How the paper is searched', [
-        ['Qwen', 'Points at ids that bear on the claim: tables, figures, result sentences, method text, citations.'],
-        ['code', 'Drops what cannot count: the sentence itself, restatements in abstract / intro / conclusion, ids that do not exist.'],
-        ['code', 'Adds any table that contains the claim’s own numbers.'],
-        ['Qwen', 'A second call (the judge) sees the surviving material verbatim and answers supported / partially / unsupported / ambiguous / common knowledge, plus what is missing.']]],
-      ['How the verdict is decided', [
-        ['code', 'Fixed rules, top to bottom: prior-work fact with a citation → PASS · procedure or definition → NA · supported or partially → PASS · unsupported with nothing valid → FAIL.'],
-        ['code', 'Unsupported but the claim’s numbers are in a table, or the only evidence is a figure → U, for a human.'],
-        ['code', 'All of this runs 3 times (1 greedy + 2 sampled). FAIL only if 2+ runs say FAIL and none says PASS. Found in fewer than 2 runs, or runs disagree → U.'],
-        ['code', 'score = FAIL / (FAIL + PASS). U is reported as coverage, NA is not counted.']]],
-    ] },
+      ['How the claims are found', [[CD, 'The paper is cut into numbered sentences (A04, S2.066) and each table into rows (T1).'], [Q, 'Reads the whole paper and lists every sentence that states a result or a property as fact.'], [Q, 'Tags each one: own result · method property · fact about prior work.'], [CD, 'The same claim repeated in the abstract, intro and conclusion counts once.'], [CD, 'Procedures (“we compute…”), hypotheses and common knowledge are not claims → NA.']]],
+      ['How the needed evidence is named', [[Q, 'For each claim, writes in one sentence what a careful reader would require: an experiment, a measurement, a proof, the method description, or a citation.'], [Q, 'Is never asked “is this sentence bad?”. It only says what would prove the claim.']]],
+      ['How the paper is searched', [[Q, 'Points at ids that bear on the claim: tables, figures, result sentences, method text, citations.'], [CD, 'Drops what cannot count: the sentence itself, restatements in abstract / intro / conclusion, ids that do not exist.'], [CD, 'Adds any table that contains the claim’s own numbers.'], [Q, 'A second call (the judge) sees the surviving material verbatim and answers supported / partially / unsupported / ambiguous / common knowledge, plus what is missing.']]],
+      ['How the verdict is decided', [[CD, 'Fixed rules, top to bottom: prior-work fact with a citation → PASS · procedure or definition → NA · supported or partially → PASS · unsupported with nothing valid → FAIL.'], [CD, 'Unsupported but the claim’s numbers are in a table, or the only evidence is a figure → U, for a human.'], [CD, 'All of this runs 3 times (1 greedy + 2 sampled). FAIL only if 2+ runs say FAIL and none says PASS. Found in fewer than 2 runs, or runs disagree → U.'], [CD, 'score = FAIL / (FAIL + PASS). U is reported as coverage, NA is not counted.']]]],
+    line: 'Qwen2.5-32B does the reading. Code checks every id it names, applies the rules, and counts. Three runs vote; when they disagree the claim stays open (U).' },
+  '1-2': { unit: 'claim', units: 'supported claims',
+    stages: [['Claim', 'passed 1-1: evidence exists', 'paper'], ['Covers', 'what the evidence reaches', Q], ['Asserts', 'what the claim reaches', Q], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which claims are checked', [[CD, 'Only claims that passed 1-1: the evidence is there. The question is whether the words go further than it.'], [CD, 'Claims with no evidence at all stay in 1-1; they are not double-counted here.']]],
+      ['How the covered range is read', [[Q, 'Lists what the material actually covers: which datasets, tasks, models, conditions (the covered items).'], [Q, 'Reads the claim on four axes: scope, conditions, effect size and direction, certainty (“significantly”, “causes”, “guarantees”).']]],
+      ['How the asserted words are pinned down', [[Q, 'Quotes the words that reach past the evidence, verbatim, and the classes the claim speaks for (“adaptive attackers”, “across domains”).'], [CD, 'Checks the quoted words really occur in the claim sentence. Phrases longer than 8 words and proper names (RULER, CIFAR-10) do not count.']]],
+      ['How the verdict is decided', [[CD, 'FAIL if the quoted words are in the sentence, or if a generic class + qualifier is covered by at most 2 items.'], [CD, '“significantly” alone never fails a claim; it is counted separately as sig_without_test.'], [CD, 'A limitation sentence cancels the overreach only if it limits the same claim.'], [CD, '3 runs vote as in 1-1. score = FAIL / (FAIL + PASS).']]]],
+    line: 'Qwen2.5-32B reads the evidence and the claim side by side and quotes the overreaching words. Code verifies the quote and the class count. Three runs vote.' },
+  '1-3': { unit: 'statement', units: 'statements',
+    stages: [['Statement', 'needs a case to be understood', 'paper'], ['Reader asks', 'what would it look like?', Q], ['Example', 'is one shown?', QC], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which statements need an example', [[CD, 'Candidates: sentences with a named category, a qualitative adjective (coherent, stealthy), “we introduce / define”, or a phenomenon a figure is said to show.'], [Q, 'Keeps those a reader cannot check from definitions, formulas or numbers alone.'], [CD, 'Captions and “Figure X shows…” sentences are not units: the figure is the exhibit.']]],
+      ['How the reader’s question is written', [[Q, 'Writes the concrete question a reader would ask (“what does a poisoned demonstration look like?”).'], [Q, 'Marks the statement sufficient_without_example when a definition or a number already answers it.']]],
+      ['How an example is searched', [[Q, 'Searches the whole paper for a real case: an input with its output, an error, a trigger list, a visualization.'], [Q, 'A second call (the judge) sees every caption and checks that the exhibit shows exactly this category or property.'], [CD, 'The example must share content words with the statement.']]],
+      ['How the verdict is decided', [[CD, 'A real case → PASS. A made-up example (“suppose…”) passes only for formats and procedures, never for something claimed to have happened.'], [CD, 'No example anywhere → FAIL. Runs disagree → U.'], [CD, 'score = FAIL / (FAIL + PASS). Small counts: read the number, not the ratio.']]]],
+    line: 'Qwen2.5-32B asks the reader’s question and looks for a real case. Code checks the match. Three runs vote.' },
+  '1-4': { unit: 'cited work', units: 'cited works',
+    stages: [['Cited work', 'one citation key', 'paper'], ['Role', 'what it is to this paper', Q], ['Relation', 'a sentence that connects them?', QC], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which citations are units', [[CD, 'Every citation key gets its sentences and its bib title.'], [CD, 'Units: works cited in Related Work, baselines in the experiments, works cited in the intro with a limitation or contrast.'], [CD, 'Not units: lists of 3+ works in one sentence, surveys and tutorials, datasets, tools and metrics.']]],
+      ['How the role is assigned', [[Q, 'Assigns a role: built on · related method · baseline · dataset, metric or tool · background fact.'], [Q, 'Points at sentences that state the relation to this paper.'], [CD, 'Adds candidates of its own: first-person or contrast sentences in the citing paragraph (“these methods…, we instead…”), and sentences naming the work in the first person.']]],
+      ['How a relation is recognised', [[Q, 'The judge reads each candidate: does it say how this work and the current paper relate, or state one property of the current method?'], [CD, 'A relation sentence must use the first person or the method’s name. “Unlike prior work,” on its own does not count.']]],
+      ['How the verdict is decided', [[CD, 'A relation sentence → PASS. A baseline compared in a first-person sentence → PASS.'], [CD, 'No relation sentence → FAIL. Survey or background citations → NA.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS). Deleting citations shows up as a smaller n_positioning.']]]],
+    line: 'Qwen2.5-32B assigns each cited work a role and finds the sentence that relates it to this paper. Code requires the first person or the method name. Three runs vote.' },
+  '2-1': { unit: 'finding', units: 'findings',
+    stages: [['Finding', 'a key result in the body', Q], ['Shown in', 'the table or sentence', CD], ['Up front?', 'abstract and intro', Q], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['How the key findings are listed', [[Q, 'Sees the body only (no abstract, no intro) and writes the research question in one sentence.'], [Q, 'Lists up to 6 findings that answer it or change how a contribution should be read, including unfavourable ones, each with its condition.'], [CD, 'Secondary results, limitations and future work are dropped.']]],
+      ['Where the finding lives', [[CD, 'Each finding keeps the ids it rests on: result sentences, tables, figures.']]],
+      ['How the front matter is checked', [[Q, 'The judge gets the finding and the full abstract + introduction and answers two questions: is the meaning conveyed (a higher-level summary is fine, the same number is not required)? is the important condition conveyed?'], [CD, 'Also measures word overlap between the finding and every abstract / intro sentence.']]],
+      ['How the verdict is decided', [[CD, 'Meaning or condition not conveyed → FAIL.'], [CD, 'But if some abstract / intro sentence shares 40%+ of the content words, it is held for a human (U) instead.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS). Adding one number to the abstract does not flip condition_conveyed.']]]],
+    line: 'Qwen2.5-32B reads the body first, then checks the abstract and introduction for each finding. Code guards with word overlap. Three runs vote.' },
+  '2-2': { unit: 'question', units: 'questions',
+    stages: [['Question', 'needs 2+ results to answer', Q], ['Results', 'the ones to read together', Q], ['Joint sentence', 'does the paper connect them?', QC], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['How the questions are found', [[Q, 'Lists research questions that only two or more results answer together (“does module A help when data is small?”).']]],
+      ['Which results belong to it', [[Q, 'Names the result ids (tables, figures, sentences) that bear on the question, at least two.'], [CD, 'Fewer than two valid results → U.']]],
+      ['How the joint reading is checked', [[Q, 'Points at the sentence(s) that interpret the results together.'], [Q, 'The judge sees the result summaries and that sentence and grades it: specific (names the observed numbers, direction or condition) · generic · none.']]],
+      ['How the verdict is decided', [[CD, 'specific → PASS. generic or none → FAIL.'], [CD, '“Together, these results demonstrate the effectiveness of our approach.” is generic and does not help.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS).']]]],
+    line: 'Qwen2.5-32B finds the questions and the sentence that reads the results together. Code requires at least two results. Three runs vote.' },
+  '2-3': { unit: 'name', units: 'names',
+    stages: [['Name', 'a label that needs a definition', CD], ['Where', 'the table or sentence it appears in', CD], ['Defined?', 'a sentence that says what it is', QC], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which names are units', [[CD, 'Row and column labels of result tables (variant names, metric abbreviations) and names in results prose like “Phase-0 analysis” or “retrieval margin”.'], [CD, 'Dropped: formatting residue, generic labels (Avg., Ours, Vanilla), standard benchmark abbreviations (MMLU, SQA…).']]],
+      ['Where it appears', [[CD, 'The table (with its caption) or the sentence that uses the name.']]],
+      ['How a definition is searched', [[CD, 'First the code: a prose sentence that contains all the content words of the label → resolved, no model call.'], [Q, 'Otherwise the model searches the whole paper for the defining sentence.'], [Q, 'Still nothing: the judge checks the nearest candidate sentences and whether the name is a standard one.']]],
+      ['How the verdict is decided', [[CD, 'A definition, a consistent name or a reference → PASS. Standard name → NA. No sentence identifies it → FAIL.'], [CD, 'A broken \\ref may be a parser limit, so it is only recorded as U.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS). Labels the code resolved are counted but not animated here.']]]],
+    line: 'Code collects the labels and resolves the easy ones. Qwen2.5-32B searches for the rest. Three runs vote.' },
+  '2-4': { unit: 'proposition', units: 'propositions',
+    stages: [['Figure says', 'one claim the overview makes', QV], ['Text says', 'the Method / Setup sentence', Q], ['Match?', 'consistent · conflicting · unverifiable', Q], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['How the figure is read', [[CD, 'Picks the body figure whose caption or label says overview / framework / pipeline (else the first figure).'], [QV, 'Qwen2.5-VL-32B transcribes it: legends, axes, panels, numbers, box text, what the arrows connect.'], [Q, 'Turns the transcript into propositions (“three scores are summed”, “12 attention layers”).']]],
+      ['How the text is matched', [[Q, 'For each proposition, points at the Method or Setup sentence that states the same thing.']]],
+      ['How the match is graded', [[Q, 'The judge sees transcript + caption + those sentences and grades each proposition: consistent · conflicting · unverifiable.']]],
+      ['How the verdict is decided', [[CD, 'conflicting with a valid text id → FAIL. consistent → PASS. No matching sentence → U.'], [CD, 'Copying a figure’s names or numbers into the text does not help if the structure or condition still differs.'], [CD, 'Candidate item: reported separately, not in the 17-item score.']]]],
+    line: 'Qwen2.5-VL transcribes the overview figure; Qwen2.5-32B matches each proposition to the text. Three runs vote. Candidate item, reported separately.' },
+  '3-1': { unit: 'choice', units: 'choices',
+    stages: [['Choice', 'a setting that shapes the result', Q], ['Kind', 'data · baseline · value · metric · backbone', Q], ['Reason', 'why this, not another?', QC], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which choices are units', [[CD, 'Candidates: sentences with setting words (“we use / set / choose”, threshold, window, k=, dataset and baseline names) plus a number or formula.'], [Q, 'Keeps choices that affect the conclusion: data, subsets and sizes · baselines · method-specific values (layer, keep rate, threshold, k) · metrics and criteria · backbone.'], [CD, 'Minor settings → NA.']]],
+      ['How the kind is set', [[Q, 'Classes a–e and importance (central / minor).']]],
+      ['How a reason is searched', [[Q, 'Points at every id that gives a reason, appendix included: an ablation table, a cited standard, a constraint, an argument.'], [Q, 'The judge sees the reason text with the choice sentence and 4 sentences around it and decides: specific reason (why this value, not another) · describes only · generic phrase. It quotes the reason verbatim.'], [CD, 'The quote must occur in the text.']]],
+      ['How the verdict is decided', [[CD, 'A stock phrase (“for efficiency”, “following common practice” with no source) → FAIL at once.'], [CD, 'Baselines, metrics, backbones: a source → PASS; no reason → U (standard comparisons are not failed by rule).'], [CD, 'Data and key values: describes only / generic → FAIL; a specific reason in the text → PASS.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS).']]]],
+    line: 'Qwen2.5-32B lists the choices and quotes the reason the paper gives. Code fails stock phrases and verifies the quote. Three runs vote.' },
+  '4-1': { unit: 'sentence', units: 'sentences',
+    stages: [['Sentence', 'eligible prose', CD], ['Delete it', 'read the context without it', Q], ['Lost?', 'information or function', Q], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which sentences are read', [[CD, 'All prose sentences of 8+ tokens. Not captions, ethics, acknowledgements, boilerplate.'], [CD, 'Candidates: sentences with no number, formula, citation, reference or paper-specific term, plus a random 10% of the rest as a spot check. A name alone is not information.'], [CD, 'Sentences that are not candidates pass by rule; they are counted but not animated here.']]],
+      ['The deletion test', [[Q, 'Sees the sentence with its neighbours and imagines it gone.']]],
+      ['What would be lost', [[Q, 'Answers: (i) specific information about this study, (ii) a needed function (background, transition, guidance), or nothing.']]],
+      ['How the verdict is decided', [[CD, 'no_loss → FAIL. Anything else → PASS.'], [CD, 'The denominator is every eligible sentence, so the score is the share of empty prose.'], [CD, '3 runs vote.']]]],
+    line: 'Code picks the candidates; Qwen2.5-32B runs the deletion test in context. The denominator is all eligible sentences. Three runs vote.' },
+  '4-2': { unit: 'term', units: 'terms',
+    stages: [['Term', 'needs a meaning to be understood', CD], ['Used', 'where and how often', CD], ['Defined?', 'a sentence that gives the meaning', QC], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which terms are units', [[CD, 'Abbreviations, hyphenated compounds used twice or more, quoted terms, names like Phase-0, two-word metrics (“X rate / score / ratio / margin”).'], [CD, 'Dropped: appendix-only terms, names right after a citation, names already in the table inventory.']]],
+      ['Where it is used', [[CD, 'First use and every occurrence are collected.']]],
+      ['How a definition is searched', [[CD, 'The code first: a parenthetical expansion (“Self-Recall Error (SRE)”) or a cue in the same paragraph (“we call”, “is defined as”, “denotes”).'], [Q, 'Otherwise the model searches the paper: defined here (id) · standard term · undefined · name variant.'], [Q, 'Still undefined: the judge re-reads every sentence that uses the term. Spelling out an abbreviation, or “X is our X module”, is not a definition.']]],
+      ['How the verdict is decided', [[CD, 'A valid defining sentence → PASS. Standard term or a name → NA. Undefined after both passes → FAIL. Name variants are recorded separately.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS).']]]],
+    line: 'Code finds the terms and the easy definitions; Qwen2.5-32B searches for the rest and re-reads every use. Three runs vote.' },
+  '4-3': { unit: 'sentence', units: 'sentences',
+    stages: [['Sentence', 'eligible prose', CD], ['Role', 'understand · check · reproduce · limits', Q], ['Any role?', 'or none at all', Q], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which sentences are read', [[CD, 'All eligible prose sentences (as in 4-1).']]],
+      ['What a sentence can be for', [[Q, 'Picks sentences that serve none of the reader’s needs: understanding, checking, reproducing, or reading the limits (file-renaming history, anecdotes, implementation chatter unrelated to results).']]],
+      ['How a flag is confirmed', [[Q, 'The judge re-reads the flagged sentence with its context. Preprocessing exceptions, hardware, data constraints and failure conditions are needed information.']]],
+      ['How the verdict is decided', [[CD, 'Confirmed → FAIL. In conference-length papers this is nearly always 0; the sample here shows three sentences that were not flagged.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS) over all eligible sentences.']]]],
+    line: 'Qwen2.5-32B flags sentences that serve no reader need; a second call confirms in context. Conference papers rarely have any.' },
+  '4-4': { unit: 'sentence', units: 'later sentences',
+    stages: [['Sentence', 'a later one', CD], ['Earlier twin', 'the sentence it overlaps', CD], ['Adds?', 'info · interpretation · reminder · summary · nothing', Q], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which sentences are read', [[CD, 'Every later sentence that overlaps an earlier one. Not the abstract, captions, formula-heavy sentences, code-release lines.'], [CD, 'Sentences with no overlapping earlier sentence pass by rule; they are counted but not animated here.']]],
+      ['How the pair is found', [[CD, 'Candidate pairs: a shared 8-gram across paragraphs, or MiniLM cosine ≥ 0.75 with content-word Jaccard ≥ 0.2.'], [CD, 'The later sentence gets a slot tag: [conclusion], [section opening], [contribution list].']]],
+      ['What the later sentence adds', [[Q, 'Sees both sentences and decides: info · interpretation · needed reminder · summary function (only in a summary slot) · nothing.']]],
+      ['How the verdict is decided', [[CD, 'nothing → FAIL. Abstract → intro preview, abstract / intro → first numeric statement in results, the conclusion’s first paragraph and the contribution list → PASS as summary function.'], [CD, 'Cosine ≥ 0.85 with ≤ 2 new content words and no new number → FAIL whatever the model says (deterministic guard).'], [CD, 'A loose paraphrase (cosine < 0.80, Jaccard < 0.4) judged “nothing” → U.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS).']]]],
+    line: 'Code finds the overlapping pairs; Qwen2.5-32B says what the later sentence adds. A deterministic guard catches near-copies. Three runs vote.' },
+  '4-5': { unit: 'figure', units: 'figures',
+    stages: [['Figure', 'a body figure with an image', CD], ['Transcribed', 'what is in the image', QV], ['Explained?', 'elements, numbers, caption, comparisons', Q], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which figures are units', [[CD, 'Every body figure that has an image. AI papers: the figure file. Human papers: the PDF page found by caption.']]],
+      ['How the image is read', [[QV, 'Qwen2.5-VL-32B transcribes the image. If it says the image and caption do not match → U.']]],
+      ['What the judge checks', [[Q, 'With transcript + caption + the sentences that cite the figure, it lists: (1) elements needed for the purpose that nothing explains, (2) result numbers in the figure and whether their condition can be read, (3) caption vs image conflicts, (4) comparisons the body draws from the figure that cannot be matched to it.'], [CD, 'Only elements a reader must interpret count (arrow and line styles, symbols, colour classes, legends, panels, axis labels), not “the exact value is not printed”.']]],
+      ['How the verdict is decided', [[CD, 'FAIL = a caption conflict, or a figure-only number whose condition cannot be read, or 2+ unexplained structural elements, or 1 unexplained + an uninspectable comparison.'], [CD, 'One weak signal alone → U.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS). Bound by transcription quality (numbers on bars are sometimes missed).']]]],
+    line: 'Qwen2.5-VL transcribes the image; Qwen2.5-32B checks what the caption and body leave unexplained. Code applies the thresholds. Three runs vote.' },
+  '5-1': { unit: 'problem', units: 'problems',
+    stages: [['Presented', 'as worth studying', Q], ['Problem', 'a concrete gap stated?', Q], ['Why', 'a reason it matters?', Q], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which units are read', [[Q, 'Every problem, question or contribution the abstract, intro or related work presents as worth studying, with or without words like “critical”.']]],
+      ['How the problem is located', [[Q, 'Points at the sentence(s) that state the concrete problem or gap (gap ids). “Existing methods face challenges” is not concrete.']]],
+      ['How the reason is located', [[Q, 'Points at the sentence(s) that say why it is worth solving (reason ids): a consequence, a cost, a failure case, or a scientific question. One sentence may do both.'], [Q, 'The judge reads those sentences and answers both questions. No numbers required; a theoretical motive counts.']]],
+      ['How the verdict is decided', [[CD, 'Either answer “no” → FAIL. Both “yes” → PASS.'], [CD, 'Deleting “critical” changes nothing: the unit is what the paper presents as worth studying. Invented numbers are a 5-4 matter.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS).']]]],
+    line: 'Qwen2.5-32B locates the problem sentence and the reason sentence, then judges both. Three runs vote.' },
+  '5-2': { unit: 'contrast', units: 'contrasts',
+    stages: [['Contrast', 'ours vs a named target', CD], ['Target says', 'how the paper describes it', Q], ['Difference', 'shown, or contradicted?', QC], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which contrasts are units', [[CD, 'Candidates: first-person sentences with contrast words (unlike, in contrast, rather than, whereas, outperform, compared to…) or a baseline name + comparison word.'], [Q, 'Keeps contrasts with an identifiable target and a stated difference: structural, performance, or cost. “Requires no training” is a structural difference.'], [CD, 'Not units: findings about own data, comparisons between prior works, contrasts between settings of the own method (NA).']]],
+      ['How the target is described', [[Q, 'Records the target, the property attributed to it, and the paper’s own property.'], [CD, 'Collects every sentence in the paper that mentions the target by name.']]],
+      ['How the difference is checked', [[Q, 'The judge reads all target sentences and the evidence and answers: (1) does the paper’s own description of the target contradict the attributed property? (2) is a structural difference traceable to the method or the target description? (3) is a performance or cost difference shown under comparable conditions?'], [CD, 'If the target is a table label, its results are attached automatically.']]],
+      ['How the verdict is decided', [[CD, 'A contradiction → FAIL. Performance or cost difference with no result, or incomparable conditions → FAIL.'], [CD, 'Structural difference traceable → PASS; only a citation → U. Target not identifiable (“prior methods”) → FAIL.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS). Known over-detection on human papers (settings compared as if they were methods).']]]],
+    line: 'Code gathers every sentence about the target; Qwen2.5-32B checks the contrast against them and the results. Three runs vote.' },
+  '5-3': { unit: 'interpretation', units: 'interpretations',
+    stages: [['Interpretation', 'cause · mechanism · generalization · implication', CD], ['Observation', 'the result it reads from', Q], ['Support', 'something beyond the result itself?', QC], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which sentences are units', [[CD, 'Candidates: Experiments, Conclusion and caption sentences with interpretation cues (demonstrating, indicating, suggesting, because, stems from, thus…), and abstract / intro / method sentences with a mechanism cue. “We show that…” contribution lines are not.'], [Q, 'Types each one: restatement · scope summary · mechanism · cause · generalization · implication. The same proposition in abstract, intro and conclusion is one unit.']]],
+      ['How the observation is located', [[Q, 'Points at the observation ids (the table rows or figure) and at any support ids. Notes whether the sentence is hedged (may, we hypothesize).']]],
+      ['How support is checked', [[Q, 'The judge sees the full observation rows and the support and answers: (1) is the interpretation compatible with the numbers (no reading no-change as change)? (2) does the support carry the inferential step, not just restate the observation? (3) is it an immediate inference (removing X loses the gain, so X is needed)? (4) is it just a summary?']]],
+      ['How the verdict is decided', [[CD, 'Contradicts the observation → FAIL. Summary or restatement → NA.'], [CD, 'Support, immediate inference, or a citation → PASS. No support but every occurrence hedged → PASS. Otherwise, stated as fact → FAIL. Implications fail only on contradiction.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS). Changing “demonstrating” to “suggesting” in one place does not help while the abstract still asserts it.']]]],
+    line: 'Qwen2.5-32B locates the observation and the support, then judges whether the step from one to the other is carried. Three runs vote.' },
+  '5-4': { unit: 'statement', units: 'evidence statements',
+    stages: [['Describes', 'prior work · own scope · scale · consensus', CD], ['Checked against', 'the paper or the cited abstract', QC], ['Match?', 'consistent · contradicted · silent', Q], ['Verdict', '3 runs vote', CD]],
+    how: [
+      ['Which statements are units', [[CD, 'Candidates: (a) “prior work has shown X”, (b) own evaluation scope (“we evaluate on three domains”), (c) scale words (extensive, numerous, consistently), (d) consensus or authority (“well known”, “typically considered”).'], [Q, 'Confirms the unit, its type, and what evidence it describes.']]],
+      ['What it is checked against', [[Q, 'For (b)(c): the tables and setup sentences that show the real scope. For (a)(d): in-paper sentences that contradict it, and what the cited work is said to have shown.'], [CD, 'For cited (a)(d) statements, fetches the cited paper’s abstract from Semantic Scholar by bib title and hands it to the judge.']]],
+      ['How the match is judged', [[Q, '(b)(c): does the described scope match the actual evaluation? (a): does the abstract support, contradict or stay silent? (d): is there a source or in-paper support?'], [CD, 'An abstract’s silence is not a contradiction.']]],
+      ['How the verdict is decided', [[CD, '(b)(c) scope mismatch → FAIL. (a)(d) contradicted in the paper or by the abstract → FAIL. (d) with no source at all, or (a) with no citation → FAIL (a citation in the same paragraph counts).'], [CD, 'Abstract silent or unavailable → U.'], [CD, '3 runs vote. score = FAIL / (FAIL + PASS).']]]],
+    line: 'Qwen2.5-32B checks scope words against the tables and cited claims against the cited abstracts (fetched by code). Three runs vote.' },
 };
 const VLAB = { FAIL: 'FAIL', PASS: 'PASS', UNRESOLVED: 'U', NOT_APPLICABLE: 'NA' };
 const VK = d => ({ FAIL: 'F', PASS: 'P', UNRESOLVED: 'U', NOT_APPLICABLE: 'N' })[d] || 'U';
@@ -622,18 +745,17 @@ function measurePanel(it) {
   return wrap;
 }
 function buildFlow(m, data, wrap) {
-  const U = data.units, n = U.length;
-  const box = (i, [t, sub, who]) => h('div', { class: 'ms-bx', 'data-s': i }, h('div', { class: 'ms-bt' }, h('b', { text: t }), h('span', { class: 'ms-who ' + (who.startsWith('Qwen') ? 'llm' : 'code'), text: who })), h('i', { text: sub }), h('div', { class: 'ms-bc' }));
+  const U = data.units, n = U.length, pre = data.meta.pre || {};
+  const whoCls = w => w === 'paper' ? 'paper' : w.startsWith('Qwen') ? 'llm' : w === 'code' ? 'code' : 'both';
+  const box = (i, [t, sub, who]) => h('div', { class: 'ms-bx', 'data-s': i }, h('div', { class: 'ms-bt' }, h('b', { text: t }), h('span', { class: 'ms-who ' + whoCls(who), text: who })), h('i', { text: sub }), h('div', { class: 'ms-bc' }), h('span', { class: 'ms-q', text: 'how?' }));
   const boxes = m.stages.map((st, i) => box(i, st));
-  boxes.forEach(b => b.append(h('span', { class: 'ms-q', text: 'how?' })));
   const flow = h('div', { class: 'ms-flow' }, ...boxes.flatMap((b, i) => i ? [h('span', { class: 'ms-ar', text: '→' }), b] : [b]));
-  // "how?" strip: hover previews a stage's method, click pins it
   const how = h('div', { class: 'ms-how', hidden: true });
   let pinned = -1;
   function showHow(k) { if (k < 0) { how.hidden = true; boxes.forEach(b => b.classList.remove('ask')); return; }
     const [title, rows] = m.how[k]; boxes.forEach((b, j) => b.classList.toggle('ask', j === k));
     how.replaceChildren(h('div', { class: 'ms-howh' }, h('span', { class: 'ms-n', text: String(k + 1) }), h('b', { text: title }), h('span', { class: 'ms-howhint', text: pinned === k ? 'click the box again to close' : 'click the box to keep this open' })),
-      h('ul', {}, ...rows.map(([w, t]) => h('li', {}, h('span', { class: 'ms-who ' + (w === 'Qwen' ? 'llm' : 'code'), text: w }), h('span', { text: t })))));
+      h('ul', {}, ...rows.map(([w, t]) => h('li', {}, h('span', { class: 'ms-who ' + whoCls(w), text: w }), h('span', { text: t })))));
     how.hidden = false; }
   boxes.forEach((b, k) => { b.tabIndex = 0;
     b.addEventListener('mouseenter', () => { if (pinned < 0) showHow(k); });
@@ -642,20 +764,18 @@ function buildFlow(m, data, wrap) {
     b.addEventListener('blur', () => { if (pinned < 0) showHow(-1); });
     b.addEventListener('click', () => { pinned = pinned === k ? -1 : k; showHow(pinned < 0 ? -1 : k); });
     b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); } }); });
-  const bins = { FAIL: null, PASS: null, UNRESOLVED: null, NOT_APPLICABLE: null };
-  const binRow = h('div', { class: 'ms-bins' }, ...Object.keys(bins).map(k => { const d = h('div', { class: 'ms-dots' }); bins[k] = d; return h('div', { class: 'ms-bin v-' + VK(k) }, h('div', { class: 'ms-bh' }, h('b', { text: VLAB[k] }), h('span', { class: 'ms-bn', text: '0' })), d); }));
+  const bins = {};
+  const binRow = h('div', { class: 'ms-bins' }, ...['FAIL', 'PASS', 'UNRESOLVED', 'NOT_APPLICABLE'].map(k => { const d = h('div', { class: 'ms-dots' }); bins[k] = d; return h('div', { class: 'ms-bin v-' + VK(k) }, h('div', { class: 'ms-bh' }, h('b', { text: VLAB[k] }), h('span', { class: 'ms-bn', text: '0' })), d, pre[k] ? h('small', { class: 'ms-pre', text: '+' + pre[k] + ' settled by code' }) : null); }));
   const formula = h('div', { class: 'ms-form' });
   const play = h('button', { type: 'button', class: 'ms-nb', text: '▶ Play' }), prev = h('button', { type: 'button', class: 'ms-nb', text: '‹' }), next = h('button', { type: 'button', class: 'ms-nb', text: '›' });
   const ctr = h('span', { class: 'ms-ctr' });
-  const caseBtns = (m.cases || []).map(([v, id]) => { const b = h('button', { type: 'button', class: 'ms-case v-' + VK(v) }, h('span', { class: 'ms-vb v-' + VK(v), text: VLAB[v] }), h('span', { text: 'case' })); b.addEventListener('click', () => { stop(); const k = U.findIndex(u => u.id === id); if (k >= 0) showClaim(k, true); }); return b; });
-  wrap.replaceChildren(flow, how, h('div', { class: 'ms-ctl' }, play, prev, next, ctr, h('span', { class: 'ms-cases' }, h('span', { class: 'ms-cl', text: 'jump to a' }), ...caseBtns), h('span', { class: 'ms-paper', text: data.meta.paper + ' · ' + n + ' ' + m.units })), binRow, formula, h('p', { class: 'ms-line', text: m.line }));
   const cnt = { FAIL: 0, PASS: 0, UNRESOLVED: 0, NOT_APPLICABLE: 0 };
   const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const T = k => `<i class="v-${k}">${{ F: 'FAIL', P: 'PASS', U: 'U' }[k]}</i>`;
   function fill(k, v) { boxes[k].querySelector('.ms-bc').replaceChildren(v); boxes[k].classList.add('lit'); }
   function renderTally() {
-    Object.keys(bins).forEach(k => { binRow.querySelector('.ms-bin.v-' + VK(k) + ' .ms-bn').textContent = cnt[k]; });
-    const F = cnt.FAIL, P = cnt.PASS, UU = cnt.UNRESOLVED, D = F + P, N = D + UU;
+    Object.keys(bins).forEach(k => { binRow.querySelector('.ms-bin.v-' + VK(k) + ' .ms-bn').textContent = cnt[k] + (pre[k] || 0); });
+    const F = cnt.FAIL + (pre.FAIL || 0), P = cnt.PASS + (pre.PASS || 0), UU = cnt.UNRESOLVED + (pre.UNRESOLVED || 0), D = F + P, N = D + UU;
     formula.innerHTML = `<span class="ms-f"><em>score</em> = <span class="ms-frac"><span>${T('F')}</span><span>${T('F')} + ${T('P')}</span></span> = <span class="ms-val">${D ? `${F} / ${D} = <b>${(F / D).toFixed(2)}</b>` : '—'}</span></span>` +
       `<span class="ms-f sm"><em>coverage</em> = <span class="ms-frac"><span>${T('F')} + ${T('P')}</span><span>${T('F')} + ${T('P')} + ${T('U')}</span></span> = <span class="ms-val">${N ? `${D} / ${N} = <b>${(D / N).toFixed(2)}</b>` : '—'}</span></span>`;
   }
@@ -664,14 +784,14 @@ function buildFlow(m, data, wrap) {
   function showClaim(k, animate) {
     i = k; clearStage(); const u = U[k]; ctr.textContent = `${k + 1} / ${n}`;
     Object.keys(cnt).forEach(c => cnt[c] = 0); U.slice(0, k).forEach(x => cnt[x.final]++);
-    Object.keys(bins).forEach(c => bins[c].replaceChildren(...U.slice(0, k).filter(x => x.final === c).map(x => h('span', { class: 'ms-dot', title: x.id + ' · ' + x.claim.slice(0, 80) }))));
+    Object.keys(bins).forEach(c => bins[c].replaceChildren(...U.slice(0, k).filter(x => x.final === c).map(x => h('span', { class: 'ms-dot', title: x.id + ' · ' + x.text.slice(0, 80) }))));
     renderTally();
     const step = reduced() || !animate ? 0 : 420;
     const parts = [
-      () => fill(0, h('div', {}, h('q', { text: u.claim.length > 110 ? u.claim.slice(0, 108) + '…' : u.claim }), h('small', { text: u.id + ' · ' + u.sec + ' · ' + u.kind.replace('_', ' ') }))),
-      () => fill(1, h('div', {}, h('span', { text: u.required || '—' }))),
-      () => { const ids = u.material.map(x => x.id); fill(2, h('div', {}, ids.length ? h('div', { class: 'ms-chips' }, ...ids.map(id => h('span', { class: 'ms-chip', text: id }))) : h('span', { class: 'ms-nonef', text: u.judge ? 'nothing' : 'a citation on the sentence' }), u.judge ? h('small', { text: 'judge: ' + u.judge.decision.replace('_', ' ') + (u.judge.missing ? ' · missing: ' + u.judge.missing.slice(0, 70) : '') }) : h('small', { text: 'passes by rule; the citation’s honesty is item 5-4' }))); },
-      () => { fill(3, h('div', {}, h('div', { class: 'ms-votes' }, ...u.runs.map(r => h('span', { class: 'ms-vb sm v-' + VK(r), text: VLAB[r] })), ...Array.from({ length: data.meta.n_runs - u.runs.length }, () => h('span', { class: 'ms-vb sm v-x', text: '–' })), h('span', { class: 'ms-ar', text: '→' }), vb(u.final, true)))); },
+      () => fill(0, h('div', {}, h('q', { text: u.text.length > 120 ? u.text.slice(0, 118) + '…' : u.text }), h('small', { text: [u.id, u.sec, u.kind].filter(Boolean).join(' · ') }))),
+      () => fill(1, h('div', {}, h('span', { text: u.s2 || '—' }))),
+      () => fill(2, h('div', {}, u.found.length ? h('div', { class: 'ms-chips' }, ...u.found.map(id => h('span', { class: 'ms-chip', text: id }))) : h('span', { class: 'ms-nonef', text: 'nothing' }), u.found_note ? h('small', { text: u.found_note }) : null, u.judge_line ? h('small', { text: u.judge_line }) : null)),
+      () => { fill(3, h('div', {}, h('div', { class: 'ms-votes' }, ...u.runs.map(r => h('span', { class: 'ms-vb sm v-' + VK(r), text: VLAB[r] })), ...Array.from({ length: Math.max(0, data.meta.n_runs - u.runs.length) }, () => h('span', { class: 'ms-vb sm v-x', text: '–' })), h('span', { class: 'ms-ar', text: '→' }), vb(u.final, true)), u.final_reason ? h('small', { text: u.final_reason }) : null)); },
       () => { cnt[u.final]++; const d = h('span', { class: 'ms-dot new', title: u.id }); bins[u.final].append(d); renderTally(); },
     ];
     parts.forEach((f, j) => { if (step) stageTimers.push(setTimeout(f, j * step)); else f(); });
@@ -682,7 +802,11 @@ function buildFlow(m, data, wrap) {
   play.addEventListener('click', () => { if (timer) { stop(); return; } play.textContent = '❚❚ Pause'; if (i >= n - 1) i = -1; tick(); });
   prev.addEventListener('click', () => { stop(); showClaim(Math.max(0, i - 1), false); });
   next.addEventListener('click', () => { stop(); showClaim(Math.min(n - 1, i + 1), false); });
-  showClaim(U.findIndex(u => u.id === 'S2.066') >= 0 ? U.findIndex(u => u.id === 'S2.066') : 0, false);
+  const firstOf = v => U.findIndex(u => u.final === v);
+  const caseBtns = ['FAIL', 'PASS', 'UNRESOLVED', 'NOT_APPLICABLE'].filter(v => firstOf(v) >= 0).map(v => { const b = h('button', { type: 'button', class: 'ms-case v-' + VK(v) }, h('span', { class: 'ms-vb v-' + VK(v), text: VLAB[v] }), h('span', { text: 'case' })); b.addEventListener('click', () => { stop(); showClaim(firstOf(v), true); }); return b; });
+  wrap.replaceChildren(flow, how, h('div', { class: 'ms-ctl' }, play, prev, next, ctr, h('span', { class: 'ms-cases' }, h('span', { class: 'ms-cl', text: 'jump to a' }), ...caseBtns), h('span', { class: 'ms-paper', text: `${data.meta.side} ${data.meta.paper} · ${n} ${m.units}` })), binRow, formula, h('p', { class: 'ms-line', text: m.line }));
+  if (!n) { ctr.textContent = '0 / 0'; renderTally(); return; }
+  showClaim(firstOf('FAIL') >= 0 ? firstOf('FAIL') : 0, false);
 }
 
 function card(it, area) {

@@ -1,0 +1,194 @@
+{
+"meta": {
+"item": "5-4",
+"paper": "FA0280",
+"side": "AI paper",
+"title": "deep-layer attention pruning for visual grounding",
+"n_runs": 3,
+"F": 1,
+"P": 5,
+"U": 1,
+"NA": 1,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0280/5-4.json"
+},
+"units": [
+{
+"id": "S1.016",
+"sec": "S1 Related Work (Related)",
+"kind": "scale word",
+"text": "The computational cost of vision-language models scales quadratically with the number of visual tokens, motivating extensive research on token reduction strategies.",
+"runs": [
+"PASS",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "scope matches the evaluation",
+"s2": "describes: “extensive research” · cites Chen2024AnII, Shang2024LLaVAPruMergeAT, Xing2024PyramidDropA",
+"found": [
+"S3.072",
+"S3.075",
+"S3.079",
+"S3.081",
+"S3.083",
+"S3.084"
+],
+"found_note": "",
+"judge_line": "judge: scope consistent · source no source"
+},
+{
+"id": "S2.043",
+"sec": "S2 Method (Method)",
+"kind": "prior work has shown",
+"text": "Prior work has identified that attention-based pruning can fail catastrophically on spatially-sensitive tasks like visual grounding, even when it succeeds on coarse-grained VQA [cite] .",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "cited source abstract is silent; full text not checked",
+"s2": "describes: “prior work identified failure of attention-based pruning” · cites Chen2024AnII, Endo2024FeatherTT",
+"found": [],
+"found_note": "",
+"judge_line": "judge: scope not applicable · source silent"
+},
+{
+"id": "S3.072",
+"sec": "S3 Experiments (Experiments)",
+"kind": "own evaluation scope",
+"text": "We evaluate on InternVL2.5-8B [cite] , a state-of-the-art vision-language model with 32 LLM layers (InternLM2 backbone) and 256 visual tokens per image tile.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "scope matches the evaluation",
+"s2": "describes: “evaluation on InternVL2.5-8B” · cites Chen2024ExpandingPB",
+"found": [
+"S3.072",
+"S3.075",
+"S3.079",
+"S3.081",
+"S3.083",
+"S3.084"
+],
+"found_note": "",
+"judge_line": "judge: scope consistent · source no source"
+},
+{
+"id": "S3.075",
+"sec": "S3 Experiments (Experiments)",
+"kind": "own evaluation scope",
+"text": "We evaluate on the RefCOCO family of visual grounding benchmarks [cite] : RefCOCO, RefCOCO+, and RefCOCOg.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "scope matches the evaluation",
+"s2": "describes: “evaluation on RefCOCO family” · cites Yu2016ModelingCI",
+"found": [
+"S3.072",
+"S3.075",
+"S3.079",
+"S3.081",
+"S3.083",
+"S3.084"
+],
+"found_note": "",
+"judge_line": "judge: scope consistent · source no source"
+},
+{
+"id": "S3.079",
+"sec": "S3 Experiments (Experiments)",
+"kind": "own evaluation scope",
+"text": "Following prior work [cite] , we use grounding accuracy with IoU [math] threshold: a prediction is correct if the intersection-over-union between the predicted and ground-truth bounding boxes exceeds 0.5.",
+"runs": [
+"PASS",
+"PASS",
+"UNRESOLVED"
+],
+"final": "PASS",
+"final_reason": "runs disagree: ['PASS', 'PASS', 'UNRESOLVED']",
+"s2": "describes: “evaluation metric” · cites Zhang2025D2PrunerDI, Chen2024AnII",
+"found": [
+"S3.072",
+"S3.075",
+"S3.079",
+"S3.081",
+"S3.083",
+"S3.084"
+],
+"found_note": "",
+"judge_line": "judge: scope consistent · source no source"
+},
+{
+"id": "S3.113",
+"sec": "S3 Experiments (Experiments)",
+"kind": "consensus or authority",
+"text": "All values are well below the 0.3 threshold typically considered indicative of meaningful positional bias.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "consensus or authority claim without a source",
+"s2": "describes: “0.3 threshold typically considered indicative of meaningful positional bias” · no citation",
+"found": [],
+"found_note": "contradicted by S3.113",
+"judge_line": "judge: scope not applicable · source no source"
+},
+{
+"id": "S3.120",
+"sec": "S3 Experiments (Experiments)",
+"kind": "scale word",
+"text": "Raw attention (dashed line) consistently outperforms all ratio variants. xxcaptionxx Spatial analysis of token retention.",
+"runs": [
+"PASS",
+"UNRESOLVED",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "runs disagree: ['PASS', 'UNRESOLVED', 'PASS']",
+"s2": "describes: “consistently outperforms” · no citation",
+"found": [
+"T1",
+"T2",
+"T3"
+],
+"found_note": "",
+"judge_line": "judge: scope consistent · source no source"
+},
+{
+"id": "S3.123",
+"sec": "S3 Experiments (Experiments)",
+"kind": "scale word",
+"text": "Importantly, raw attention without any debiasing (dashed line at 66.32%) consistently outperforms all ratio variants, confirming that debiasing is unnecessary when using deep-layer attention.",
+"runs": [
+"PASS",
+"UNRESOLVED",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "runs disagree: ['PASS', 'UNRESOLVED', 'PASS']",
+"s2": "describes: “consistently outperforms” · no citation",
+"found": [
+"T1",
+"T2",
+"T3"
+],
+"found_note": "",
+"judge_line": "judge: scope consistent · source no source"
+}
+]
+}

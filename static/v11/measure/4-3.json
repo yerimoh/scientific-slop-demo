@@ -1,0 +1,73 @@
+{
+"meta": {
+"item": "4-3",
+"paper": "FA0280",
+"side": "AI paper",
+"title": "deep-layer attention pruning for visual grounding",
+"n_runs": 3,
+"F": 0,
+"P": 109,
+"U": 0,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 106,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0280/4-3.json"
+},
+"units": [
+{
+"id": "A00",
+"sec": "Abstract",
+"kind": "eligible sentence",
+"text": "Visual token pruning is essential for efficient vision-language model inference, yet existing attention-based methods either fail catastrophically on spatially-sensitive tasks or require offline calibration data.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "not flagged",
+"s2": "does it help understanding, checking, reproducing or reading limits?",
+"found": [],
+"found_note": "not flagged by the model",
+"judge_line": ""
+},
+{
+"id": "A01",
+"sec": "Abstract",
+"kind": "eligible sentence",
+"text": "We present a simple solution: use attention from deeper layers.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "not flagged",
+"s2": "does it help understanding, checking, reproducing or reading limits?",
+"found": [],
+"found_note": "not flagged by the model",
+"judge_line": ""
+},
+{
+"id": "A02",
+"sec": "Abstract",
+"kind": "eligible sentence",
+"text": "While prior methods like D [math] Pruner extract attention from shallow layers (L2) and apply offline debiasing, we show that attention at layer 12 of InternVL2.5-8B is semantically rich enough to directly guide token selection without any debiasing.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "not flagged",
+"s2": "does it help understanding, checking, reproducing or reading limits?",
+"found": [],
+"found_note": "not flagged by the model",
+"judge_line": ""
+}
+]
+}

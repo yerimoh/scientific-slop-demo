@@ -1,0 +1,420 @@
+{
+"meta": {
+"item": "1-2",
+"paper": "2512.19443",
+"side": "human paper",
+"title": "D²Pruner (visual token pruning)",
+"n_runs": 3,
+"F": 2,
+"P": 8,
+"U": 14,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/HU_2512.19443/1-2.json"
+},
+"units": [
+{
+"id": "A07",
+"sec": "Abstract",
+"kind": "axis: scope",
+"text": "Extensive experiments demonstrate that D²Pruner has exceptional efficiency and fidelity.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "scope: 'exceptional efficiency and fidelity' exceeds the verified material (D²Pruner demonstrates high performance and efficiency across specific models and tasks, but the clai)",
+"s2": "evidence covers: LLaVa-1.5-7B, LLaVa-Next-7B, Qwen2.5-VL-7B, InternVL2.5-8B",
+"found": [
+"A07"
+],
+"found_note": "asserts: “exceptional efficiency and fidelity”",
+"judge_line": "judge: overstated · D²Pruner demonstrates high performance and efficiency across specific models and tasks, but the cla…"
+},
+{
+"id": "A08",
+"sec": "Abstract",
+"kind": "axis: scope",
+"text": "Applied to LLaVA-1.5-7B for general understanding tasks, it reduces FLOPs by 74.2% while retaining 99.2% of its original performance.",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['UNRESOLVED', 'UNRESOLVED', 'FAIL']",
+"s2": "evidence covers: LLaVA-1.5-7B",
+"found": [],
+"found_note": "asserts: “reduces FLOPs by 74.2% while retaining 99.2% of its original performance”",
+"judge_line": "judge: overstated · The material supports the claim for LLaVA-1.5-7B, but the claim is not limited to this specific mod…"
+},
+{
+"id": "A09",
+"sec": "Abstract",
+"kind": "axis: scope",
+"text": "Furthermore, in challenging localization benchmarks with InternVL-2.5-8B, it maintains 85.7% performance at a 90% token reduction rate, marking a significant advancement with up to 63.",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "overstatement reported but the asserted words were not found in the claim sentences",
+"s2": "evidence covers: InternVL-2.5-8B, Qwen2.5-VL-7B",
+"found": [],
+"found_note": "asserts: “maintains 85.7% performance at a 90% token reduction rate”",
+"judge_line": "judge: overstated · The material supports the claim for specific models, but the claim is not limited to these specific…"
+},
+{
+"id": "A10",
+"sec": "Abstract",
+"kind": "axis: magnitude",
+"text": "53% improvement over existing methods.",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "overstatement reported but the asserted words were not found in the claim sentences",
+"s2": "evidence covers: LLaVA-1.5-7B",
+"found": [],
+"found_note": "asserts: “up to 63.53% improvement over existing methods”",
+"judge_line": "judge: overstated · The material supports a range of improvements, but the claim specifies a precise percentage."
+},
+{
+"id": "S0.013",
+"sec": "S0 Introduction (Intro)",
+"kind": "axis: scope",
+"text": "D²Pruner achieves the best performance across all reduction ratios, with notable improvements on localization tasks.",
+"runs": [
+"UNRESOLVED",
+"FAIL",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['UNRESOLVED', 'FAIL', 'UNRESOLVED']",
+"s2": "evidence covers: LLaVa-1.5-7B, LLaVa-Next-7B, Qwen2.5-VL-7B, InternVL2.5-8B",
+"found": [],
+"found_note": "asserts: “best performance across all reduction ratios, with notable improvements on localization tasks”",
+"judge_line": "judge: overstated · The material supports the claim for specific models and tasks, but the claim is broad and not limit…"
+},
+{
+"id": "S0.039",
+"sec": "S0 Introduction (Intro)",
+"kind": "axis: magnitude",
+"text": "Critically, these results are achieved with remarkable efficiency: D²Pruner delivers a 5× prefill acceleration and a 7.6× reduction in KV cache size, while the pruning process itself adds a negligible overhead of just 0.",
+"runs": [
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "overstatement reported but the asserted words were not found in the claim sentences",
+"s2": "evidence covers: LLaVa-1.5-7B",
+"found": [],
+"found_note": "asserts: “5× prefill acceleration and a 7.6× reduction in KV cache size”",
+"judge_line": "judge: overstated · The material supports the claim for a specific model, but the claim is not limited to this specific…"
+},
+{
+"id": "S0.044",
+"sec": "S0 Introduction (Intro)",
+"kind": "axis: scope",
+"text": "Extensive experiments demonstrate that D²Pruner achieves superior performance, especially on fine-grained localization tasks, while delivering significant acceleration and memory savings.",
+"runs": [
+"UNRESOLVED",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['UNRESOLVED', 'FAIL']",
+"s2": "evidence covers: LLaVa-1.5-7B, LLaVa-Next-7B, Qwen2.5-VL-7B, InternVL2.5-8B",
+"found": [],
+"found_note": "asserts: “superior performance, especially on fine-grained localization tasks, while delivering significant acceleration and memory savings”",
+"judge_line": "judge: overstated · The material supports the claim for specific models and tasks, but the claim is broad and not limit…"
+},
+{
+"id": "S3.154",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "For LLaVa-1.5-7B, D²Pruner achieves an impressive average performance of 99.9%, with only 192 tokens retained (↓ 66.7%).",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "claim within the verified scope",
+"s2": "evidence covers: LLaVa-1.5-7B",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · The material supports the claim for LLaVa-1.5-7B."
+},
+{
+"id": "S3.155",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "When further reducing token retention to 64 tokens (↓ 77.8%), D²Pruner still maintains a strong performance of 97.3%, demonstrating its robustness even with a sharp reduction in tokens.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "claim within the verified scope",
+"s2": "evidence covers: LLaVA-1.5-7B, GQA, MMB, MMB-CN, MME, POPE, SQA, VQA^V2, VQA^Text, VizWiz",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · D²Pruner maintains a strong performance of 97.3% with 64 tokens retained (↓ 77.8%) on LLaVA-1.5-7B…"
+},
+{
+"id": "S3.156",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "For LLaVa-Next-7B, the D²Pruner achieves exceptional scalability, achieving an average score of 95.5% with only 11.1% of tokens retained, surpassing all other methods by a notable margin.",
+"runs": [
+"PASS",
+"UNRESOLVED",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "claim within the verified scope",
+"s2": "evidence covers: LLaVA-Next-7B, GQA, MMB, MMB-CN, MME, POPE, SQA, VQA^V2, VQA^Text, VizWiz",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · D²Pruner achieves an average score of 95.5% with only 11.1% of tokens retained on LLaVA-Next-7B acr…"
+},
+{
+"id": "S3.157",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "For Qwen2.5-VL-7B, with 90% token reduction, D²Pruner achieves an impressive 81.69%, outperforming DART (64.89%), FastV (67.10%) and DivPrune (74.01%) by notable margins.",
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "claim within the verified scope",
+"s2": "evidence covers: Qwen2.5-VL-7B, AI2D, ChartQA, DocVQA, MME, MMStar, POPE, TextVQA",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · D²Pruner achieves an impressive 81.69% with 90% token reduction on Qwen2.5-VL-7B, outperforming DAR…"
+},
+{
+"id": "S3.159",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: magnitude",
+"text": "When reducing tokens by 90%, D²Pruner still delivers 96.67%, outpacing all other methods by a wide margin.",
+"runs": [
+"FAIL",
+"FAIL",
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['FAIL', 'FAIL', 'PASS']",
+"s2": "evidence covers: Qwen2.5-VL-7B, AI2D, ChartQA, DocVQA, MME, MMStar, POPE, TextVQA",
+"found": [
+"S3.159"
+],
+"found_note": "asserts: “96.67%”",
+"judge_line": "judge: overstated · D²Pruner achieves an average score of 85.89% with 90% token reduction on Qwen2.5-VL-7B."
+},
+{
+"id": "S3.163",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "For LLaVA-1.5-7B, under a high 60% reduction ratio, our method's average performance of 85.89% surpasses that of other methods by 15.13-67.07 percentage points.",
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "claim within the verified scope",
+"s2": "evidence covers: LLaVA-1.5-7B, RefCOCO, RefCOCO+, RefCOCOg",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · D²Pruner's average performance of 85.89% surpasses that of other methods by 15.13-67.07 percentage…"
+},
+{
+"id": "S3.165",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: magnitude",
+"text": "Even when 90% of tokens are pruned, our method maintains a high performance of 85.68%, in stark contrast to competing methods, whose performance drops to a mere 22.1%-40.65%.",
+"runs": [
+"FAIL",
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['FAIL', 'PASS']",
+"s2": "evidence covers: LLaVA-1.5-7B, RefCOCO, RefCOCO+, RefCOCOg",
+"found": [
+"S3.165"
+],
+"found_note": "asserts: “85.68%”",
+"judge_line": "judge: overstated · D²Pruner maintains a high performance of 85.89% with 90% token reduction on LLaVA-1.5-7B, while com…"
+},
+{
+"id": "S3.153",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "We present the performance on understanding tasks in Tab. [ref] and Tab. [ref] .",
+"runs": [
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)",
+"s2": "evidence covers: LLaVA-1.5-7B, LLaVA-Next-7B, GQA, MMB, MMB-CN, MME, POPE, SQA, VQA^V2, VQA^Text, VizWiz",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · Performance comparisons on understanding tasks are presented in Table T1."
+},
+{
+"id": "S3.164",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "The robustness of our method is particularly evident on InternVL2.5-8B.",
+"runs": [
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)",
+"s2": "evidence covers: InternVL2.5-8B, RefCOCO, RefCOCO+, RefCOCOg",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · The robustness of D²Pruner is evident on InternVL2.5-8B across localization benchmarks."
+},
+{
+"id": "S3.169",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: scope",
+"text": "As shown in Fig. [ref] (left), Ours (DI) already surpasses the baseline, demonstrating that correcting for attention bias is effective.",
+"runs": [
+"FAIL",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['FAIL', 'UNRESOLVED']",
+"s2": "evidence covers: Debiased Importance (DI)",
+"found": [
+"S3.169"
+],
+"found_note": "asserts: “demonstrating that correcting for attention bias is effective”",
+"judge_line": "judge: overstated · DI-only variant outperforms the baseline, but the material does not specify the exact scope of task…"
+},
+{
+"id": "S3.170",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: scope",
+"text": "The addition of Structural Diversity (Ours (DI+SD)) further improves performance by encouraging diversity among the selected tokens, which leads to significant gains on both tasks.",
+"runs": [
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "scope: 'significant gains on both tasks' exceeds the verified material (DI+SD outperforms DI-only variant, but the material does not specify the exact tasks.)",
+"s2": "evidence covers: DI+SD",
+"found": [
+"S3.170"
+],
+"found_note": "asserts: “significant gains on both tasks”",
+"judge_line": "judge: overstated · DI+SD outperforms DI-only variant, but the material does not specify the exact tasks."
+},
+{
+"id": "S3.171",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: scope",
+"text": "This confirms that DI successfully identifies critical tokens, while SD complements it by promoting diversity in token selection.",
+"runs": [
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)",
+"s2": "evidence covers: DI, SD",
+"found": [],
+"found_note": "asserts: “DI successfully identifies critical tokens, while SD complements it by promoting diversity in token selection”",
+"judge_line": "judge: overstated · DI+SD outperforms DI-only variant, but the material does not specify the exact scope of tasks or da…"
+},
+{
+"id": "S3.172",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: scope",
+"text": "Notably, the performance advantage of D²Pruner becomes more pronounced at higher pruning ratios, highlighting the robustness and synergistic effect of our two components under extreme compression.",
+"runs": [
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)",
+"s2": "evidence covers: DI+SD",
+"found": [],
+"found_note": "asserts: “performance advantage of D²Pruner becomes more pronounced at higher pruning ratios”",
+"judge_line": "judge: overstated · DI+SD outperforms DI-only variant at low token retaining ratios, but the material does not specify…"
+},
+{
+"id": "S3.175",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "As shown in Fig. [ref] (right), incorporating spatial adjacency consistently improves performance on localization tasks.",
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "claim within the verified scope",
+"s2": "evidence covers: spatial adjacency",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · Our method with spatial adjacency outperforms the variant without it, demonstrating the benefit of…"
+},
+{
+"id": "S3.176",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "This demonstrates that considering spatial redundancy and ensuring a more uniform spatial distribution are crucial for localization, as they help preserve important spatial cues after token reduction.",
+"runs": [
+"PASS"
+],
+"final": "UNRESOLVED",
+"final_reason": "unit extracted in only 1/3 runs (unstable unit)",
+"s2": "evidence covers: spatial redundancy, uniform spatial distribution",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · Our method with spatial adjacency outperforms the variant without it, demonstrating the benefit of…"
+},
+{
+"id": "S3.179",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "Retaining just 33.4% of tokens accelerates prefilling by 2.93× and cuts FLOPs/KV Cache by over 2.8×.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "claim within the verified scope",
+"s2": "evidence covers: 33.4% of tokens",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · Retaining just 33.4% of tokens accelerates prefilling by 2.93× and cuts FLOPs/KV Cache by over 2.8×."
+},
+{
+"id": "S3.180",
+"sec": "S3 Experiments (Experiments)",
+"kind": "axis: none",
+"text": "Under a more aggressive 11.2% keep ratio of visual tokens, we achieve a 5.09× prefill speedup and reduce FLOPs/KV Cache by 6.10×/7.63×.",
+"runs": [
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "claim within the verified scope",
+"s2": "evidence covers: 11.2% keep ratio of visual tokens",
+"found": [],
+"found_note": "no word reaches past the evidence",
+"judge_line": "judge: within scope · Under a more aggressive 11.2% keep ratio of visual tokens, we achieve a 5.09× prefill speedup and r…"
+}
+]
+}

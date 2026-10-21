@@ -1,0 +1,303 @@
+{
+"meta": {
+"item": "1-4",
+"paper": "FA0280",
+"side": "AI paper",
+"title": "deep-layer attention pruning for visual grounding",
+"n_runs": 3,
+"F": 7,
+"P": 5,
+"U": 1,
+"NA": 2,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/AI_FA0280/1-4.json"
+},
+"units": [
+{
+"id": "Bolya2022TokenMY",
+"sec": "S1.020",
+"kind": "role: related method",
+"text": "Token Merging (ToMe) [cite] , originally designed for Vision Transformers, has also been adapted for VLM acceleration.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "candidate sentences only describe the work, not its relation to this paper",
+"s2": "cited work: “Token Merging: Your ViT But Faster”",
+"found": [],
+"found_note": "no sentence relates it to this paper",
+"judge_line": "judge: only describes the cited work"
+},
+{
+"id": "Chen2024AnII",
+"sec": "S0.003, S0.004, S1.017, S2.043, S2.057, ",
+"kind": "role: baseline",
+"text": "Existing pruning methods face a fundamental challenge: attention-based importance scoring, while computationally convenient, can fail catastrophically on spatially-sensitive tasks like visual grounding [cite] .",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "compared as a baseline in a first-person comparison sentence",
+"s2": "cited work: “An Image is Worth 1/2 Tokens After Layer 2: Plug-and-Play Inference Acceleration for Larg…”",
+"found": [],
+"found_note": "relation: “pioneered training-free pruning but suffers from significant performance degradation on spatially-sensitive t…”",
+"judge_line": "judge: a property of this paper is stated"
+},
+{
+"id": "Dao2022FlashAttentionFA",
+"sec": "S1.030",
+"kind": "role: related method",
+"text": "FlashAttention [cite] reduces memory overhead through IO-aware computation, while attention sink mechanisms [cite] enable efficient streaming inference.",
+"runs": [
+"PASS",
+"FAIL",
+"FAIL"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['PASS', 'FAIL', 'FAIL']",
+"s2": "cited work: “FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness”",
+"found": [
+"S1.031"
+],
+"found_note": "relation: “our approach is complementary and can be combined for further acceleration”",
+"judge_line": "judge: a property of this paper is stated"
+},
+{
+"id": "Endo2024FeatherTT",
+"sec": "S0.003, S1.019, S2.043",
+"kind": "role: related method",
+"text": "Existing pruning methods face a fundamental challenge: attention-based importance scoring, while computationally convenient, can fail catastrophically on spatially-sensitive tasks like visual grounding [cite] .",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "candidate sentences only describe the work, not its relation to this paper",
+"s2": "cited work: “Feather the Throttle: Revisiting Visual Token Pruning for Vision-Language Model Accelerat…”",
+"found": [],
+"found_note": "relation: “introduces text-aware sparsification and revisits pruning strategies with improved layer selection”",
+"judge_line": "judge: only describes the cited work"
+},
+{
+"id": "Jin2024EfficientML",
+"sec": "S0.002, S1.029",
+"kind": "role: background fact",
+"text": "Beyond token pruning, VLM efficiency has been addressed through architectural innovations, quantization, and knowledge distillation [cite] .",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "survey or tutorial citation (background)",
+"s2": "cited work: “Efficient multimodal large language models: a survey”",
+"found": [
+"S1.031"
+],
+"found_note": "relation: “our approach is complementary and can be combined for further acceleration”",
+"judge_line": "judge: a property of this paper is stated"
+},
+{
+"id": "Li2025BalancedTP",
+"sec": "S1.021",
+"kind": "role: related method",
+"text": "Recent work has explored more sophisticated selection criteria: Balanced Token Pruning [cite] optimizes global token allocation across layers, while IVC-Prune [cite] leverages implicit visual coordinates for pruning",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "candidate sentences only describe the work, not its relation to this paper",
+"s2": "cited work: “Balanced Token Pruning: Accelerating Vision Language Models Beyond Local Optimization”",
+"found": [],
+"found_note": "no sentence relates it to this paper",
+"judge_line": "judge: only describes the cited work"
+},
+{
+"id": "Shang2024LLaVAPruMergeAT",
+"sec": "S1.018",
+"kind": "role: related method",
+"text": "LLaVA-PruMerge [cite] combines pruning with token merging to preserve information from discarded tokens, while PyramidDrop [cite] progressively reduces tokens across layers following a pyramid schedule.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "candidate sentences only describe the work, not its relation to this paper",
+"s2": "cited work: “LLaVA-PruMerge: Adaptive Token Reduction for Efficient Large Multimodal Models”",
+"found": [],
+"found_note": "no sentence relates it to this paper",
+"judge_line": "judge: only describes the cited work"
+},
+{
+"id": "Shinde2025ASO",
+"sec": "S0.002, S1.029",
+"kind": "role: background fact",
+"text": "Beyond token pruning, VLM efficiency has been addressed through architectural innovations, quantization, and knowledge distillation [cite] .",
+"runs": [
+"NOT_APPLICABLE",
+"NOT_APPLICABLE",
+"NOT_APPLICABLE"
+],
+"final": "NOT_APPLICABLE",
+"final_reason": "survey or tutorial citation (background)",
+"s2": "cited work: “A Survey on Efficient Vision-Language Models”",
+"found": [
+"S1.031"
+],
+"found_note": "relation: “our approach is complementary and can be combined for further acceleration”",
+"judge_line": "judge: a property of this paper is stated"
+},
+{
+"id": "Sun2026IVCPruneRT",
+"sec": "S1.021",
+"kind": "role: related method",
+"text": "Recent work has explored more sophisticated selection criteria: Balanced Token Pruning [cite] optimizes global token allocation across layers, while IVC-Prune [cite] leverages implicit visual coordinates for pruning",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "candidate sentences only describe the work, not its relation to this paper",
+"s2": "cited work: “IVC-Prune: Revealing the Implicit Visual Coordinates in LVLMs for Vision Token Pruning”",
+"found": [],
+"found_note": "relation: “IVC-Prune leverages implicit visual coordinates for pruning decisions, which is a different approach compared…”",
+"judge_line": "judge: only describes the cited work"
+},
+{
+"id": "Xiao2023EfficientSL",
+"sec": "S1.030",
+"kind": "role: related method",
+"text": "FlashAttention [cite] reduces memory overhead through IO-aware computation, while attention sink mechanisms [cite] enable efficient streaming inference.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "relation stated: Our approach is complementary to attention sink mechanisms and can be combined with them for further acceleration.",
+"s2": "cited work: “Efficient Streaming Language Models with Attention Sinks”",
+"found": [
+"S1.031"
+],
+"found_note": "relation: “Our approach is complementary to attention sink mechanisms and can be combined with them for further accelera…”",
+"judge_line": "judge: a property of this paper is stated"
+},
+{
+"id": "Xing2024PyramidDropAY",
+"sec": "S1.018",
+"kind": "role: related method",
+"text": "LLaVA-PruMerge [cite] combines pruning with token merging to preserve information from discarded tokens, while PyramidDrop [cite] progressively reduces tokens across layers following a pyramid schedule.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "candidate sentences only describe the work, not its relation to this paper",
+"s2": "cited work: “PyramidDrop: Accelerating Your Large Vision-Language Models via Pyramid Visual Redundancy…”",
+"found": [],
+"found_note": "relation: “PyramidDrop progressively reduces tokens across layers following a pyramid schedule, while our method combine…”",
+"judge_line": "judge: a property of this paper is stated"
+},
+{
+"id": "Yin2025LiftingTV",
+"sec": "S1.026",
+"kind": "role: related method",
+"text": "PoRe [cite] addresses position bias through reweighting schemes, while recent analysis [cite] reveals that visual information flow in MLLMs varies significantly across layers, suggesting that layer choice is critical",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "relation stated: Our work builds on insights from prior work by demonstrating that deep-layer attention eliminates the need for explicit",
+"s2": "cited work: “Lifting the Veil on Visual Information Flow in MLLMs: Unlocking Pathways to Faster Infere…”",
+"found": [
+"S1.024",
+"S1.027"
+],
+"found_note": "relation: “Our work builds on insights from prior work by demonstrating that deep-layer attention eliminates the need fo…”",
+"judge_line": "judge: a property of this paper is stated"
+},
+{
+"id": "Zhang2024SparseVLMVT",
+"sec": "S1.019",
+"kind": "role: related method",
+"text": "SparseVLM [cite] introduces text-aware sparsification that conditions token selection on the input query, and FEATHER [cite] revisits pruning strategies with improved layer selection.",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "candidate sentences only describe the work, not its relation to this paper",
+"s2": "cited work: “SparseVLM: Visual Token Sparsification for Efficient Vision-Language Model Inference”",
+"found": [],
+"found_note": "relation: “SparseVLM introduces text-aware sparsification that conditions token selection on the input query, which is a…”",
+"judge_line": "judge: only describes the cited work"
+},
+{
+"id": "Zhang2025D2PrunerDI",
+"sec": "S0.005, S1.024, S2.039, S3.073, S3.079, ",
+"kind": "role: baseline",
+"text": "D [math] Pruner [cite] advances this approach by introducing debiased importance scoring with Maximal Independent Set (MIS) for diversity-aware token selection.",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "compared as a baseline in a first-person comparison sentence",
+"s2": "cited work: “D2Pruner: Debiased Importance and Structural Diversity for MLLM Token Pruning”",
+"found": [
+"S1.024",
+"S3.079",
+"S3.081",
+"S1.027"
+],
+"found_note": "relation: “Our work builds on insights from D [math] Pruner by demonstrating that deep-layer attention eliminates the ne…”",
+"judge_line": "judge: a property of this paper is stated"
+},
+{
+"id": "Zhao2025AttentionDF",
+"sec": "S1.026",
+"kind": "role: related method",
+"text": "PoRe [cite] addresses position bias through reweighting schemes, while recent analysis [cite] reveals that visual information flow in MLLMs varies significantly across layers, suggesting that layer choice is critical",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "relation stated: Our work builds on insights from prior work by demonstrating that deep-layer attention eliminates the need for explicit",
+"s2": "cited work: “Attention Debiasing for Token Pruning in Vision Language Models”",
+"found": [
+"S1.024",
+"S1.027",
+"A02",
+"S0.014",
+"S2.048",
+"S2.056",
+"S2.057",
+"S2.058",
+"S4.129"
+],
+"found_note": "relation: “Our work builds on insights from prior work by demonstrating that deep-layer attention eliminates the need fo…”",
+"judge_line": "judge: a property of this paper is stated"
+}
+]
+}

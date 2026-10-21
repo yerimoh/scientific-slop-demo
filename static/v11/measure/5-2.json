@@ -1,0 +1,153 @@
+{
+"meta": {
+"item": "5-2",
+"paper": "2405.20915",
+"side": "human paper",
+"title": "Fast yet Safe: early-exiting with risk control",
+"n_runs": 3,
+"F": 4,
+"P": 1,
+"U": 1,
+"NA": 0,
+"pre": {
+"FAIL": 0,
+"PASS": 0,
+"UNRESOLVED": 0,
+"NOT_APPLICABLE": 0
+},
+"source": "v2/runs/v2_deep2/HU_2405.20915/5-2.json"
+},
+"units": [
+{
+"id": "S2.117",
+"sec": "S2 Safe Early-Exiting via Ri",
+"kind": "structural difference",
+"text": "Our main technical insight is that risk control can be relaxed to assume monotone risks, rather than monotone losses as in the original formulation [cite] .",
+"runs": [
+"PASS",
+"UNRESOLVED",
+"UNRESOLVED"
+],
+"final": "UNRESOLVED",
+"final_reason": "runs disagree: ['PASS', 'UNRESOLVED', 'UNRESOLVED']",
+"s2": "target “original formulation”: assumes monotone losses · ours: relaxes to assume monotone risks",
+"found": [
+"X7.010"
+],
+"found_note": "",
+"judge_line": "judge: no description · difference shown: True · comparable: unclear"
+},
+{
+"id": "S3.154",
+"sec": "S3 Related Work (Related)",
+"kind": "structural difference",
+"text": "Yet their emphasis is on exiting from a stream of input features, whereas we exit from the model itself ( , a stream of model layers).",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "no description of the target or of the difference in the paper",
+"s2": "target “[cite]”: exits from a stream of input features · ours: exits from the model itself",
+"found": [
+"S3.154"
+],
+"found_note": "",
+"judge_line": "judge: no description · difference shown: False · comparable: unclear"
+},
+{
+"id": "S4.216",
+"sec": "S4 Experiments (Experiments)",
+"kind": "structural difference",
+"text": "Recall that CALM makes use of the Learn-then-Test [cite] (LTT) framework for early-exit prediction control, whereas we suggest the Upper Confidence Bound [cite] (UCB).",
+"runs": [
+"PASS",
+"PASS",
+"PASS"
+],
+"final": "PASS",
+"final_reason": "structural difference traceable to the method or the target's description",
+"s2": "target “CALM”: uses Learn-then-Test (LTT) framework · ours: suggests Upper Confidence Bound (UCB)",
+"found": [
+"S2.133",
+"S2.134",
+"S2.136",
+"S2.139",
+"S2.142",
+"S4.215",
+"S4.216"
+],
+"found_note": "",
+"judge_line": "judge: consistent · difference shown: False · comparable: unclear"
+},
+{
+"id": "S4.217",
+"sec": "S4 Experiments (Experiments)",
+"kind": "cost difference",
+"text": "In contrast to their experiments which involve excessively large calibration sets ( [math] ), we explore more practical settings of low calibration sample counts with [math] .",
+"runs": [
+"FAIL",
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "cost difference claimed without a comparison result",
+"s2": "target “their experiments”: involves excessively large calibration sets · ours: explores more practical settings of low calibration sample counts",
+"found": [
+"S4.215",
+"S4.217"
+],
+"found_note": "",
+"judge_line": "judge: consistent · difference shown: False · comparable: unclear"
+},
+{
+"id": "S4.248",
+"sec": "S4 Experiments (Experiments)",
+"kind": "performance difference",
+"text": "That is, our approaches via CRC ( [ref] ) and UCB ( [ref] ) provide meaningful speed-ups and improve upon the LTT method [cite] used by CALM [cite] , while maintaining the desired risk control across test samples",
+"runs": [
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "performance difference claimed without a comparison result",
+"s2": "target “LTT method”: provides less speed-ups · ours: provides meaningful speed-ups",
+"found": [
+"S2.134",
+"S2.137",
+"S2.138",
+"S2.139",
+"S2.142",
+"S2.143",
+"S4.248"
+],
+"found_note": "",
+"judge_line": "judge: consistent · difference shown: False · comparable: unclear"
+},
+{
+"id": "X10.198",
+"sec": "Body",
+"kind": "performance difference",
+"text": "Our employed risk control frameworks based on CRC and UCB continue to outperform LTT across all measures of confidence.",
+"runs": [
+"FAIL",
+"FAIL"
+],
+"final": "FAIL",
+"final_reason": "performance difference claimed without a comparison result",
+"s2": "target “LTT”: provides less speed-ups · ours: outperforms LTT across all measures of confidence",
+"found": [
+"S2.134",
+"S2.137",
+"S2.138",
+"S2.139",
+"S2.142",
+"S2.143",
+"X10.198"
+],
+"found_note": "",
+"judge_line": ""
+}
+]
+}
