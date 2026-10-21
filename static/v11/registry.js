@@ -571,109 +571,66 @@ $('#area-tiles').replaceChildren(...GROUPS.map(a => h('a', { class: 'atile ' + a
 function excerpt(ex) { return h('div', { class: 'v-ex' + (ex.made ? ' made' : '') }, h('div', { class: 'ex-h', text: ex.src || ex.sec }), h('p', { class: 'ex-t' }, ex.pre, h('mark', { text: ex.mark }), ex.post), h('p', { class: 'ex-n', text: ex.note })); }
 function bullets(cls, label, arr) { return h('div', { class: 'dl ' + cls }, h('span', { class: 'l', text: label }), h('ul', {}, ...arr.map(t => h('li', { text: t })))); }
 // ------------------------------------------------------------------ how it is measured (v2 measurer, slop_v2/metrics.py)
-// Per-item trace data lives in measure/<id>.json (built from v2/runs/v2_deep2/<paper>/<id>.json + block.txt): every unit with the
-// model's actual outputs at each step. The panel is the same for every item that has a file; only the step wording differs.
+// Flow animation over the real run: measure/<id>.json holds every unit of one paper with the model's outputs at each stage.
 const MEASURE = {
-  '1-1': {
-    unit: 'claim', units: 'claims',
-    who: [
-      ['Qwen2.5-32B', 'the reader', 'An open-weights model on our own server. Every prompt begins with the whole paper, numbered: A04 is abstract sentence 4, S3.092 is body sentence 92 (in §3), T1 is table 1 with its rows. It is never asked “is this sentence bad?”. It lists the claims, says what evidence each one needs, points at material by id, and judges the material it is shown.'],
-      ['Code', 'the referee', 'Numbers the sentences, turns tables into rows, checks that every id the model names exists and may serve as evidence, applies the fixed rules, and counts.'],
-      ['3 runs', 'the vote', 'One greedy run and two sampled runs (T = 0.5). A claim counts only if at least two runs found it. FAIL only if two runs say FAIL and none says PASS. Anything else is left unresolved (U).'],
-    ],
-    featured: ['S2.066', 'A04', 'S0.013', 'S3.092', 'S0.004'],
-    asked: {
-      extract: 'List every claim in this range that the paper presents as a fact or achievement: its own results, properties of its method, facts about prior work. Skip definitions, procedure descriptions, hypotheses and common knowledge. For each, write what evidence a careful reader would require.',
-      point: 'For each claim, list the ids of material in the paper that bears on it: result tables or figures, result sentences with numbers, method descriptions, citations. The claim sentence itself and its restatements are not material.',
-      judge: 'Here is the claim, the evidence it needs, and the material (verbatim). Does the material establish the claim as stated? Answer supported / partially_supported / unsupported / ambiguous_claim / common_knowledge, and say what is established and what is missing.',
-    },
-    rules: 'FAIL only when the judge says unsupported and nothing valid was offered. A background fact with a citation passes without a judge (whether the citation is honest is item 5-4). A procedure or definition statement is not a claim (NA). When the judge says unsupported but the claim’s own numbers sit in a table, or the only evidence is a figure image, the code holds it for a human (U).',
-  },
+  '1-1': { unit: 'claim', units: 'claims',
+    stages: [['Claim', 'the paper says', 'paper'], ['Needs', 'what would prove it?', 'Qwen'], ['Found', 'is it in the paper?', 'Qwen + code'], ['Verdict', '3 runs vote', 'code']],
+    line: 'Qwen2.5-32B does the reading. Code checks every id it names, applies the rules, and counts. Three runs vote; when they disagree the claim stays open (U).' },
 };
-const VLAB = { F: 'FAIL', P: 'PASS', U: 'U', N: 'NA', FAIL: 'FAIL', PASS: 'PASS', UNRESOLVED: 'U', NOT_APPLICABLE: 'NA' };
-const VK = d => ({ FAIL: 'F', PASS: 'P', UNRESOLVED: 'U', NOT_APPLICABLE: 'N', U: 'U', NA: 'N', F: 'F', P: 'P', N: 'N' })[d] || 'U';
+const VLAB = { FAIL: 'FAIL', PASS: 'PASS', UNRESOLVED: 'U', NOT_APPLICABLE: 'NA' };
+const VK = d => ({ FAIL: 'F', PASS: 'P', UNRESOLVED: 'U', NOT_APPLICABLE: 'N' })[d] || 'U';
 const vb = (d, big) => h('span', { class: 'ms-vb v-' + VK(d) + (big ? ' big' : ''), text: VLAB[d] || d });
 function measurePanel(it) {
   const m = MEASURE[it.id];
-  const wrap = h('div', { class: 'ms' });
-  wrap.append(h('div', { class: 'ms-who' }, ...m.who.map(([name, role, txt]) => h('div', { class: 'ms-w' }, h('b', { text: name }), h('i', { text: role }), h('p', { text: txt })))));
-  const viewer = h('div', { class: 'ms-viewer' }, h('p', { class: 'ms-loading', text: 'Loading the measured claims…' }));
-  const tally = h('div', { class: 'ms-tally' });
-  wrap.append(h('h4', { class: 'ms-h', text: 'Watch one ' + m.unit + ' go through' }), viewer, h('h4', { class: 'ms-h', text: 'Add it up' }), tally);
-  fetch('measure/' + it.id + '.json').then(r => r.json()).then(data => buildViewer(m, data, viewer, tally)).catch(() => { viewer.replaceChildren(h('p', { class: 'ms-loading', text: 'The trace data could not be loaded.' })); });
+  const wrap = h('div', { class: 'ms' }, h('p', { class: 'ms-loading', text: 'Loading…' }));
+  fetch('measure/' + it.id + '.json').then(r => r.json()).then(data => buildFlow(m, data, wrap)).catch(() => wrap.replaceChildren(h('p', { class: 'ms-loading', text: 'The run data could not be loaded.' })));
   return wrap;
 }
-function buildViewer(m, data, viewer, tally) {
-  const U = data.units, by = {}; U.forEach(u => { by[u.id] = u; });
-  const picker = h('div', { class: 'ms-pick' });
-  const sel = h('select', { class: 'ms-sel', 'aria-label': 'all ' + m.units }, h('option', { value: '', text: 'all ' + U.length + ' ' + m.units + ' of ' + data.meta.paper + '…' }),
-    ...U.map(u => h('option', { value: u.id, text: `${u.id} · ${VLAB[u.final]} · ${u.claim.slice(0, 60)}${u.claim.length > 60 ? '…' : ''}` })));
-  const chips = m.featured.filter(id => by[id]).map(id => { const b = h('button', { type: 'button', class: 'ms-chip', 'data-id': id }, vb(by[id].final), h('span', { text: id })); b.addEventListener('click', () => load(id)); return b; });
-  picker.append(...chips, sel);
-  const steps = h('ol', { class: 'ms-trace' });
-  const nav = h('div', { class: 'ms-nav' });
-  const prev = h('button', { type: 'button', class: 'ms-nb', text: '‹ Prev' }), next = h('button', { type: 'button', class: 'ms-nb', text: 'Next step ›' }), all = h('button', { type: 'button', class: 'ms-nb', text: 'Show all' });
-  nav.append(prev, next, all);
-  viewer.replaceChildren(picker, steps, nav);
-  let cur = null, focus = -1;
-  const who = w => h('span', { class: 'ms-whob ' + (w === 'Qwen' ? 'llm' : w === 'Qwen → Code' ? 'both' : 'code'), text: w });
-  const asked = t => h('p', { class: 'ms-asked' }, h('span', { text: 'asked' }), document.createTextNode(' “' + t + '”'));
-  const got = (...kids) => h('div', { class: 'ms-got' }, ...kids);
-  const kvs = (...pairs) => h('dl', { class: 'ms-kv' }, ...pairs.flatMap(([k, v]) => v == null || v === '' ? [] : [h('dt', { text: k }), h('dd', {}, typeof v === 'string' ? document.createTextNode(v) : v)]));
-  const step = (n, title, w, plain, ...kids) => h('li', { class: 'ms-step' }, h('div', { class: 'ms-sh' }, h('span', { class: 'ms-n', text: String(n) }), h('b', { text: title }), who(w)), h('p', { class: 'ms-plain', text: plain }), ...kids);
-  function load(id) {
-    const u = by[id]; cur = u; focus = -1; sel.value = id;
-    chips.forEach(c => c.classList.toggle('on', c.dataset.id === id));
-    const also = u.sids.filter(s => s !== u.id);
-    const s1 = step(1, 'The sentence', 'Code', 'The paper is split into numbered sentences; tables become rows. This is the sentence the claim comes from.',
-      got(h('blockquote', { class: 'ms-q', text: u.text }), kvs(['where', `${u.id} · ${u.sec}`], ['also stated in', also.length ? also.join(', ') + ' (the same claim repeated; counted once)' : null])));
-    const s2 = step(2, 'Extract the claim', 'Qwen', 'The model reads the whole paper and lists what it presents as fact. For each claim it writes which kind it is and what evidence a careful reader would require.',
-      asked(m.asked.extract), got(kvs(['kind', h('code', { text: u.kind })], ['claim', u.claim], ['needs', h('em', { text: u.required })])));
-    const shown = u.material, dropped = u.dropped, selfk = u.self_kept;
-    const matEls = shown.length ? shown.map(x => h('div', { class: 'ms-mat' }, h('span', { class: 'ms-mid', text: x.id + ' · ' + x.sec + (x.auto ? ' · added by code: the claim’s numbers are in this table' : '') }), h('p', { text: x.text }), x.rows ? h('pre', { text: x.rows.join('\n') }) : null))
-      : [h('p', { class: 'ms-none', text: selfk.length ? 'Nothing. The model pointed only at the claim sentence itself (' + selfk.join(', ') + '), and a sentence is not evidence for itself. The judge sees “no material offered beyond the claim sentences”.' : (u.has_cite && u.kind === 'background_fact' ? 'Not needed: the sentence carries a citation (see step 5).' : 'Nothing was pointed at.') })];
-    const s3 = step(3, 'Point at material, then check it', 'Qwen → Code', 'The model names the ids that bear on the claim. The code keeps only ids that exist and can serve as evidence, and adds any table that contains the claim’s own numbers. What survives is shown to the judge, verbatim.',
-      asked(m.asked.point), got(kvs(['model pointed at', u.pointed.length ? u.pointed.join(', ') : '(nothing)'],
-        ['dropped by code', dropped.length ? dropped.map(d => `${d.id}: ${d.why}`).join(' · ') : null],
-        ['kept but not shown', selfk.length ? selfk.join(', ') + ' (the claim sentence; never shown as evidence)' : null]),
-        h('div', { class: 'ms-mats' }, h('span', { class: 'ms-ml', text: 'what the judge sees' }), ...matEls)));
-    const j = u.judge;
-    const s4 = j ? step(4, 'Judge the material', 'Qwen', 'A fresh call. The model gets the claim, the evidence it needs, and the material text, and says whether the material establishes the claim as stated.',
-      asked(m.asked.judge), got(kvs(['decision', h('code', { text: j.decision })], ['established', j.established], ['missing', j.missing])))
-      : step(4, 'Judge the material', 'Qwen', 'Skipped for this claim: a fact about prior work with a citation on the sentence passes by rule (step 5). Whether the citation really says that is item 5-4.');
-    const s5 = step(5, 'Apply the rule', 'Code', 'The judge’s word is not the verdict. The code runs a fixed, ordered rule list over kind, citation, judge answer and material.',
-      got(h('div', { class: 'ms-rule' }, h('code', { text: u.rule.id }), h('span', { text: u.rule.text }), h('span', { class: 'ms-arr', text: '→' }), vb(u.rule.result)), h('p', { class: 'ms-rules', text: m.rules })));
-    const votes = h('div', { class: 'ms-votes' }, ...u.runs.map((r, i) => h('span', { class: 'ms-vote' }, h('small', { text: 'run ' + (i + 1) + (i ? ' · T=0.5' : ' · greedy') }), vb(r))), ...Array.from({ length: data.meta.n_runs - u.runs.length }, (_, i) => h('span', { class: 'ms-vote miss' }, h('small', { text: 'run ' + (u.runs.length + i + 1) }), h('span', { class: 'ms-vb v-x', text: 'not found' }))), h('span', { class: 'ms-arr', text: '→' }), vb(u.final, true));
-    const s6 = step(6, 'Three runs vote', 'Code', 'Steps 2 to 5 run three times. The verdict above is from run 1. The final decision needs the runs to agree.', got(votes, h('p', { class: 'ms-why', text: u.final_reason })));
-    steps.replaceChildren(s1, s2, s3, s4, s5, s6);
-    setFocus(-1);
+function buildFlow(m, data, wrap) {
+  const U = data.units, n = U.length;
+  const box = (i, [t, sub, who]) => h('div', { class: 'ms-bx', 'data-s': i }, h('div', { class: 'ms-bt' }, h('b', { text: t }), h('span', { class: 'ms-who ' + (who.startsWith('Qwen') ? 'llm' : 'code'), text: who })), h('i', { text: sub }), h('div', { class: 'ms-bc' }));
+  const boxes = m.stages.map((st, i) => box(i, st));
+  const flow = h('div', { class: 'ms-flow' }, ...boxes.flatMap((b, i) => i ? [h('span', { class: 'ms-ar', text: '→' }), b] : [b]));
+  const bins = { FAIL: null, PASS: null, UNRESOLVED: null, NOT_APPLICABLE: null };
+  const binRow = h('div', { class: 'ms-bins' }, ...Object.keys(bins).map(k => { const d = h('div', { class: 'ms-dots' }); bins[k] = d; return h('div', { class: 'ms-bin v-' + VK(k) }, h('div', { class: 'ms-bh' }, h('b', { text: VLAB[k] }), h('span', { class: 'ms-bn', text: '0' })), d); }));
+  const formula = h('div', { class: 'ms-form' });
+  const play = h('button', { type: 'button', class: 'ms-nb', text: '▶ Play' }), prev = h('button', { type: 'button', class: 'ms-nb', text: '‹' }), next = h('button', { type: 'button', class: 'ms-nb', text: '›' });
+  const ctr = h('span', { class: 'ms-ctr' });
+  wrap.replaceChildren(flow, h('div', { class: 'ms-ctl' }, play, prev, next, ctr, h('span', { class: 'ms-paper', text: data.meta.paper + ' · ' + n + ' ' + m.units })), binRow, formula, h('p', { class: 'ms-line', text: m.line }));
+  const cnt = { FAIL: 0, PASS: 0, UNRESOLVED: 0, NOT_APPLICABLE: 0 };
+  const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const T = k => `<i class="v-${k}">${{ F: 'FAIL', P: 'PASS', U: 'U' }[k]}</i>`;
+  function fill(k, v) { boxes[k].querySelector('.ms-bc').replaceChildren(v); boxes[k].classList.add('lit'); }
+  function renderTally() {
+    Object.keys(bins).forEach(k => { binRow.querySelector('.ms-bin.v-' + VK(k) + ' .ms-bn').textContent = cnt[k]; });
+    const F = cnt.FAIL, P = cnt.PASS, UU = cnt.UNRESOLVED, D = F + P, N = D + UU;
+    formula.innerHTML = `<span class="ms-f"><em>score</em> = <span class="ms-frac"><span>${T('F')}</span><span>${T('F')} + ${T('P')}</span></span> = <span class="ms-val">${D ? `${F} / ${D} = <b>${(F / D).toFixed(2)}</b>` : '—'}</span></span>` +
+      `<span class="ms-f sm"><em>coverage</em> = <span class="ms-frac"><span>${T('F')} + ${T('P')}</span><span>${T('F')} + ${T('P')} + ${T('U')}</span></span> = <span class="ms-val">${N ? `${D} / ${N} = <b>${(D / N).toFixed(2)}</b>` : '—'}</span></span>`;
   }
-  function setFocus(i) {
-    focus = i; const li = [...steps.children];
-    li.forEach((el, k) => { el.classList.toggle('dim', i >= 0 && k !== i); el.classList.toggle('now', k === i); });
-    if (i >= 0) li[i].scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    prev.disabled = i <= 0; next.disabled = i >= li.length - 1; all.disabled = i < 0;
+  let i = -1, timer = null, stageTimers = [];
+  function clearStage() { stageTimers.forEach(clearTimeout); stageTimers = []; boxes.forEach(b => { b.classList.remove('lit'); b.querySelector('.ms-bc').replaceChildren(); }); }
+  function showClaim(k, animate) {
+    i = k; clearStage(); const u = U[k]; ctr.textContent = `${k + 1} / ${n}`;
+    Object.keys(cnt).forEach(c => cnt[c] = 0); U.slice(0, k).forEach(x => cnt[x.final]++);
+    Object.keys(bins).forEach(c => bins[c].replaceChildren(...U.slice(0, k).filter(x => x.final === c).map(x => h('span', { class: 'ms-dot', title: x.id + ' · ' + x.claim.slice(0, 80) }))));
+    renderTally();
+    const step = reduced() || !animate ? 0 : 420;
+    const parts = [
+      () => fill(0, h('div', {}, h('q', { text: u.claim.length > 110 ? u.claim.slice(0, 108) + '…' : u.claim }), h('small', { text: u.id + ' · ' + u.sec + ' · ' + u.kind.replace('_', ' ') }))),
+      () => fill(1, h('div', {}, h('span', { text: u.required || '—' }))),
+      () => { const ids = u.material.map(x => x.id); fill(2, h('div', {}, ids.length ? h('div', { class: 'ms-chips' }, ...ids.map(id => h('span', { class: 'ms-chip', text: id }))) : h('span', { class: 'ms-nonef', text: u.judge ? 'nothing' : 'a citation on the sentence' }), u.judge ? h('small', { text: 'judge: ' + u.judge.decision.replace('_', ' ') + (u.judge.missing ? ' · missing: ' + u.judge.missing.slice(0, 70) : '') }) : h('small', { text: 'passes by rule; the citation’s honesty is item 5-4' }))); },
+      () => { fill(3, h('div', {}, h('div', { class: 'ms-votes' }, ...u.runs.map(r => h('span', { class: 'ms-vb sm v-' + VK(r), text: VLAB[r] })), ...Array.from({ length: data.meta.n_runs - u.runs.length }, () => h('span', { class: 'ms-vb sm v-x', text: '–' })), h('span', { class: 'ms-ar', text: '→' }), vb(u.final, true)))); },
+      () => { cnt[u.final]++; const d = h('span', { class: 'ms-dot new', title: u.id }); bins[u.final].append(d); renderTally(); },
+    ];
+    parts.forEach((f, j) => { if (step) stageTimers.push(setTimeout(f, j * step)); else f(); });
+    return parts.length * step;
   }
-  prev.addEventListener('click', () => setFocus(Math.max(0, focus - 1)));
-  next.addEventListener('click', () => setFocus(Math.min(5, focus + 1)));
-  all.addEventListener('click', () => setFocus(-1));
-  sel.addEventListener('change', () => { if (sel.value) load(sel.value); });
-  // tally
-  const groups = { FAIL: [], PASS: [], UNRESOLVED: [], NOT_APPLICABLE: [] };
-  U.forEach(u => groups[u.final].push(u.id));
-  const F = groups.FAIL.length, P = groups.PASS.length, UU = groups.UNRESOLVED.length, N = groups.NOT_APPLICABLE.length;
-  const frac = (name, top, bot, val) => h('div', { class: 'ms-f' }, h('span', { class: 'ms-fn', text: name }), h('span', { text: '=' }), h('span', { class: 'ms-frac' }, h('span', { html: top }), h('span', { html: bot })), h('span', { text: '=' }), h('span', { class: 'ms-val', html: val }));
-  const T = k => `<i class="v-${k}">${VLAB[k]}</i>`;
-  tally.replaceChildren(
-    h('p', { class: 'ms-plain', text: `Every ${m.unit} of ${data.meta.paper} ends in one of four boxes. Only FAIL and PASS enter the score. U is reported as coverage. NA is not counted. Click an id to load it above.` }),
-    h('div', { class: 'ms-boxes' }, ...[['FAIL', 'F', 'evidence missing'], ['PASS', 'P', 'evidence found'], ['UNRESOLVED', 'U', 'runs disagree or needs a human'], ['NOT_APPLICABLE', 'N', 'not a claim']].map(([g, k, cap]) =>
-      h('div', { class: 'ms-box v-' + k }, h('div', { class: 'ms-bh' }, h('b', { text: VLAB[g] }), h('span', { class: 'ms-bc', text: String(groups[g].length) })), h('small', { text: cap }),
-        h('div', { class: 'ms-ids' }, ...groups[g].map(id => { const b = h('button', { type: 'button', class: 'ms-idb', text: id }); b.addEventListener('click', () => { load(id); steps.scrollIntoView({ block: 'start', behavior: 'smooth' }); }); return b; }))))),
-    h('div', { class: 'ms-formulas' },
-      frac('score', T('F'), T('F') + ' + ' + T('P'), `${F} / (${F} + ${P}) = <b>${(F / (F + P)).toFixed(2)}</b>`),
-      frac('coverage', T('F') + ' + ' + T('P'), T('F') + ' + ' + T('P') + ' + ' + T('U'), `${F + P} / ${F + P + UU} = <b>${((F + P) / (F + P + UU)).toFixed(2)}</b>`)),
-    h('p', { class: 'ms-note', text: `Read the two together: the score ${(F / (F + P)).toFixed(2)} rests on ${F + P} judged ${m.units}; ${UU} more were left open, so the true value lies between ${(F / (F + P + UU)).toFixed(2)} (all U pass) and ${((F + UU) / (F + P + UU)).toFixed(2)} (all U fail). Source: ${data.meta.source}.` }));
-  load(m.featured[0]);
+  function stop() { clearInterval(timer); timer = null; play.textContent = '▶ Play'; }
+  function tick() { if (i >= n - 1) { stop(); return; } const d = showClaim(i + 1, true); clearInterval(timer); timer = setTimeout(tick, d + (reduced() ? 300 : 900)); }
+  play.addEventListener('click', () => { if (timer) { stop(); return; } play.textContent = '❚❚ Pause'; if (i >= n - 1) i = -1; tick(); });
+  prev.addEventListener('click', () => { stop(); showClaim(Math.max(0, i - 1), false); });
+  next.addEventListener('click', () => { stop(); showClaim(Math.min(n - 1, i + 1), false); });
+  showClaim(U.findIndex(u => u.id === 'S2.066') >= 0 ? U.findIndex(u => u.id === 'S2.066') : 0, false);
 }
 
 function card(it, area) {
