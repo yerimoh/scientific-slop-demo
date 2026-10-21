@@ -67,43 +67,42 @@ const row = (els, gap = 2) => {
   return k < 1 ? `<g transform="translate(50 ${MID}) scale(${k.toFixed(3)}) translate(-50 ${-MID})">${s}</g>` : s;
 };
 // one scene per item
-const PIC_LABELS = ['claim', 'needs', 'in the paper?', 'verdict'];
-// every item's pictogram is the measuring flow in miniature: unit chip → the question the measurer asks → what the paper
-// holds (✗ nothing · > reaches past it · = the same again · ≠ contradicts) → verdict. Words come from the card's own example.
-const flowPic = (a, b, mark, verdict, labels, o = {}) => {
-  const fs = 3.6, y = 11, hh = 9, g = 6, col = o.col || C.arg;
-  const lab = (cx, t) => K.text(cx, 24.2, t, { fs: 3.2, color: C.muted, anchor: 'middle' });
-  const ar = (x0, x1) => K.arrow([x0, y], [x1, y], { color: C.muted, lw: .9 });
-  const badge = (x, yy) => mark === 'x' ? K.cross(x, yy, 3.3) : `<circle cx="${x}" cy="${yy}" r="3.3" fill="${C.bad}" stroke="#fff" stroke-width=".6"/>` + K.text(x, yy + .1, { gt: '>', eq: '=', ne: '=' }[mark], { fs: 5.2, color: '#fff', anchor: 'middle', bold: true }) + (mark === 'ne' ? `<line x1="${x - 1.4}" y1="${yy + 2.1}" x2="${x + 1.4}" y2="${yy - 2.1}" stroke="#fff" stroke-width=".9" stroke-linecap="round"/>` : '');
-  const w1 = tw(a, fs, true) + 6, w2 = tw(b, fs) + 6, w3 = 17, w4 = tw(verdict, fs, true) + 7;
-  const total = w1 + w2 + w3 + w4 + 3 * g, k = Math.min(1, 96 / total);
-  let x = 50 - total / 2, s = '';
-  s += K.chip(x, y - hh / 2, a, { fs, fc: col, ec: col, tc: '#fff', bold: true, w: w1, h: hh }) + lab(x + w1 / 2, labels[0]); x += w1; s += ar(x + .8, x + g - .8); x += g;
-  s += K.box(x, y - hh / 2, w2, hh, { dashed: true, ec: C.muted, lw: .9, r: 1.8 }) + K.text(x + w2 / 2, y + .1, b, { fs, color: C.muted, anchor: 'middle', italic: true }) + lab(x + w2 / 2, labels[1]); x += w2; s += ar(x + .8, x + g - .8); x += g;
-  const ch = 15, cy = y - ch / 2;
-  s += K.card(x, cy, w3, ch) + (o.fig ? K.box(x + 2.5, cy + 3, w3 - 5, 6.5, { fc: C.tint, ec: C.art }) + K.line(x + 3.5, cy + 8, x + w3 - 3.5, cy + 4.5, { color: C.art, lw: .8 }) + K.lines(x + 2.5, cy + 11.5, w3 - 5, 1, { last: .7 }) : K.lines(x + 2.5, cy + 3, w3 - 5, 2, { gap: 2.6, last: .6 }) + K.grid(x + 2.5, cy + 8.3, w3 - 5, 4.4, 2, 3)) + badge(x + w3 - 2.2, cy + ch - 2.2) + lab(x + w3 / 2, labels[2]); x += w3; s += ar(x + .8, x + g - .8); x += g;
-  s += K.chip(x, y - hh / 2, verdict, { fs, fc: C.bad, ec: C.bad, tc: '#fff', bold: true, w: w4, h: hh }) + lab(x + w4 / 2, labels[3]);
-  return k < 1 ? `<g transform="translate(50 13) scale(${k.toFixed(3)}) translate(-50 -13)">${s}</g>` : s;
-};
 const PIC = {
-  '1-1': () => flowPic('adapts to new domains', 'a domain test?', 'x', 'FAIL', PIC_LABELS),
-  '1-2': () => flowPic('all diffuse tasks', 'evidence: 2 tasks', 'gt', 'FAIL', ['claim', 'covers', 'reaches past?', 'verdict']),
-  '1-3': () => flowPic('poisoned demos', 'one shown?', 'x', 'FAIL', ['statement', 'reader asks', 'example?', 'verdict']),
-  '1-4': () => flowPic('FEATHER [cite]', 'relation to us?', 'x', 'FAIL', ['cited work', 'role', 'relation?', 'verdict']),
-  '2-1': () => flowPic('12.10 → 3.65 on MQ', 'in the abstract?', 'x', 'FAIL', ['finding', 'shown in', 'up front?', 'verdict'], { col: C.struct }),
-  '2-2': () => flowPic('does A help?', '3 results, read together?', 'x', 'FAIL', ['question', 'results', 'joint sentence?', 'verdict'], { col: C.struct }),
-  '2-3': () => flowPic('ASR_a', 'defined where?', 'x', 'FAIL', ['name', 'where', 'defined?', 'verdict'], { col: C.struct }),
-  '2-4': () => flowPic('figure: 12 layers', 'text: 8 layers', 'ne', 'FAIL', ['figure says', 'text says', 'match?', 'verdict'], { col: C.struct, fig: true }),
-  '3-1': () => flowPic('layer 12', 'why 12, not 8?', 'x', 'FAIL', ['choice', 'kind', 'reason?', 'verdict'], { col: C.art }),
-  '4-1': () => flowPic('exciting promise', 'delete it: lost?', 'x', 'FAIL', ['sentence', 'delete it', 'lost?', 'verdict'], { col: C.ochre }),
-  '4-2': () => flowPic('retrieval rate', 'a definition?', 'x', 'FAIL', ['term', 'used', 'defined?', 'verdict'], { col: C.ochre }),
-  '4-3': () => flowPic('we renamed the file', 'any reader need?', 'x', 'FAIL', ['sentence', 'role', 'any role?', 'verdict'], { col: C.ochre }),
-  '4-4': () => flowPic('requires calibration', 'earlier: S1.025', 'eq', 'FAIL', ['sentence', 'earlier twin', 'adds?', 'verdict'], { col: C.ochre }),
-  '4-5': () => flowPic('dashed line', 'explained where?', 'x', 'FAIL', ['figure', 'transcribed', 'explained?', 'verdict'], { col: C.ochre, fig: true }),
-  '5-1': () => flowPic('a critical problem', 'why it matters?', 'x', 'FAIL', ['presented', 'problem', 'why?', 'verdict'], { col: C.sage }),
-  '5-2': () => flowPic('unlike H2O, which prunes', 'H2O keeps them', 'ne', 'FAIL', ['contrast', 'target says', 'difference?', 'verdict'], { col: C.sage }),
-  '5-3': () => flowPic('because orthogonal', 'any analysis?', 'x', 'FAIL', ['interpretation', 'observation', 'support?', 'verdict'], { col: C.sage }),
-  '5-4': () => flowPic('typically 0.3', 'a source?', 'x', 'FAIL', ['describes', 'checked against', 'match?', 'verdict'], { col: C.sage }),
+  '1-1': () => { // the measuring flow in miniature: claim → what would prove it → searched the paper, nothing → FAIL
+    const fs = 3.6, y = 11, hh = 9, g = 6;
+    const lab = (cx, t) => K.text(cx, 24.2, t, { fs: 3.2, color: C.muted, anchor: 'middle' });
+    const ar = (x0, x1) => K.arrow([x0, y], [x1, y], { color: C.muted, lw: .9 });
+    const w1 = tw('adapts to new domains', fs, true) + 6, w2 = tw('a domain test?', fs) + 6, w3 = 17, w4 = tw('FAIL', fs, true) + 7;
+    const total = w1 + w2 + w3 + w4 + 3 * g, k = Math.min(1, 96 / total);
+    let x = 50 - total / 2, s = '';
+    s += K.chip(x, y - hh / 2, 'adapts to new domains', { fs, fc: C.arg, ec: C.arg, tc: '#fff', bold: true, w: w1, h: hh }) + lab(x + w1 / 2, 'claim'); x += w1; s += ar(x + .8, x + g - .8); x += g;
+    s += K.box(x, y - hh / 2, w2, hh, { dashed: true, ec: C.muted, lw: .9, r: 1.8 }) + K.text(x + w2 / 2, y + .1, 'a domain test?', { fs, color: C.muted, anchor: 'middle', italic: true }) + lab(x + w2 / 2, 'needs'); x += w2; s += ar(x + .8, x + g - .8); x += g;
+    const ch = 15, cy = y - ch / 2;
+    s += K.card(x, cy, w3, ch) + K.lines(x + 2.5, cy + 3, w3 - 5, 2, { gap: 2.6, last: .6 }) + K.grid(x + 2.5, cy + 8.3, w3 - 5, 4.4, 2, 3) + K.cross(x + w3 - 2.2, cy + ch - 2.2, 3.3) + lab(x + w3 / 2, 'in the paper?'); x += w3; s += ar(x + .8, x + g - .8); x += g;
+    s += K.chip(x, y - hh / 2, 'FAIL', { fs, fc: C.bad, ec: C.bad, tc: '#fff', bold: true, w: w4, h: hh }) + lab(x + w4 / 2, 'verdict');
+    return k < 1 ? `<g transform="translate(50 13) scale(${k.toFixed(3)}) translate(-50 -13)">${s}</g>` : s;
+  },
+  '1-2': () => row([E.card('tested', inner.chip('2 tasks: VT, MQ', C.arg, { outline: true })), E.miss(C.arg, { solid: true }), E.chip('all diffuse tasks', C.arg)]),
+  '1-3': () => row([E.card('§4 Results', inner.text(['20 poisoned demos', 'ASR 18%']), { lines: false }), E.miss(C.arg), E.ask(['one demonstration?', 'one target action?'])]),
+  '1-4': () => { const cw = tw('SparseVLM', FS - .3) + 6, ow = tw('ours', FS, true) + 8, gap = 22, total = cw + gap + ow, x0 = 50 - total / 2, xo = x0 + cw + gap;
+    return K.chip(x0, MID - 10.5, 'FEATHER', { fs: FS - .3, ec: C.arg, lw: .9, w: cw, h: 8 }) + K.chip(x0, MID - 1, 'SparseVLM', { fs: FS - .3, ec: C.arg, lw: .9, w: cw, h: 8 }) + K.text(x0 + cw / 2, MID + 10.3, '+ 6 more, listed', { fs: FS - .8, color: C.muted, anchor: 'middle' }) +
+      K.chip(xo, MID - 6.25, 'ours', { fc: C.arg, ec: C.arg, tc: '#fff', bold: true, w: ow, h: 9.5 }) +
+      K.arrow([x0 + cw, MID - 6.5], [xo - .5, MID - 3], { color: C.arg, dashed: true, rad: -.1 }) + K.arrow([x0 + cw, MID + 3], [xo - .5, MID], { color: C.arg, dashed: true, rad: .1 }) + K.cross(x0 + cw + gap / 2, MID - 5.5) + K.cross(x0 + cw + gap / 2, MID + 2.5); },
+  '2-1': () => row([E.card('Abstract', inner.chip('46% · 93% kept', C.struct, { outline: true })), E.miss(C.struct, { left: true }), E.card('§4 Results', inner.chip('MQ: 12.1 → 3.65', C.struct))]),
+  '2-2': () => { const q = 'Does A help with little data?', qw = tw(q, FS - .2, true) + 6, labs = ['+3.1 @ 1k', '−A: gain lost', 'gap→0 @ 100k'], ws = labs.map(l => tw(l, FS - .5) + 5), total = ws.reduce((a, b) => a + b, 0) + 2 * 3; let x = 50 - total / 2, s = K.chip(50 - qw / 2, 2, q, { fc: C.struct, ec: C.struct, tc: '#fff', bold: true, fs: FS - .2, w: qw, h: 8 });
+    labs.forEach((l, i) => { const cx = x + ws[i] / 2; s += K.box(x, 19.5, ws[i], 8, { r: 1.6 }) + K.text(cx, 23.6, l, { fs: FS - .5, anchor: 'middle' }) + K.arrow([cx, 19.5], [50 + (i - 1) * 9, 10.2], { color: C.struct, dashed: true, rad: (i - 1) * -.1 }); x += ws[i] + 3; });
+    return s + K.cross(50, 14.8); },
+  '2-3': () => row([E.card('§3 Method', inner.lines(3)), E.miss(C.struct, { left: true }), E.card('Table 3', inner.chip('Phase-0 analysis', C.struct))]),
+  '3-1': () => row([E.chip('layer 12 of 32', C.art), E.miss(C.art), E.ask(['why 12?'])]),
+  '4-1': () => row([E.para('§1 Introduction', 'this holds exciting promise …', C.struct)]),
+  '4-2': () => row([E.chip('retrieval rate', C.art), E.miss(C.art), E.ask(['= ?'])]),
+  '4-3': () => row([E.para('§4.1 Data', 'folder layout · renamed files · scratch dirs', C.struct, { box: true })]),
+  '4-4': () => row([E.card('§4 · a line above', inner.chip('SRE, not attention', C.struct)), E.eq(), E.card('§4 · two lines below', inner.chip('SRE, not attention', C.struct))]),
+  '4-5': () => row([E.card('Figure 1', inner.bars(), { lines: false }), E.miss(C.art), E.ask(['L8 in the text?'])]),
+  '5-1': () => row([E.chip('limits deployment flexibility', C.arg), E.miss(C.arg), E.ask(['where', 'does it fail?'])]),
+  '5-2': () => row([E.chip('H2O prunes high-attn tokens', C.arg), E.clash(), E.card('H2O in §2', inner.text(['keeps them', 'same paper'], { bold0: true, mute1: true }), { lines: false })]),
+  '5-3': () => row([E.card('Table 4', inner.text(['AUROC 1.0 → 1.0', 'ASR 40.7 → 42.4']), { lines: false }), E.miss(C.arg), E.say('a fundamental trade-off', C.arg)]),
+  '5-4': () => row([E.chip('0.3, "typically considered"', C.arg), E.miss(C.arg), E.ask(['by whom?', '[ ? ]'])]),
 };
 // what the pattern looks like, one line under each scene
 const CAP = { '1-1': 'a claim with nothing behind it', '1-2': 'claim wider than its evidence', '1-3': 'numbers only, no example', '1-4': 'cited, related to nothing', '2-1': 'the bad news never reaches the front', '2-2': 'results never meet the question', '2-3': 'a name that points at nothing', '3-1': 'a choice with no reason', '4-1': 'delete it and nothing is lost', '4-2': 'a term with no meaning', '4-3': 'detail the reader never needs', '4-4': 'six places, one finding', '4-5': 'a result only the figure reports', '5-1': 'important, but never shown', '5-2': 'the contrast is not true', '5-3': 'nothing moved, yet it explains', '5-4': 'a source that is not there' };
