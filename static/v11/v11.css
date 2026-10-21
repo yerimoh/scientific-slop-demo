@@ -280,6 +280,18 @@
 .ms-ar { color: var(--ink-3); font-size: 18px; align-self: center; }
 .ms-bx { border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px 10px; background: var(--surface); min-width: 0; min-height: 118px; display: grid; grid-template-rows: auto auto 1fr; gap: 4px; transition: border-color .25s, box-shadow .25s; }
 .ms-bx.lit { border-color: var(--ac); box-shadow: 0 0 0 2px var(--ab); }
+.ms-bx { position: relative; cursor: help; } .ms-bx:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; }
+.ms-bx.ask { background: var(--ab); border-color: var(--ac); } .ms-bx.ask .ms-q { color: var(--ac); }
+.ms-q { position: absolute; right: 8px; bottom: 6px; font-size: 10.5px; font-weight: 700; color: var(--ink-3); letter-spacing: .03em; }
+.ms-how { border: 1px solid var(--ac); border-radius: 9px; padding: 10px 14px 12px; background: var(--ab); animation: ms-in .2s ease-out; }
+.ms-howh { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; } .ms-howh b { font-size: 13.5px; color: var(--ink); } .ms-howhint { margin-left: auto; font-size: 11px; color: var(--ink-3); }
+.ms-how .ms-n { width: 20px; height: 20px; border-radius: 50%; background: var(--ac); color: #fff; font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; }
+.ms-how ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.ms-how li { display: grid; grid-template-columns: 44px 1fr; gap: 8px; align-items: start; font-size: 13px; line-height: 1.45; color: var(--ink); }
+.ms-how li .ms-who { justify-self: start; margin-top: 3px; text-align: center; }
+.ms-cases { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; flex-wrap: wrap; } .ms-cl { font-size: 11px; color: var(--ink-3); margin-right: 2px; }
+.ms-case { display: inline-flex; align-items: center; gap: 4px; font: 500 11px Inter, system-ui, sans-serif; padding: 2px 7px 2px 3px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; }
+.ms-case:hover { border-color: var(--vc); color: var(--vc); }
 .ms-bt { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; } .ms-bt b { font-size: 13px; color: var(--ink); }
 .ms-who { font-size: 9.5px; font-weight: 700; letter-spacing: .05em; padding: 0 5px; border-radius: 3px; white-space: nowrap; } .ms-who.llm { background: var(--ab); color: var(--ac); } .ms-who.code { background: var(--surface-2); color: var(--ink-3); }
 .ms-bx > i { font-style: normal; font-size: 11px; color: var(--ink-3); }
@@ -306,5 +318,5 @@
 .ms-val { font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink-2); } .ms-f:not(.sm) .ms-val b { color: var(--ac); font-size: 16px; }
 .ms-line { margin: 0; font-size: 12px; color: var(--ink-3); line-height: 1.5; }
 @media (prefers-reduced-motion: reduce) { .ms-bc > div, .ms-dot.new { animation: none; } }
-@media (max-width: 760px) { .ms-flow { grid-template-columns: 1fr 1fr; } .ms-flow .ms-ar { display: none; } .ms-bx { min-height: 0; } }
+@media (max-width: 760px) { .ms-flow { grid-template-columns: 1fr 1fr; } .ms-flow .ms-ar { display: none; } .ms-bx { min-height: 0; } .ms-paper { display: none; } }
 @media (max-width: 440px) { .ms-flow, .ms-bins { grid-template-columns: 1fr; } }

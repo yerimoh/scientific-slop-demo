@@ -575,7 +575,29 @@ function bullets(cls, label, arr) { return h('div', { class: 'dl ' + cls }, h('s
 const MEASURE = {
   '1-1': { unit: 'claim', units: 'claims',
     stages: [['Claim', 'the paper says', 'paper'], ['Needs', 'what would prove it?', 'Qwen'], ['Found', 'is it in the paper?', 'Qwen + code'], ['Verdict', '3 runs vote', 'code']],
-    line: 'Qwen2.5-32B does the reading. Code checks every id it names, applies the rules, and counts. Three runs vote; when they disagree the claim stays open (U).' },
+    line: 'Qwen2.5-32B does the reading. Code checks every id it names, applies the rules, and counts. Three runs vote; when they disagree the claim stays open (U).',
+    cases: [['FAIL', 'S2.066'], ['PASS', 'A04'], ['UNRESOLVED', 'S3.092'], ['NOT_APPLICABLE', 'S0.013']],
+    how: [
+      ['How the claims are found', [
+        ['code', 'The paper is cut into numbered sentences (A04, S2.066) and each table into rows (T1).'],
+        ['Qwen', 'Reads the whole paper and lists every sentence that states a result or a property as fact.'],
+        ['Qwen', 'Tags each one: own result · method property · fact about prior work.'],
+        ['code', 'The same claim repeated in the abstract, intro and conclusion counts once.'],
+        ['code', 'Procedures (“we compute…”), hypotheses and common knowledge are not claims → NA.']]],
+      ['How the needed evidence is named', [
+        ['Qwen', 'For each claim, writes in one sentence what a careful reader would require: an experiment, a measurement, a proof, the method description, or a citation.'],
+        ['Qwen', 'Is never asked “is this sentence bad?”. It only says what would prove the claim.']]],
+      ['How the paper is searched', [
+        ['Qwen', 'Points at ids that bear on the claim: tables, figures, result sentences, method text, citations.'],
+        ['code', 'Drops what cannot count: the sentence itself, restatements in abstract / intro / conclusion, ids that do not exist.'],
+        ['code', 'Adds any table that contains the claim’s own numbers.'],
+        ['Qwen', 'A second call (the judge) sees the surviving material verbatim and answers supported / partially / unsupported / ambiguous / common knowledge, plus what is missing.']]],
+      ['How the verdict is decided', [
+        ['code', 'Fixed rules, top to bottom: prior-work fact with a citation → PASS · procedure or definition → NA · supported or partially → PASS · unsupported with nothing valid → FAIL.'],
+        ['code', 'Unsupported but the claim’s numbers are in a table, or the only evidence is a figure → U, for a human.'],
+        ['code', 'All of this runs 3 times (1 greedy + 2 sampled). FAIL only if 2+ runs say FAIL and none says PASS. Found in fewer than 2 runs, or runs disagree → U.'],
+        ['code', 'score = FAIL / (FAIL + PASS). U is reported as coverage, NA is not counted.']]],
+    ] },
 };
 const VLAB = { FAIL: 'FAIL', PASS: 'PASS', UNRESOLVED: 'U', NOT_APPLICABLE: 'NA' };
 const VK = d => ({ FAIL: 'F', PASS: 'P', UNRESOLVED: 'U', NOT_APPLICABLE: 'N' })[d] || 'U';
@@ -590,13 +612,30 @@ function buildFlow(m, data, wrap) {
   const U = data.units, n = U.length;
   const box = (i, [t, sub, who]) => h('div', { class: 'ms-bx', 'data-s': i }, h('div', { class: 'ms-bt' }, h('b', { text: t }), h('span', { class: 'ms-who ' + (who.startsWith('Qwen') ? 'llm' : 'code'), text: who })), h('i', { text: sub }), h('div', { class: 'ms-bc' }));
   const boxes = m.stages.map((st, i) => box(i, st));
+  boxes.forEach(b => b.append(h('span', { class: 'ms-q', text: 'how?' })));
   const flow = h('div', { class: 'ms-flow' }, ...boxes.flatMap((b, i) => i ? [h('span', { class: 'ms-ar', text: '→' }), b] : [b]));
+  // "how?" strip: hover previews a stage's method, click pins it
+  const how = h('div', { class: 'ms-how', hidden: true });
+  let pinned = -1;
+  function showHow(k) { if (k < 0) { how.hidden = true; boxes.forEach(b => b.classList.remove('ask')); return; }
+    const [title, rows] = m.how[k]; boxes.forEach((b, j) => b.classList.toggle('ask', j === k));
+    how.replaceChildren(h('div', { class: 'ms-howh' }, h('span', { class: 'ms-n', text: String(k + 1) }), h('b', { text: title }), h('span', { class: 'ms-howhint', text: pinned === k ? 'click the box again to close' : 'click the box to keep this open' })),
+      h('ul', {}, ...rows.map(([w, t]) => h('li', {}, h('span', { class: 'ms-who ' + (w === 'Qwen' ? 'llm' : 'code'), text: w }), h('span', { text: t })))));
+    how.hidden = false; }
+  boxes.forEach((b, k) => { b.tabIndex = 0;
+    b.addEventListener('mouseenter', () => { if (pinned < 0) showHow(k); });
+    b.addEventListener('mouseleave', () => { if (pinned < 0) showHow(-1); });
+    b.addEventListener('focus', () => { if (pinned < 0) showHow(k); });
+    b.addEventListener('blur', () => { if (pinned < 0) showHow(-1); });
+    b.addEventListener('click', () => { pinned = pinned === k ? -1 : k; showHow(pinned < 0 ? -1 : k); });
+    b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.click(); } }); });
   const bins = { FAIL: null, PASS: null, UNRESOLVED: null, NOT_APPLICABLE: null };
   const binRow = h('div', { class: 'ms-bins' }, ...Object.keys(bins).map(k => { const d = h('div', { class: 'ms-dots' }); bins[k] = d; return h('div', { class: 'ms-bin v-' + VK(k) }, h('div', { class: 'ms-bh' }, h('b', { text: VLAB[k] }), h('span', { class: 'ms-bn', text: '0' })), d); }));
   const formula = h('div', { class: 'ms-form' });
   const play = h('button', { type: 'button', class: 'ms-nb', text: '▶ Play' }), prev = h('button', { type: 'button', class: 'ms-nb', text: '‹' }), next = h('button', { type: 'button', class: 'ms-nb', text: '›' });
   const ctr = h('span', { class: 'ms-ctr' });
-  wrap.replaceChildren(flow, h('div', { class: 'ms-ctl' }, play, prev, next, ctr, h('span', { class: 'ms-paper', text: data.meta.paper + ' · ' + n + ' ' + m.units })), binRow, formula, h('p', { class: 'ms-line', text: m.line }));
+  const caseBtns = (m.cases || []).map(([v, id]) => { const b = h('button', { type: 'button', class: 'ms-case v-' + VK(v) }, h('span', { class: 'ms-vb v-' + VK(v), text: VLAB[v] }), h('span', { text: 'case' })); b.addEventListener('click', () => { stop(); const k = U.findIndex(u => u.id === id); if (k >= 0) showClaim(k, true); }); return b; });
+  wrap.replaceChildren(flow, how, h('div', { class: 'ms-ctl' }, play, prev, next, ctr, h('span', { class: 'ms-cases' }, h('span', { class: 'ms-cl', text: 'jump to a' }), ...caseBtns), h('span', { class: 'ms-paper', text: data.meta.paper + ' · ' + n + ' ' + m.units })), binRow, formula, h('p', { class: 'ms-line', text: m.line }));
   const cnt = { FAIL: 0, PASS: 0, UNRESOLVED: 0, NOT_APPLICABLE: 0 };
   const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const T = k => `<i class="v-${k}">${{ F: 'FAIL', P: 'PASS', U: 'U' }[k]}</i>`;
