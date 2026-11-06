@@ -3,8 +3,8 @@ name: pages
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: "17 */6 * * *"        # refresh the home-page count (api/stats.json) every six hours
+  # schedule:                    # paused 2026-11-07: Actions jobs cannot start while the account is billing-locked
+  #   - cron: "17 */6 * * *"      # refresh the home-page count (api/stats.json) every six hours
   workflow_dispatch:
 permissions:
   contents: read
